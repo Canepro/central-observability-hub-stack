@@ -1,0 +1,29 @@
+# Sensitive files
+*.pem
+*.key
+*.crt
+secrets/
+
+# Helm
+.helmignore
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Local testing
+test-output/
+*.log
+
+terraform/.terraform/
+terraform/terraform.tfstate*

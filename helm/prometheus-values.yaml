@@ -1,0 +1,89 @@
+# Prometheus Standalone Helm Chart Values
+# Chart: prometheus-community/prometheus
+# Version: 27.47.0+
+
+server:
+  # Retention
+  retention: "15d"
+  
+  # Enable Remote Write Receiver (CRITICAL for external metrics)
+  extraFlags:
+    - web.enable-remote-write-receiver
+    - web.enable-lifecycle
+
+  # Storage
+  persistentVolume:
+    enabled: true
+    size: 50Gi
+    storageClass: oci-bv
+    accessModes:
+      - ReadWriteOnce
+
+  # Resource limits
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2
+      memory: 2Gi
+
+  # Service configuration
+  service:
+    servicePort: 80
+    type: ClusterIP
+
+  # Global Scrape Interval
+  global:
+    scrape_interval: 30s
+    evaluation_interval: 30s
+
+# Alertmanager
+alertmanager:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: oci-bv
+    accessModes:
+      - ReadWriteOnce
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# Kube State Metrics
+kubeStateMetrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Pushgateway
+pushgateway:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

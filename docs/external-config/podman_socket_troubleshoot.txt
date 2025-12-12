@@ -1,0 +1,23 @@
+# Troubleshooting Podman Socket Location
+
+# 1. Check where Podman thinks the socket is
+podman info --format '{{.Host.RemoteSocket.Path}}'
+
+# 2. If the above is empty or wrong, check if the socket service is running
+systemctl --user status podman.socket
+
+# 3. If it's not active, start it
+systemctl --user enable --now podman.socket
+
+# 4. Verify it exists now
+ls -l $XDG_RUNTIME_DIR/podman/podman.sock
+
+# 5. Run the agent again
+podman run -d \
+  -v $(pwd)/podman-agent.river:/etc/agent/config.river \
+  --name grafana-agent \
+  --network host \
+  --privileged \
+  -v $XDG_RUNTIME_DIR/podman/podman.sock:/run/podman/podman.sock \
+  grafana/agent:v0.39.1 run /etc/agent/config.river
+

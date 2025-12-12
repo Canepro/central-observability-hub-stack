@@ -1,0 +1,83 @@
+// Grafana Agent Flow Configuration for Podman RocketChat
+// Usage:
+// docker run -d \
+//   -v $(pwd)/podman-agent.river:/etc/agent/config.river \
+//   --name grafana-agent \
+//   --network host \
+//   grafana/agent:v0.39.1 run /etc/agent/config.river
+
+// Variables for authentication
+// Replace USERNAME and PASSWORD with your Basic Auth credentials
+// defined in the central observability stack (observability-auth secret)
+
+// 1. Metrics Collection
+prometheus.scrape "rocketchat" {
+  targets = [
+    { "__address__" = "localhost:9458" },
+  ]
+  metrics_path = "/metrics"
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.central.receiver]
+}
+
+prometheus.remote_write "central" {
+  endpoint {
+    url = "https://observability.canepro.me/api/v1/write"
+    
+    basic_auth {
+      username = "observability-user"
+      password = "YOUR_PASSWORD_HERE"
+    }
+  }
+}
+
+// 2. Logs Collection (Docker/Podman)
+// This assumes the agent has access to the docker socket
+loki.source.docker "rocketchat" {
+  host = "unix:///run/podman/podman.sock" // Adjust if using Docker or different socket path
+  targets = [
+    { container_name = "rocketchat-deployment_rocketchat_1" }, // Updated to match actual container name
+  ]
+  forward_to = [loki.write.central.receiver]
+}
+
+loki.write "central" {
+  endpoint {
+    url = "https://observability.canepro.me/loki/api/v1/push"
+    headers = {
+      "X-Scope-OrgID" = "1",
+    }
+    
+    basic_auth {
+      username = "observability-user"
+      password = "YOUR_PASSWORD_HERE"
+    }
+  }
+}
+
+// 3. Traces (OTLP Receiver)
+otelcol.receiver.otlp "default" {
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  output {
+    traces  = [otelcol.exporter.otlphttp.central.input]
+  }
+}
+
+otelcol.exporter.otlphttp "central" {
+  client {
+    endpoint = "https://observability.canepro.me"
+    
+    auth = otelcol.auth.basic.central.handler
+  }
+}
+
+otelcol.auth.basic "central" {
+  username = "observability-user"
+  password = "YOUR_PASSWORD_HERE"
+}

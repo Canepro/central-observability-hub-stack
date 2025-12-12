@@ -1,0 +1,27 @@
+# 1. Find your User ID (UID)
+# Run this command to get your UID (usually 1000 or 1001)
+id -u
+
+# 2. Locate the Socket
+# The socket is typically at /run/user/$UID/podman/podman.sock
+# For example, if your UID is 1000:
+ls -l /run/user/1000/podman/podman.sock
+
+# 3. Updated Run Command (Replace 1000 with your actual UID)
+podman run -d \
+  -v $(pwd)/podman-agent.river:/etc/agent/config.river \
+  --name grafana-agent \
+  --network host \
+  --privileged \
+  -v /run/user/$(id -u)/podman/podman.sock:/run/podman/podman.sock \
+  grafana/agent:v0.39.1 run /etc/agent/config.river
+
+# 4. IMPORTANT: Update the Config File
+# You also need to update the socket path INSIDE your podman-agent.river file
+# Change line 42 from:
+#   host = "unix:///run/podman/podman.sock"
+# To:
+#   host = "unix:///run/podman/podman.sock" 
+# (Wait! The inside path stays the same because we are mounting it TO that location in the container.
+#  Only the source path in the -v flag changes. So the config file is actually fine!)
+
