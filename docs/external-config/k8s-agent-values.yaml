@@ -1,0 +1,92 @@
+# Helm Values for External Kubernetes Cluster (grafana/grafana-agent-operator or grafana-agent)
+# Recommended Chart: grafana/k8s-monitoring or grafana/grafana-agent
+# Usage: helm upgrade --install grafana-agent grafana/grafana-agent -f k8s-agent-values.yaml -n monitoring
+
+agent:
+  mode: flow
+  configMap:
+    create: true
+    content: |
+      // Metrics: Scrape RocketChat Pods
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "rocketchat" {
+        targets = discovery.kubernetes.pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          regex = "rocketchat"
+          action = "keep"
+        }
+      }
+
+      prometheus.scrape "rocketchat" {
+        targets = discovery.relabel.rocketchat.output
+        forward_to = [prometheus.remote_write.central.receiver]
+      }
+
+      prometheus.remote_write "central" {
+        endpoint {
+          url = "https://observability.canepro.me/api/v1/write"
+          basic_auth {
+            username = "observability-user"
+            password = "YOUR_PASSWORD_HERE"
+          }
+        }
+      }
+
+      // Logs: Collect Cluster Logs
+      discovery.relabel "logs" {
+        targets = discovery.kubernetes.pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          regex = "rocketchat"
+          action = "keep"
+        }
+      }
+
+      loki.source.kubernetes "rocketchat" {
+        targets = discovery.relabel.logs.output
+        forward_to = [loki.write.central.receiver]
+      }
+
+      loki.write "central" {
+        endpoint {
+          url = "https://observability.canepro.me/loki/api/v1/push"
+          headers = {
+            "X-Scope-OrgID" = "1",
+          }
+          basic_auth {
+            username = "observability-user"
+            password = "YOUR_PASSWORD_HERE"
+          }
+        }
+      }
+
+      // Traces: OTLP Receiver
+      otelcol.receiver.otlp "default" {
+        http { endpoint = "0.0.0.0:4318" }
+        grpc { endpoint = "0.0.0.0:4317" }
+        output {
+          traces = [otelcol.exporter.otlphttp.central.input]
+        }
+      }
+
+      otelcol.exporter.otlphttp "central" {
+        client {
+          endpoint = "https://observability.canepro.me"
+          auth = otelcol.auth.basic.central.handler
+        }
+      }
+
+      otelcol.auth.basic "central" {
+        username = "observability-user"
+        password = "YOUR_PASSWORD_HERE"
+      }
+
+# Enable Controller to create Service/PodMonitors if needed (optional)
+controller:
+  type: deployment
+  replicas: 1
+

@@ -1,0 +1,155 @@
+# Grafana Observability Stack - Deployment Guide
+
+Complete step-by-step guide to deploy the observability stack on Oracle Kubernetes Engine (OKE).
+
+## Prerequisites
+
+- OKE cluster running with 2+ worker nodes (ARM/AMD64 supported)
+- `kubectl` configured to access the cluster
+- `helm` v3.x installed
+- OCI Block Volume storage class available (`oci-bv`)
+- OCI Object Storage bucket credentials (for Loki/Tempo)
+
+## Infrastructure Details
+
+- **Cluster**: Oracle Kubernetes Engine (OKE)
+- **Kubernetes**: v1.34.1+
+- **Domain**: canepro.me
+- **Tenancy**: Always Free tier
+
+## Deployment Steps
+
+### Step 1: Add Helm Repositories
+
+```bash
+# Add Grafana and Prometheus Community Helm repositories
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+```
+
+### Step 2: Create Monitoring Namespace
+
+```bash
+kubectl create namespace monitoring
+```
+
+### Step 3: Create Secrets
+
+**1. OCI Object Storage Credentials (for Loki & Tempo):**
+
+```bash
+kubectl create secret generic oci-s3-creds -n monitoring \
+  --from-literal=access_key='YOUR_ACCESS_KEY' \
+  --from-literal=secret_key='YOUR_SECRET_KEY'
+```
+
+**2. Data Ingestion Authentication (for Remote Agents):**
+
+```bash
+# Generate APR1 hash (e.g., using openssl or htpasswd)
+# Example user: observability-user
+# Example hash: $apr1$th5J7vrc$tL8FiO7Kq6pT60qctEYZs/
+
+kubectl create secret generic observability-auth -n monitoring \
+  --from-literal=auth='observability-user:$apr1$th5J7vrc$tL8FiO7Kq6pT60qctEYZs/'
+```
+
+### Step 4: Deploy Loki (Logs)
+
+```bash
+# Install with S3 configuration
+export ACCESS_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.access_key}" | base64 -d)
+export SECRET_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.secret_key}" | base64 -d)
+
+helm install loki grafana/loki \
+  -n monitoring \
+  -f helm/loki-values.yaml \
+  --set loki.storage.s3.accessKeyId=$ACCESS_KEY \
+  --set loki.storage.s3.secretAccessKey=$SECRET_KEY
+```
+
+### Step 5: Deploy Prometheus (Metrics)
+
+```bash
+helm install prometheus prometheus-community/prometheus \
+  -f helm/prometheus-values.yaml \
+  -n monitoring
+```
+
+### Step 6: Deploy Tempo (Traces)
+
+```bash
+# Install with S3 configuration
+export ACCESS_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.access_key}" | base64 -d)
+export SECRET_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.secret_key}" | base64 -d)
+
+helm install tempo grafana/tempo \
+  -n monitoring \
+  -f helm/tempo-values.yaml \
+  --set storage.trace.s3.access_key=$ACCESS_KEY \
+  --set storage.trace.s3.secret_key=$SECRET_KEY
+```
+
+### Step 7: Deploy Promtail (Log Collection)
+
+```bash
+helm install promtail grafana/promtail \
+  -f helm/promtail-values.yaml \
+  -n monitoring
+```
+
+### Step 8: Set Up NGINX Ingress Controller
+
+```bash
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  -f helm/nginx-ingress-values.yaml \
+  -n monitoring
+```
+
+### Step 9: Configure Ingress Routes & SSL
+
+```bash
+# 1. Install cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+
+# 2. Configure Let's Encrypt Issuer
+kubectl apply -f k8s/cert-manager-clusterissuer.yaml
+
+# 3. Apply Grafana Ingress (UI)
+kubectl apply -f k8s/grafana-ingress.yaml
+
+# 4. Apply Observability Ingress (Data Ingestion)
+kubectl apply -f k8s/observability-ingress-secure.yaml
+```
+
+### Step 10: Retrieve Grafana Credentials
+
+```bash
+kubectl get secret grafana -n monitoring \
+  -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+```
+
+### Step 11: Access Services
+
+- **UI**: `https://grafana.canepro.me`
+- **Metrics Endpoint**: `https://observability.canepro.me/api/v1/write`
+- **Logs Endpoint**: `https://observability.canepro.me/loki/api/v1/push`
+
+## Verification
+
+```bash
+# Check Pods
+kubectl get pods -n monitoring
+
+# Check Ingress
+kubectl get ingress -n monitoring
+
+# Check PVCs
+kubectl get pvc -n monitoring
+```
+
+## Troubleshooting
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for solutions to common issues (e.g., 404 errors, 401 Unauthorized, ARM64 crashes).

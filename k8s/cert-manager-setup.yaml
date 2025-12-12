@@ -1,0 +1,29 @@
+# Cert-Manager Setup for SSL/TLS
+# This is OPTIONAL - you can set up SSL later
+# 
+# Steps to enable SSL:
+# 1. Install cert-manager:
+#    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+#
+# 2. Create ClusterIssuer for Let's Encrypt:
+#    kubectl apply -f - <<EOF
+#    apiVersion: cert-manager.io/v1
+#    kind: ClusterIssuer
+#    metadata:
+#      name: letsencrypt-prod
+#    spec:
+#      acme:
+#        server: https://acme-v02.api.letsencrypt.org/directory
+#        email: your-email@example.com  # CHANGE THIS
+#        privateKeySecretRef:
+#          name: letsencrypt-prod
+#        solvers:
+#        - http01:
+#            ingress:
+#              class: nginx
+#    EOF
+#
+# 3. Uncomment TLS section in grafana-ingress.yaml
+# 4. Uncomment cert-manager annotation in grafana-ingress.yaml
+# 5. Apply the updated ingress: kubectl apply -f k8s/grafana-ingress.yaml
+

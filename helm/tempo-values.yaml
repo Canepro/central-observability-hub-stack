@@ -1,0 +1,63 @@
+# Tempo Helm Chart Values
+# Deployment Mode: Monolithic
+
+persistence:
+  enabled: false
+
+tempo:
+  retention: 168h
+  
+  storage:
+    trace:
+      backend: s3
+      s3:
+        bucket: tempo-data
+        # FIX 1: REMOVED "https://" prefix. Just the domain.
+        endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
+        
+        access_key: "${ACCESS_KEY}"
+        secret_key: "${SECRET_KEY}"
+        insecure: false
+        # FIX 2: Added this for OCI compatibility
+        forcepathstyle: true
+      
+      wal:
+        path: /tmp/tempo/wal
+      local:
+        path: /tmp/tempo/traces
+
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+        grpc:
+          endpoint: 0.0.0.0:14250
+    zipkin:
+      endpoint: 0.0.0.0:9411
+
+  compactor:
+    compaction:
+      block_retention: 168h
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 2000
+
+service:
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1
+    memory: 1.5Gi

@@ -1,0 +1,53 @@
+# NGINX Ingress Controller Helm Chart Values
+# Chart: ingress-nginx
+# Purpose: Single LoadBalancer for all services (Grafana, Rocket.Chat, etc.)
+
+controller:
+# Service configuration
+  service:
+    type: LoadBalancer
+    annotations:
+      # Use OCI Network Load Balancer (Always Free & Fast)
+      oci.oraclecloud.com/load-balancer-type: "nlb"
+  
+  # Resource limits for Always Free tier
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Replica count
+  replicaCount: 1
+  
+  # Disable admission webhook (can cause timeout issues)
+  admissionWebhooks:
+    enabled: false
+  
+  # Enable metrics for Prometheus
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+      namespace: monitoring
+      labels:
+        release: prometheus
+  
+  # Enable SSL passthrough for TLS termination
+  extraArgs:
+    enable-ssl-passthrough: ""
+
+# Default backend (optional, for 404 pages)
+defaultBackend:
+  enabled: false
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 20Mi
+    limits:
+      cpu: 50m
+      memory: 50Mi
+

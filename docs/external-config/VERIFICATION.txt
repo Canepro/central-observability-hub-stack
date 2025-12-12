@@ -1,0 +1,18 @@
+## Verification
+
+1.  **Check Agent Logs**:
+    ```bash
+    podman logs -f grafana-agent
+    ```
+    Look for "component=prometheus.scrape ... msg=finished". If you see errors about "connection refused" to port 3000, ensure RocketChat is running.
+
+2.  **Check Central Grafana**:
+    -   Go to `https://grafana.canepro.me`
+    -   Open **Dashboards > Rocket.Chat Metrics**
+    -   You should start seeing data points populate within 1-2 minutes.
+
+3.  **Check Logs**:
+    -   Go to **Explore > Loki**
+    -   Query: `{container_name="rocketchat-deployment_rocketchat_1"}`
+    -   You should see log lines arriving.
+

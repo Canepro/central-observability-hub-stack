@@ -1,0 +1,76 @@
+# Final Verification and Deployment Summary
+
+## 1. Deployment Status
+All components of the Centralized Observability Stack are successfully deployed and connected.
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Central Stack (OKE)** | ✅ Active | Mimir (Metrics), Loki (Logs), Tempo (Traces) running. |
+| **External K8s (`k8.canepro.me`)** | ✅ Connected | Metrics shipping via Remote Write. Logs shipping via Loki push. |
+| **External Podman (`podman.canepro.me`)** | ✅ Connected | Metrics shipping (Port 9458). Logs shipping (User Socket 1001). |
+
+## 2. Critical Fixes Applied
+During the deployment, several configuration issues were identified and resolved:
+
+### Podman Agent Fixes
+1.  **User vs System Socket**:
+    *   *Issue*: Agent running as root (system socket) could not see Rootless Podman containers.
+    *   *Fix*: Mounted User Socket (`/run/user/1001/podman/podman.sock`) and ran agent with `-u 1001:1001`.
+2.  **Log File Access**:
+    *   *Issue*: Agent could not read log files in user home directory.
+    *   *Fix*: Mounted `~/.local/share/containers` into the agent container.
+3.  **Metrics Port**:
+    *   *Issue*: Scraped port 3000 (Login page) instead of 9458 (Metrics).
+    *   *Fix*: Updated `podman-agent.river` to target `127.0.0.1:9458` and exposed port in RocketChat `docker-compose.yml`.
+4.  **Loki Headers**:
+    *   *Issue*: `401 Unauthorized`.
+    *   *Fix*: Added `X-Scope-OrgID` header to River config.
+
+### Kubernetes Agent Fixes
+1.  **Conflict**: Removed existing `kube-prometheus-stack` before deploying agent.
+2.  **Loki Headers**: Added `X-Scope-OrgID` header.
+
+## 3. Verification Steps
+
+### Verify Metrics
+In Central Grafana (Explore -> Prometheus):
+*   Query: `up{job="prometheus.scrape.rocketchat"}`
+*   Expected: Value `1` for both `k8` and `podman` instances.
+
+### Verify Logs
+In Central Grafana (Explore -> Loki):
+*   Query: `{container_name=~".+"}` or `{cluster="rocketchat-k8s"}`
+*   Expected: Log streams from both environments.
+
+### Verify Traces
+In Central Grafana (Explore -> Tempo):
+*   Query: TraceQL or Search for recent traces.
+*   Expected: Spans from RocketChat operations.
+
+## 4. Operational Commands
+
+**Restart Podman Agent (if needed):**
+```bash
+# On podman.canepro.me
+sudo podman run -d \
+  -u 1001:1001 \
+  -v $(pwd)/podman-agent.river:/etc/agent/config.river \
+  -v $(pwd)/data-agent:/var/lib/grafana-agent \
+  -e AGENT_MODE=flow \
+  --name grafana-agent \
+  --network host \
+  --privileged \
+  -v /run/user/1001/podman/podman.sock:/run/podman/podman.sock \
+  -v /home/cloud_user/.local/share/containers:/home/cloud_user/.local/share/containers:ro \
+  grafana/agent:v0.39.1 \
+  run /etc/agent/config.river --storage.path=/var/lib/grafana-agent
+```
+
+**Restart K8s Agent:**
+```bash
+# On k8.canepro.me
+helm upgrade --install grafana-agent grafana/grafana-agent \
+  -f external-config/k8s-agent-values.yaml \
+  --namespace monitoring
+```
+
