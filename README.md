@@ -11,7 +11,7 @@ This stack provides a production-ready, centralized observability platform deplo
 - **Cluster**: Oracle Kubernetes Engine (OKE) in Ashburn
 - **Nodes**: 2 worker nodes (VM.Standard.A1.Flex, 2 OCPU, 12GB RAM each)
 - **Kubernetes**: v1.34.1
-- **Domain**: 
+- **Domain**:
   - `grafana.canepro.me` (Dashboards)
   - `observability.canepro.me` (Data Ingestion)
 - **Tenancy**: Always Free tier
@@ -33,9 +33,10 @@ This stack provides a production-ready, centralized observability platform deplo
 
 ### Grafana Dashboard
 
-- **URL**: https://grafana.canepro.me
+- **URL**: <https://grafana.canepro.me>
 - **Username**: `admin`
 - **Password**: Retrieve with:
+
   ```bash
   kubectl get secret grafana -n monitoring \
     -o jsonpath="{.data.admin-password}" | base64 -d ; echo
@@ -55,6 +56,7 @@ All external telemetry is sent to `https://observability.canepro.me` using **Bas
 
 | Component | Chart | Version | App Version |
 |-----------|-------|---------|-------------|
+| Grafana | grafana/grafana | 7.3.0 | 12.x |
 | Prometheus | prometheus-community/prometheus | 27.47.0 | v3.x |
 | Loki | grafana/loki | 6.46.0 | 3.x |
 | Tempo | grafana/tempo | 1.24.0 | 2.x |
@@ -87,11 +89,12 @@ kubectl create namespace monitoring
 # See docs/DEPLOYMENT.md for secret creation steps
 
 # 4. Deploy components
-helm install loki grafana/loki -f helm/loki-values.yaml -n monitoring
+helm install loki grafana/loki --version 6.46.0 -f helm/loki-values.yaml -n monitoring
 helm install prometheus prometheus-community/prometheus \
-  -f helm/prometheus-values.yaml -n monitoring
-helm install tempo grafana/tempo -f helm/tempo-values.yaml -n monitoring
-helm install promtail grafana/promtail -f helm/promtail-values.yaml -n monitoring
+  --version 27.47.0 -f helm/prometheus-values.yaml -n monitoring
+helm install grafana grafana/grafana --version 7.3.0 -f helm/grafana-values.yaml -n monitoring
+helm install tempo grafana/tempo --version 1.24.0 -f helm/tempo-values.yaml -n monitoring
+helm install promtail grafana/promtail --version 6.17.1 -f helm/promtail-values.yaml -n monitoring
 
 # 5. Set up Ingress and SSL
 kubectl apply -f k8s/observability-ingress-secure.yaml
@@ -107,8 +110,9 @@ kubectl apply -f k8s/observability-ingress-secure.yaml
 
 ## 📁 Directory Structure
 
-```
+```text
 ├── helm/              # Helm values files for each component
+│   ├── grafana-values.yaml
 │   ├── loki-values.yaml
 │   ├── prometheus-values.yaml
 │   ├── promtail-values.yaml

@@ -11,7 +11,7 @@
 Username: admin
 Password: (run command below)
 
-kubectl get secret prometheus-grafana -n monitoring \
+kubectl get secret grafana -n monitoring \
   -o jsonpath="{.data.admin-password}" | base64 -d ; echo
 ```
 
@@ -208,7 +208,7 @@ kubectl delete pod alertmanager-prometheus-alertmanager-0 -n monitoring
 ### Grafana Login Issues
 ```bash
 # Reset admin password
-kubectl exec -n monitoring deployment/prometheus-grafana -- \
+kubectl exec -n monitoring deployment/grafana -- \
   grafana-cli admin reset-admin-password newpassword
 ```
 

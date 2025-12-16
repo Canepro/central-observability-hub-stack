@@ -6,7 +6,7 @@ Comprehensive architecture documentation for the centralized observability hub o
 
 This observability stack serves as a **centralized monitoring hub** that aggregates metrics, logs, and traces from multiple Rocket.Chat deployments and other applications across different environments (OKE, Azure, AWS, etc.).
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     External Applications                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
@@ -57,6 +57,7 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 **Role**: Central visualization hub and unified interface for all observability data.
 
 **Configuration**:
+
 - **Deployment**: 1 replica
 - **Storage**: 50 GiB PVC (OCI Block Volume)
 - **Access**: `https://grafana.canepro.me`
@@ -66,6 +67,7 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 **Role**: Time-series database for metrics collection, storage, and alerting.
 
 **Configuration**:
+
 - **Deployment**: Standalone (Community Chart)
 - **Storage**: 50 GiB PVC (OCI Block Volume)
 - **Retention**: 15 days
@@ -77,6 +79,7 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 **Role**: Log aggregation system optimized for Kubernetes workloads.
 
 **Configuration**:
+
 - **Deployment**: Single Binary
 - **Storage**: **OCI Object Storage (S3 Compatible)**
   - Bucket: `loki-data`
@@ -89,6 +92,7 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 **Role**: Distributed tracing backend.
 
 **Configuration**:
+
 - **Deployment**: Monolithic
 - **Storage**: **OCI Object Storage (S3 Compatible)**
   - Bucket: `tempo-data`
@@ -99,6 +103,7 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 **Role**: Secure entry point for both UI and Data Ingestion.
 
 **Configuration**:
+
 - **SSL**: Let's Encrypt (cert-manager)
 - **Authentication**: Basic Auth (`observability-auth` secret)
 - **Path Routing**:

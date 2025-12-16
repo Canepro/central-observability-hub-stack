@@ -1,0 +1,69 @@
+# Grafana Helm Chart Values
+# Chart: grafana/grafana
+# Version: 7.3.0+
+# App Version: 12.x
+
+# Deployment configuration
+replicas: 1
+
+# Persistence
+persistence:
+  enabled: true
+  type: pvc
+  storageClassName: oci-bv
+  accessModes:
+    - ReadWriteOnce
+  size: 50Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+
+# Resource limits for Always Free tier
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+# Grafana configuration
+grafana.ini:
+  server:
+    root_url: https://grafana.canepro.me
+  security:
+    admin_user: admin
+    admin_password: admin  # Change on first login
+
+# Datasource provisioning
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.monitoring.svc.cluster.local:80
+        isDefault: true
+        editable: true
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        editable: true
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        editable: true
+
+# Dashboard provisioning (optional)
+# dashboards:
+#   default:
+#     some-dashboard:
+#       gnetId: 315
+#       revision: 1
+#       datasource: Prometheus
+
