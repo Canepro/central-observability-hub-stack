@@ -64,6 +64,7 @@ export ACCESS_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{
 export SECRET_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.secret_key}" | base64 -d)
 
 helm install loki grafana/loki \
+  --version 6.46.0 \
   -n monitoring \
   -f helm/loki-values.yaml \
   --set loki.storage.s3.accessKeyId=$ACCESS_KEY \
@@ -74,11 +75,21 @@ helm install loki grafana/loki \
 
 ```bash
 helm install prometheus prometheus-community/prometheus \
+  --version 27.47.0 \
   -f helm/prometheus-values.yaml \
   -n monitoring
 ```
 
-### Step 6: Deploy Tempo (Traces)
+### Step 6: Deploy Grafana (Visualization)
+
+```bash
+helm install grafana grafana/grafana \
+  --version 7.3.0 \
+  -f helm/grafana-values.yaml \
+  -n monitoring
+```
+
+### Step 7: Deploy Tempo (Traces)
 
 ```bash
 # Install with S3 configuration
@@ -86,21 +97,23 @@ export ACCESS_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{
 export SECRET_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.secret_key}" | base64 -d)
 
 helm install tempo grafana/tempo \
+  --version 1.24.0 \
   -n monitoring \
   -f helm/tempo-values.yaml \
   --set storage.trace.s3.access_key=$ACCESS_KEY \
   --set storage.trace.s3.secret_key=$SECRET_KEY
 ```
 
-### Step 7: Deploy Promtail (Log Collection)
+### Step 8: Deploy Promtail (Log Collection)
 
 ```bash
 helm install promtail grafana/promtail \
+  --version 6.17.1 \
   -f helm/promtail-values.yaml \
   -n monitoring
 ```
 
-### Step 8: Set Up NGINX Ingress Controller
+### Step 9: Set Up NGINX Ingress Controller
 
 ```bash
 helm install ingress-nginx ingress-nginx/ingress-nginx \
@@ -108,7 +121,7 @@ helm install ingress-nginx ingress-nginx/ingress-nginx \
   -n monitoring
 ```
 
-### Step 9: Configure Ingress Routes & SSL
+### Step 10: Configure Ingress Routes & SSL
 
 ```bash
 # 1. Install cert-manager
@@ -124,14 +137,14 @@ kubectl apply -f k8s/grafana-ingress.yaml
 kubectl apply -f k8s/observability-ingress-secure.yaml
 ```
 
-### Step 10: Retrieve Grafana Credentials
+### Step 11: Retrieve Grafana Credentials
 
 ```bash
 kubectl get secret grafana -n monitoring \
   -o jsonpath="{.data.admin-password}" | base64 -d ; echo
 ```
 
-### Step 11: Access Services
+### Step 12: Access Services
 
 - **UI**: `https://grafana.canepro.me`
 - **Metrics Endpoint**: `https://observability.canepro.me/api/v1/write`
