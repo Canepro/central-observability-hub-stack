@@ -73,6 +73,36 @@ All external telemetry is sent to `https://observability.canepro.me` using **Bas
 - `helm` v3.x installed
 - Domain `canepro.me` with DNS access
 
+### Terraform (OKE + Argo CD)
+
+This repo also includes Terraform to manage OKE infrastructure and install Argo CD via Helm.
+
+#### Prerequisites
+
+- `terraform` installed
+- `oci` CLI installed and authenticated (Helm provider uses `oci ce cluster generate-token`)
+- Cluster is reachable (public endpoint in `terraform/main.tf`)
+
+#### Deploy Argo CD
+
+```bash
+terraform -chdir=terraform init -upgrade
+terraform -chdir=terraform plan -out=argocd_grafana.tfplan
+terraform -chdir=terraform apply "argocd_grafana.tfplan"
+```
+
+#### Notes
+
+- Terraform plan files are ignored by git: `*.tfplan` / `*.tfplan.*` (see `.gitignore`).
+- The node pool ignores image drift on `node_source_details[0].image_id` to avoid accidental node rotation.
+- Argo CD is exposed at `https://argocd.canepro.me` via NGINX Ingress, with TLS issued by cert-manager (`letsencrypt-prod`).
+- If you need the initial admin password:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d ; echo
+```
+
 ### Deployment
 
 ```bash

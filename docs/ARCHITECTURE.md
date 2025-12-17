@@ -142,3 +142,29 @@ All inter-service communication happens via ClusterIP services within the `monit
 - **Transport**: HTTPS/TLS 1.3 enforced.
 - **Ingestion Auth**: HTTP Basic Authentication required for all push endpoints.
 - **Data Isolation**: Loki configured for single-tenant mode (simplified).
+
+## GitOps (Argo CD)
+
+Argo CD is installed into the cluster using Terraform + the Helm provider:
+
+- **Terraform**: `terraform/argocd.tf` defines `helm_release.argocd` (chart `argo-cd`, version `5.51.6`).
+- **Ingress**: `argocd.canepro.me` via NGINX Ingress (`ingressClassName: nginx`).
+- **TLS**: cert-manager issues `Certificate/argocd-tls` using `ClusterIssuer/letsencrypt-prod` (created via ingress-shim).
+- **Server mode**: Argo CD server runs with `--insecure` and the ingress terminates TLS.
+
+### Helm provider authentication (OKE)
+
+Terraform’s Helm provider connects to the Kubernetes API server using:
+
+- Cluster API endpoint: `oci_containerengine_cluster.k8s_cluster.endpoints[0].public_endpoint`
+- Cluster CA: extracted from `data.oci_containerengine_cluster_kube_config.k8s_kube_config.content`
+- Auth: OCI CLI exec token generation via `oci ce cluster generate-token --cluster-id <id>`
+
+This requires the `oci` CLI to be installed and authenticated wherever Terraform runs.
+
+### Node pool image drift (blast radius control)
+
+The node pool is configured to ignore changes to `node_source_details[0].image_id` to prevent Terraform from proposing node pool updates whenever the “latest” Oracle Linux image changes:
+
+- This keeps routine `terraform plan` output focused on intentional changes (like Helm releases).
+- It reduces the risk of accidental node rotation due to image drift.
