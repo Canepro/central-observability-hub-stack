@@ -100,7 +100,7 @@ resources:
 
 # Service Monitor for Prometheus
 serviceMonitor:
-  enabled: true
+  enabled: false
   labels:
     release: prometheus
 
