@@ -11,6 +11,11 @@ server:
     - web.enable-remote-write-receiver
     - web.enable-lifecycle
 
+  # Fix configmap-reloader sidecar healthcheck (it must bind an HTTP listener for /healthz)
+  configmapReload:
+    extraArgs:
+      - --listen-address=0.0.0.0:8080
+
   # Storage
   persistentVolume:
     enabled: true
