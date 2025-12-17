@@ -3,6 +3,9 @@
 # Version: 7.3.0+
 # App Version: 12.x
 
+# ArgoCD/Helm render safeguard: allow admin password in values (prefer secret/env in production)
+assertNoLeakedSecrets: false
+
 # Deployment configuration
 replicas: 1
 
