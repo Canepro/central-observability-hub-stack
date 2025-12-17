@@ -2,6 +2,12 @@
 # Chart: prometheus-community/prometheus
 # Version: 27.47.0+
 
+configmapReload:
+  prometheus:
+    # Ensure the configmap-reloader sidecar exposes its health endpoint (the chart probes /healthz)
+    extraArgs:
+      listen-address: 0.0.0.0:8080
+
 server:
   # Retention
   retention: "15d"
@@ -10,11 +16,6 @@ server:
   extraFlags:
     - web.enable-remote-write-receiver
     - web.enable-lifecycle
-
-  # Fix configmap-reloader sidecar healthcheck (it must bind an HTTP listener for /healthz)
-  configmapReload:
-    extraArgs:
-      - --listen-address=0.0.0.0:8080
 
   # Storage
   persistentVolume:
