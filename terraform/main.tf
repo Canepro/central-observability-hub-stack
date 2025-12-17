@@ -3,6 +3,10 @@ terraform {
     oci = {
       source = "oracle/oci"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.0.0"
+    }
   }
 }
 
@@ -52,7 +56,7 @@ resource "oci_core_security_list" "k8s_public_sl" {
   vcn_id         = oci_core_vcn.free_k8s_vcn.id
   display_name   = "k8s-public-sl"
 
-# --- NEW RULES START HERE ---
+  # --- NEW RULES START HERE ---
 
   # Allow HTTP (Port 80) from Anywhere
   ingress_security_rules {
@@ -74,7 +78,7 @@ resource "oci_core_security_list" "k8s_public_sl" {
     }
   }
 
-# --- NEW RULES END HERE ---
+  # --- NEW RULES END HERE ---
 
   # Allow K8s API (6443)
   ingress_security_rules {
@@ -95,7 +99,7 @@ resource "oci_core_security_list" "k8s_public_sl" {
       max = 22
     }
   }
-  
+
   # Allow Internal Communication
   ingress_security_rules {
     protocol = "all"
@@ -157,12 +161,12 @@ resource "oci_containerengine_cluster" "k8s_cluster" {
 resource "oci_containerengine_node_pool" "pool_1_34" {
   cluster_id         = oci_containerengine_cluster.k8s_cluster.id
   compartment_id     = var.compartment_id
-  kubernetes_version = "v1.34.1"   # <--- New Version
+  kubernetes_version = "v1.34.1" # <--- New Version
   name               = "pool-canepro"
   node_shape         = "VM.Standard.A1.Flex"
 
   node_config_details {
-    size = 2  # <--- SCALING UP TO 2 NODES
+    size = 2 # <--- SCALING UP TO 2 NODES
 
     placement_configs {
       availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
@@ -172,7 +176,7 @@ resource "oci_containerengine_node_pool" "pool_1_34" {
 
   node_shape_config {
     # SPLITTING THE RESOURCES (To stay free)
-    memory_in_gbs = 12 
+    memory_in_gbs = 12
     ocpus         = 2
   }
 
@@ -183,6 +187,12 @@ resource "oci_containerengine_node_pool" "pool_1_34" {
   }
 
   ssh_public_key = var.ssh_public_key
+
+  lifecycle {
+    ignore_changes = [
+      node_source_details[0].image_id,
+    ]
+  }
 }
 
 # Helper to find the v1.34 Image
@@ -201,6 +211,24 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = var.compartment_id
 }
 
+data "oci_containerengine_cluster_kube_config" "k8s_kube_config" {
+  cluster_id    = oci_containerengine_cluster.k8s_cluster.id
+  endpoint      = "PUBLIC_ENDPOINT"
+  token_version = "2.0.0"
+}
+
 output "connect_command" {
   value = "oci ce cluster create-kubeconfig --cluster-id ${oci_containerengine_cluster.k8s_cluster.id} --file $HOME/.kube/config --region us-ashburn-1 --token-version 2.0.0"
+}
+
+provider "helm" {
+  kubernetes = {
+    host                   = oci_containerengine_cluster.k8s_cluster.endpoints[0].public_endpoint
+    cluster_ca_certificate = base64decode(yamldecode(data.oci_containerengine_cluster_kube_config.k8s_kube_config.content).clusters[0].cluster["certificate-authority-data"])
+    exec = {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "oci"
+      args        = ["ce", "cluster", "generate-token", "--cluster-id", oci_containerengine_cluster.k8s_cluster.id]
+    }
+  }
 }

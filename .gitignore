@@ -27,3 +27,7 @@ test-output/
 
 terraform/.terraform/
 terraform/terraform.tfstate*
+
+# Terraform plans
+*.tfplan
+*.tfplan.*
