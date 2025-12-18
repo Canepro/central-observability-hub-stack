@@ -3,18 +3,7 @@
 # Deployment Mode: Single Binary (monolithic) with S3 Backend (OCI Object Storage)
 deploymentMode: SingleBinary
 
-# Use env vars from an existing Secret (secret contains AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)
 loki:
-  extraEnvFrom:
-    - secretRef:
-        name: loki-s3-credentials
-
-  # Pin Loki image to a version that matches the chart's generated config schema
-  # (prevents parse errors like bloom_build/use_thanos_objstore on older binaries)
-  image:
-    registry: docker.io
-    repository: grafana/loki
-    tag: "3.5.7"
 
   # Single-tenant mode (handled by ingress auth in this stack)
   auth_enabled: false
@@ -73,6 +62,15 @@ loki:
 
 singleBinary:
   replicas: 1
+  # Pin Loki image here (this is what the single-binary StatefulSet uses)
+  image:
+    registry: docker.io
+    repository: grafana/loki
+    tag: "3.5.7"
+  # Inject AWS_* env vars from the secret into the single-binary pod
+  extraEnvFrom:
+    - secretRef:
+        name: loki-s3-credentials
   persistence:
     enabled: false
 
