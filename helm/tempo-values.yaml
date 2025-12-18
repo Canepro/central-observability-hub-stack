@@ -37,10 +37,6 @@ tempo:
       local:
         path: /tmp/tempo/traces
 
-  # ENABLE environment variable expansion in Tempo
-  extraArgs:
-    - -config.expand-env=true
-
   receivers:
     otlp:
       protocols:
