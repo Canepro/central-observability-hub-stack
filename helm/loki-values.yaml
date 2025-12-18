@@ -9,6 +9,13 @@ loki:
     - secretRef:
         name: loki-s3-credentials
 
+  # Pin Loki image to a version that matches the chart's generated config schema
+  # (prevents parse errors like bloom_build/use_thanos_objstore on older binaries)
+  image:
+    registry: docker.io
+    repository: grafana/loki
+    tag: "3.5.7"
+
   # Single-tenant mode (handled by ingress auth in this stack)
   auth_enabled: false
 

@@ -27,8 +27,7 @@ tempo:
         bucket: tempo-data
         endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
         region: us-ashburn-1
-        access_key: "${S3_ACCESS_KEY}"
-        secret_key: "${S3_SECRET_KEY}"
+        # IMPORTANT: do not embed credentials in config; let AWS SDK pick them up from env
         insecure: false
         forcepathstyle: true
       
