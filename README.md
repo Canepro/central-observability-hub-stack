@@ -41,6 +41,13 @@ This stack provides a production-ready, centralized observability platform deplo
   kubectl get secret grafana -n monitoring \
     -o jsonpath="{.data.admin-password}" | base64 -d ; echo
   ```
+###Execute the reset command in the running Grafana pod
+  ```bash
+  # Get the pod name first
+  POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
+  # Reset the 'admin' user password to 'admin123'
+  kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
+  ```
 
 ### Data Ingestion (Secure)
 
