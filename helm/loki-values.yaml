@@ -31,7 +31,8 @@ loki:
       ruler: loki-data
       admin: loki-data
     s3:
-      endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
+      # OCI S3-compatible endpoint (include https:// for signing parity)
+      endpoint: https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
       region: us-ashburn-1
       accessKeyId: ${AWS_ACCESS_KEY_ID}
       secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
@@ -81,3 +82,13 @@ gateway:
   replicas: 1
   service:
     type: ClusterIP
+
+# Free-tier simplification: disable cache StatefulSets (they also caused ImageInspectError)
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+
+# Optional: disable canary to reduce pods (keep enabled if you like)
+lokiCanary:
+  enabled: false
