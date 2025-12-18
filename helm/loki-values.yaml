@@ -11,19 +11,19 @@ deploymentMode: SingleBinary
 #     --from-literal=AWS_ACCESS_KEY_ID='...' \
 #     --from-literal=AWS_SECRET_ACCESS_KEY='...'
 # Inject S3 credentials for Loki
-extraEnv:
-  - name: S3_ACCESS_KEY
-    valueFrom:
-      secretKeyRef:
-        name: loki-s3-credentials
-        key: access_key
-  - name: S3_SECRET_KEY
-    valueFrom:
-      secretKeyRef:
-        name: loki-s3-credentials
-        key: secret_key
-
 loki:
+  extraEnv:
+    - name: S3_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: loki-s3-credentials
+          key: access_key
+    - name: S3_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: loki-s3-credentials
+          key: secret_key
+  
   # Disable multi-tenancy for easier setup
   auth_enabled: false
   
@@ -48,9 +48,10 @@ loki:
       # Use the domain only (no https://) for best compatibility
       endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
       region: us-ashburn-1
-      accessKeyId: ${S3_ACCESS_KEY}
-      secretAccessKey: ${S3_SECRET_KEY}
+      access_key: ${S3_ACCESS_KEY}
+      secret_key: ${S3_SECRET_KEY}
       s3ForcePathStyle: true
+      insecure: false
 
   # Schema Config
   schemaConfig:
@@ -99,7 +100,7 @@ singleBinary:
   # Persistence (PVC) for WAL directory only
   # Actual logs go to S3
   persistence:
-    enabled: true
+    enabled: false
     storageClass: oci-bv
     size: 10Gi
 

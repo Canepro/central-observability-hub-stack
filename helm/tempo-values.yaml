@@ -21,6 +21,8 @@ tempo:
         insecure: false
         # FIX 2: Added this for OCI compatibility
         forcepathstyle: true
+        # Ensure the region is used for signing
+        region: us-ashburn-1
       
       wal:
         path: /tmp/tempo/wal
@@ -51,18 +53,19 @@ tempo:
     compaction:
       block_retention: 168h
 
-# Inject S3 credentials for Tempo (using same secret as Loki)
-extraEnv:
-  - name: S3_ACCESS_KEY
-    valueFrom:
-      secretKeyRef:
-        name: loki-s3-credentials
-        key: access_key
-  - name: S3_SECRET_KEY
-    valueFrom:
-      secretKeyRef:
-        name: loki-s3-credentials
-        key: secret_key
+# Inject S3 credentials for Tempo
+tempo:
+  extraEnv:
+    - name: S3_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: loki-s3-credentials
+          key: access_key
+    - name: S3_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: loki-s3-credentials
+          key: secret_key
 
 securityContext:
   runAsUser: 1000
