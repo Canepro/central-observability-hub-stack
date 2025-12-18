@@ -46,6 +46,12 @@ tempo:
     compaction:
       block_retention: 168h
 
+# Inject S3 credentials for Tempo (using same secret as Loki)
+global:
+  extraEnvFrom:
+    - secretRef:
+        name: loki-s3-credentials
+
 securityContext:
   runAsUser: 1000
   runAsGroup: 1000
