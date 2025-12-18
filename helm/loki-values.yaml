@@ -32,8 +32,7 @@ loki:
       # OCI S3-compatible endpoint (include https:// for signing parity)
       endpoint: https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
       region: us-ashburn-1
-      accessKeyId: ${AWS_ACCESS_KEY_ID}
-      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+      # IMPORTANT: do not embed credentials in config; let the AWS SDK pick them up from env
       s3ForcePathStyle: true
       insecure: false
 
