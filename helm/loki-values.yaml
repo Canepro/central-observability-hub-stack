@@ -34,7 +34,7 @@ loki:
   # Explicitly configure memberlist for SingleBinary mode
   memberlist:
     join_members:
-      - {{ include "loki.fullname" . }}-memberlist
+      - loki-memberlist
   
   # Allow ${VAR} expansion in config (requires env vars to be present in the container)
   extraArgs:
