@@ -1,49 +1,43 @@
 # Loki Helm Chart Values
-# Chart: grafana/loki 6.46.0
-# App Version: 3.5.7
-# Deployment Mode: Single Binary (monolithic) with S3 Backend
-
+# Chart: grafana/loki
+# Deployment Mode: Single Binary (monolithic) with S3 Backend (OCI Object Storage)
 deploymentMode: SingleBinary
 
+# Use env vars from an existing Secret (secret contains AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)
 loki:
-  # Inject S3 credentials for Loki
-  extraEnv:
-    - name: S3_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: loki-s3-credentials
-          key: AWS_ACCESS_KEY_ID
-    - name: S3_SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: loki-s3-credentials
-          key: AWS_SECRET_ACCESS_KEY
-  
-  # Disable multi-tenancy for easier setup
+  extraEnvFrom:
+    - secretRef:
+        name: loki-s3-credentials
+
+  # Single-tenant mode (handled by ingress auth in this stack)
   auth_enabled: false
-  
-  # Consolidated S3 Storage Config
+
+  # IMPORTANT: replication_factor=1 => we can use in-memory ring and avoid memberlist/DNS entirely
   commonConfig:
     replication_factor: 1
-    path_prefix: /var/loki
-    storage:
-      s3:
-        endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
-        region: us-ashburn-1
-        access_key: ${S3_ACCESS_KEY}
-        secret_key: ${S3_SECRET_KEY}
-        s3_force_path_style: true
-        insecure: false
+    ring:
+      kvstore:
+        store: inmemory
 
-  # Explicitly configure memberlist for SingleBinary mode
-  memberlist:
-    join_members:
-      - loki-memberlist.monitoring.svc.cluster.local
-  
-  # Allow ${VAR} expansion in config
+  # Expand ${ENV_VAR} in the rendered config
   extraArgs:
     - -config.expand-env=true
-  
+
+  # S3 (OCI) storage configuration (chart-native keys)
+  storage:
+    type: s3
+    bucketNames:
+      chunks: loki-data
+      ruler: loki-data
+      admin: loki-data
+    s3:
+      endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
+      region: us-ashburn-1
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+      s3ForcePathStyle: true
+      insecure: false
+
   # Schema Config
   schemaConfig:
     configs:
@@ -66,18 +60,11 @@ loki:
   compactor:
     retention_enabled: true
     retention_delete_delay: 2h
+    retention_delete_worker_count: 150
     delete_request_store: s3
 
-# Single binary deployment settings
 singleBinary:
   replicas: 1
-  resources:
-    requests:
-      cpu: 200m
-      memory: 512Mi
-    limits:
-      cpu: 1
-      memory: 1.5Gi
   persistence:
     enabled: false
 
