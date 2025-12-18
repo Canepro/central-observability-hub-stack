@@ -26,7 +26,7 @@ kubectl get secret grafana -n monitoring \
 All datasources are pre-configured via Helm values:
 
 1. **Prometheus** - Auto-configured ✅
-2. **Loki** - Pre-configured with `X-Scope-OrgID: 1` header ✅
+2. **Loki** - Pre-configured ✅
 3. **Tempo** - Pre-configured ✅
 
 **To Verify Datasources:**
@@ -35,7 +35,7 @@ All datasources are pre-configured via Helm values:
 2. Click on each datasource
 3. Click **Save & Test** - All should show "✓ Data source is working"
 
-**Note**: Loki datasource includes multi-tenancy header (`X-Scope-OrgID: 1`) automatically. No manual configuration needed!
+**Note**: Loki is configured in **single-tenant** mode in this repo (`auth_enabled: false`), and ingestion auth is handled at the Ingress layer.
 
 ---
 
@@ -99,7 +99,7 @@ All datasources are pre-configured via Helm values:
 kubectl port-forward -n monitoring svc/loki-gateway 3100:80 &
 
 # Send test log
-curl -H "Content-Type: application/json" -H "X-Scope-OrgID: 1" \
+curl -H "Content-Type: application/json" \
   -XPOST "http://127.0.0.1:3100/loki/api/v1/push" \
   --data-raw "{\"streams\": [{\"stream\": {\"job\": \"quickstart-test\"}, \"values\": [[\"$(date +%s)000000000\", \"Hello from Grafana Stack!\"]]}]}"
 
@@ -235,7 +235,7 @@ A **production-ready centralized observability hub** with:
 
 - ✅ **Grafana** - Unified visualization for metrics, logs, and traces
 - ✅ **Prometheus** - 15-day metric retention, auto-discovery
-- ✅ **Loki** - 7-day log retention, multi-tenant, label-based indexing
+- ✅ **Loki** - 7-day log retention, S3-backed storage (OCI Object Storage)
 - ✅ **Tempo** - 7-day trace retention, OTLP support
 - ✅ **Alertmanager** - Alert routing and notifications
 - ✅ **NGINX Ingress** - Load balancer with SSL/TLS termination
@@ -243,7 +243,7 @@ A **production-ready centralized observability hub** with:
 - ✅ **Auto-collection** - Promtail, Node Exporter, Kube State Metrics
 
 **Total deployment time:** ~30 minutes  
-**Storage used:** 250 GiB OCI Block Volumes (Always Free tier)  
+**Storage used:** Free-tier optimized hybrid storage (PVC only where needed; Loki/Tempo use OCI Object Storage)  
 **Cost:** $0 (Always Free resources)  
 **Access:** https://grafana.canepro.me (HTTPS enabled)
 

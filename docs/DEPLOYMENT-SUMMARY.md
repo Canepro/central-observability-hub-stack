@@ -19,12 +19,10 @@ This document summarizes the complete observability stack deployment on Oracle K
 
 ## 🔧 Key Configurations
 
-### Loki Multi-Tenancy
+### Loki Auth Mode
 
-- **Status**: ✅ Enabled
-- **Default Tenant**: `1` (cluster-wide logs)
-- **Grafana Datasource**: Pre-configured with `X-Scope-OrgID: 1` header
-- **Promtail**: Configured with `tenant_id: "1"`
+- **Status**: ✅ Single-tenant mode
+- **Config**: `auth_enabled: false` (Ingress handles auth)
 
 ### SSL/TLS
 
@@ -94,10 +92,10 @@ This document summarizes the complete observability stack deployment on Oracle K
 | Prometheus | 20 GiB | 50 GiB | ✅ Bound |
 | Grafana | 10 GiB | 50 GiB | ✅ Bound |
 | Alertmanager | 5 GiB | 50 GiB | ✅ Bound |
-| Loki | 20 GiB | 50 GiB | ✅ Bound |
-| Tempo | 10 GiB | 50 GiB | ✅ Bound |
+| Loki | N/A | OCI Object Storage | ✅ S3-compatible |
+| Tempo | N/A | OCI Object Storage | ✅ S3-compatible |
 
-**Note**: OCI Block Volume minimum size is 50 GiB
+**Note**: OCI Block Volume minimum size is 50 GiB. This repo uses PVCs only where needed (Prometheus/Grafana/Alertmanager). Loki/Tempo use OCI Object Storage.
 
 ### Compute Resources
 

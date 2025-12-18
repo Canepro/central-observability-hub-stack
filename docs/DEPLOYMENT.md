@@ -40,9 +40,11 @@ kubectl create namespace monitoring
 **1. OCI Object Storage Credentials (for Loki & Tempo):**
 
 ```bash
-kubectl create secret generic oci-s3-creds -n monitoring \
-  --from-literal=access_key='YOUR_ACCESS_KEY' \
-  --from-literal=secret_key='YOUR_SECRET_KEY'
+# We use OCI Object Storage S3-compat keys, but most S3 clients expect AWS_* env vars.
+# Store them in a Kubernetes secret that can be env-injected into Loki/Tempo pods.
+kubectl -n monitoring create secret generic loki-s3-credentials \
+  --from-literal=AWS_ACCESS_KEY_ID='YOUR_OCI_S3_ACCESS_KEY' \
+  --from-literal=AWS_SECRET_ACCESS_KEY='YOUR_OCI_S3_SECRET_KEY'
 ```
 
 **2. Data Ingestion Authentication (for Remote Agents):**
@@ -59,16 +61,11 @@ kubectl create secret generic observability-auth -n monitoring \
 ### Step 4: Deploy Loki (Logs)
 
 ```bash
-# Install with S3 configuration
-export ACCESS_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.access_key}" | base64 -d)
-export SECRET_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.secret_key}" | base64 -d)
-
+# Install with S3 configuration (credentials are injected via secret; do not pass on CLI)
 helm install loki grafana/loki \
   --version 6.46.0 \
   -n monitoring \
-  -f helm/loki-values.yaml \
-  --set loki.storage.s3.accessKeyId=$ACCESS_KEY \
-  --set loki.storage.s3.secretAccessKey=$SECRET_KEY
+  -f helm/loki-values.yaml
 ```
 
 ### Step 5: Deploy Prometheus (Metrics)
@@ -92,16 +89,11 @@ helm install grafana grafana/grafana \
 ### Step 7: Deploy Tempo (Traces)
 
 ```bash
-# Install with S3 configuration
-export ACCESS_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.access_key}" | base64 -d)
-export SECRET_KEY=$(kubectl get secret oci-s3-creds -n monitoring -o jsonpath="{.data.secret_key}" | base64 -d)
-
+# Install with S3 configuration (credentials are injected via secret; do not pass on CLI)
 helm install tempo grafana/tempo \
   --version 1.24.0 \
   -n monitoring \
-  -f helm/tempo-values.yaml \
-  --set storage.trace.s3.access_key=$ACCESS_KEY \
-  --set storage.trace.s3.secret_key=$SECRET_KEY
+  -f helm/tempo-values.yaml
 ```
 
 ### Step 8: Deploy Promtail (Log Collection)
