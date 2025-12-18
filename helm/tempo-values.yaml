@@ -60,12 +60,12 @@ tempo:
       valueFrom:
         secretKeyRef:
           name: loki-s3-credentials
-          key: access_key
+          key: AWS_ACCESS_KEY_ID
     - name: S3_SECRET_KEY
       valueFrom:
         secretKeyRef:
           name: loki-s3-credentials
-          key: secret_key
+          key: AWS_SECRET_ACCESS_KEY
 
 securityContext:
   runAsUser: 1000
