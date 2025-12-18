@@ -21,6 +21,12 @@ loki:
   
   commonConfig:
     replication_factor: 1
+    path_prefix: /var/loki
+
+  # Explicitly define memberlist to help with resolution
+  memberlist:
+    join_members:
+      - loki-memberlist
 
   # Allow ${VAR} expansion in config (requires env vars to be present in the container)
   extraArgs:
