@@ -23,11 +23,6 @@ loki:
     replication_factor: 1
     path_prefix: /var/loki
 
-  # Explicitly define memberlist to help with resolution
-  memberlist:
-    join_members:
-      - loki-memberlist
-
   # Allow ${VAR} expansion in config (requires env vars to be present in the container)
   extraArgs:
     - -config.expand-env=true
@@ -45,8 +40,8 @@ loki:
       # Use the domain only (no https://) for best compatibility
       endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
       region: us-ashburn-1
-      accessKeyId: ${AWS_ACCESS_KEY_ID}
-      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+      accessKeyId: ${access_key}
+      secretAccessKey: ${secret_key}
       s3ForcePathStyle: true
 
   # Schema Config
