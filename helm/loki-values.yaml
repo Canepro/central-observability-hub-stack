@@ -96,4 +96,4 @@ resultsCache:
 
 # Optional: disable canary to reduce pods (keep enabled if you like)
 lokiCanary:
-  enabled: false
+  enabled: true
