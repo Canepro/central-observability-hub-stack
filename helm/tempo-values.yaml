@@ -15,8 +15,8 @@ tempo:
         # FIX 1: REMOVED "https://" prefix. Just the domain.
         endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
         
-        access_key: "${ACCESS_KEY}"
-        secret_key: "${SECRET_KEY}"
+        access_key: "${AWS_ACCESS_KEY_ID}"
+        secret_key: "${AWS_SECRET_ACCESS_KEY}"
         insecure: false
         # FIX 2: Added this for OCI compatibility
         forcepathstyle: true
