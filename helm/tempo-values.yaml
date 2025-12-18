@@ -7,18 +7,10 @@ persistence:
 tempo:
   retention: 168h
   
-  # Inject S3 credentials for Tempo
-  extraEnv:
-    - name: S3_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: loki-s3-credentials
-          key: AWS_ACCESS_KEY_ID
-    - name: S3_SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: loki-s3-credentials
-          key: AWS_SECRET_ACCESS_KEY
+  # Inject S3 credentials for Tempo (AWS SDK expects AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)
+  extraEnvFrom:
+    - secretRef:
+        name: loki-s3-credentials
 
   storage:
     trace:
