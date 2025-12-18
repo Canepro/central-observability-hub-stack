@@ -7,32 +7,6 @@ persistence:
 tempo:
   retention: 168h
   
-  storage:
-    trace:
-      backend: s3
-      s3:
-        bucket: tempo-data
-        # FIX 1: REMOVED "https://" prefix. Just the domain.
-        endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
-        region: us-ashburn-1
-        
-        access_key: "${S3_ACCESS_KEY}"
-        secret_key: "${S3_SECRET_KEY}"
-        insecure: false
-        # FIX 2: Added this for OCI compatibility
-        forcepathstyle: true
-        # Ensure the region is used for signing
-        region: us-ashburn-1
-      
-      wal:
-        path: /tmp/tempo/wal
-      local:
-        path: /tmp/tempo/traces
-
-  # ENABLE environment variable expansion in Tempo
-  extraArgs:
-    - -config.expand-env=true
-
   # Inject S3 credentials for Tempo
   extraEnv:
     - name: S3_ACCESS_KEY
@@ -45,6 +19,27 @@ tempo:
         secretKeyRef:
           name: loki-s3-credentials
           key: AWS_SECRET_ACCESS_KEY
+
+  storage:
+    trace:
+      backend: s3
+      s3:
+        bucket: tempo-data
+        endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
+        region: us-ashburn-1
+        access_key: "${S3_ACCESS_KEY}"
+        secret_key: "${S3_SECRET_KEY}"
+        insecure: false
+        forcepathstyle: true
+      
+      wal:
+        path: /tmp/tempo/wal
+      local:
+        path: /tmp/tempo/traces
+
+  # ENABLE environment variable expansion in Tempo
+  extraArgs:
+    - -config.expand-env=true
 
   receivers:
     otlp:
@@ -73,7 +68,6 @@ securityContext:
 
 service:
   type: ClusterIP
-  # Explicitly defined ports to rename prom-metrics to tempo-prom-metrics and expose receivers
   ports:
     - name: tempo-prom-metrics
       port: 3200

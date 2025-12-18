@@ -43,6 +43,7 @@ grafana.ini:
   security:
     admin_user: admin
     admin_password: admin  # Change on first login
+    secret_key: "observability-hub-secret-key" # Static key to prevent encryption/DB errors
 
 # Datasource provisioning
 datasources:
@@ -65,12 +66,3 @@ datasources:
         access: proxy
         url: http://tempo.monitoring.svc.cluster.local:3200
         editable: true
-
-# Dashboard provisioning (optional)
-# dashboards:
-#   default:
-#     some-dashboard:
-#       gnetId: 315
-#       revision: 1
-#       datasource: Prometheus
-
