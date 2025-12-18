@@ -11,6 +11,8 @@ loki:
   # IMPORTANT: replication_factor=1 => we can use in-memory ring and avoid memberlist/DNS entirely
   commonConfig:
     replication_factor: 1
+    # Use a writable path (container root FS is read-only in this chart)
+    path_prefix: /tmp/loki
     ring:
       kvstore:
         store: inmemory
@@ -55,6 +57,8 @@ loki:
 
   # Compactor for retention enforcement
   compactor:
+    # Compactor needs a writable directory; use /tmp (emptyDir) to avoid PVC usage
+    working_directory: /tmp/loki/compactor
     retention_enabled: true
     retention_delete_delay: 2h
     retention_delete_worker_count: 150
