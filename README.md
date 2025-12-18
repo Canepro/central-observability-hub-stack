@@ -133,6 +133,7 @@ kubectl apply -f k8s/observability-ingress-secure.yaml
 ## 📚 Documentation
 
 - **[QUICKSTART.md](docs/QUICKSTART.md)** - Get started in 5 minutes! 🚀
+- **[ARGOCD-RUNBOOK.md](docs/ARGOCD-RUNBOOK.md)** - Argo CD operations for this repo (sync, upgrade, delete, immutable resources)
 - **[DEPLOYMENT-STATUS.md](docs/DEPLOYMENT-STATUS.md)** - Current deployment status and configuration summary
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Complete step-by-step deployment guide
 - **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** - **Integration Guide for Remote Clusters** 🔗

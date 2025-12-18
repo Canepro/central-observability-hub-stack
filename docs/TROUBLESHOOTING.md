@@ -75,6 +75,74 @@ compactor:
   delete_request_store: s3  # Set to match your object_store
 ```
 
+### Argo CD "Manifest generation error (cached)" / values not applying
+
+**Symptoms**: Argo app shows `Progressing` / `ComparisonError` and logs mention:
+
+`Manifest generation error (cached): helm template ... failed`
+
+**Fix**:
+
+1. Check the Application conditions for the real error:
+
+```bash
+kubectl -n argocd get application loki -o jsonpath='{.status.conditions[*].type}{"\n"}{.status.conditions[*].message}{"\n"}'
+```
+
+2. Force a hard refresh of the app cache and re-sync:
+
+```bash
+kubectl -n argocd annotate application loki argocd.argoproj.io/refresh=hard --overwrite
+kubectl -n argocd patch application loki --type merge -p '{"operation":{"sync":{"prune":true}}}'
+```
+
+### Argo CD error: "Helm test requires the Loki Canary to be enabled"
+
+**Symptoms**: Argo fails to render Loki with:
+
+`... validate.yaml ... Helm test requires the Loki Canary to be enabled`
+
+**Fix**: Enable canary in `helm/loki-values.yaml`, commit/push, hard refresh, sync.
+
+```yaml
+lokiCanary:
+  enabled: true
+```
+
+### Loki CrashLoop: "mkdir /var/loki: read-only file system"
+
+**Symptoms**:
+
+`init compactor: mkdir /var/loki: read-only file system`
+
+**Root cause**: The Loki container runs with a read-only root filesystem. If you disable the PVC, Loki must write local state to a writable path (`/tmp`).
+
+**Fix**: Use `/tmp` for Loki local paths (values example):
+
+```yaml
+loki:
+  commonConfig:
+    path_prefix: /tmp/loki
+  compactor:
+    working_directory: /tmp/loki/compactor
+```
+
+### Loki / Tempo S3 auth on OCI: "SignatureDoesNotMatch" or "region must be specified"
+
+**Context**: OCI Object Storage is accessed via the **S3-compatible API**. Loki/Tempo use S3 clients internally.
+
+**Fix pattern** (recommended):
+
+- Put credentials in a K8s Secret as `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- Inject the secret via `extraEnvFrom`
+- Do **not** embed credentials in the Loki/Tempo config blocks; let the SDK read env vars.
+
+```bash
+kubectl -n monitoring create secret generic loki-s3-credentials \
+  --from-literal=AWS_ACCESS_KEY_ID='...' \
+  --from-literal=AWS_SECRET_ACCESS_KEY='...'
+```
+
 ---
 
 ## Prometheus Issues
@@ -159,3 +227,36 @@ You must **delete** the StatefulSet (and usually the PVCs if re-sizing) before r
 helm uninstall <release-name> -n monitoring
 helm install <release-name> ...
 ```
+
+### Argo CD SyncError: StatefulSet "Forbidden" (immutable spec) during upgrades
+
+**Symptoms**: Argo shows:
+
+`StatefulSet.apps "<name>" is invalid: spec: Forbidden: updates to statefulset spec ... are forbidden`
+
+**Fix**: Delete the StatefulSet and any old PVCs, then re-sync the app.
+
+Example for Loki:
+
+```bash
+kubectl -n monitoring delete sts loki --cascade=orphan
+kubectl -n monitoring delete pvc storage-loki-0 --ignore-not-found
+kubectl -n argocd patch application loki --type merge -p '{"operation":{"sync":{"prune":true}}}'
+```
+
+### PVC stuck Terminating (pvc-protection)
+
+**Symptoms**: A pod is Pending and `describe` shows:
+
+`persistentvolumeclaim "<name>" is being deleted`
+
+**Fix**:
+
+1. Scale the workload down (so nothing uses the PVC).
+2. Remove the finalizer:
+
+```bash
+kubectl -n monitoring patch pvc grafana -p '{"metadata":{"finalizers":null}}' --type=merge
+```
+
+Then scale back up.
