@@ -38,7 +38,7 @@ loki:
   # Explicitly configure memberlist for SingleBinary mode
   memberlist:
     join_members:
-      - loki-memberlist
+      - loki-memberlist.monitoring.svc.cluster.local
   
   # Allow ${VAR} expansion in config
   extraArgs:
