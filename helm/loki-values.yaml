@@ -37,7 +37,7 @@ loki:
       # OCI Object Storage S3 Compatibility
       # Namespace: iducrocaj9h2
       # Use the domain only (no https://) for best compatibility
-      endpoint: iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
+      endpoint: https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com
       region: us-ashburn-1
       accessKeyId: ${AWS_ACCESS_KEY_ID}
       secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
