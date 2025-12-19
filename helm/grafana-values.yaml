@@ -122,17 +122,66 @@ dashboards:
           },
           "panels": [
             {
-              "title": "Heartbeat (Targets Up)",
+              "title": "What this dashboard means",
+              "type": "text",
+              "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+              "options": {
+                "mode": "markdown",
+                "content": "This is a **hub health** dashboard.\n\n- **Targets Up**: how many Prometheus scrape targets are responding.\n- **Nodes Ready / CPU / Memory / Disk**: infrastructure pressure signals.\n- **Restarts / Not Ready**: early warning that workloads are unstable.\n- **PVC Usage**: avoid hitting free-tier storage surprises.\n\nTip: set the time range to **Last 15m** when debugging, and **Last 6h/24h** to spot trends."
+              }
+            },
+            {
+              "title": "Targets Up",
               "type": "stat",
-              "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+              "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
               "targets": [
                 { "expr": "sum(up)", "legendFormat": "Targets Up" }
               ]
             },
             {
+              "title": "Nodes Ready",
+              "type": "stat",
+              "gridPos": { "h": 4, "w": 6, "x": 6, "y": 4 },
+              "targets": [
+                { "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})", "legendFormat": "Ready Nodes" }
+              ]
+            },
+            {
+              "title": "Pods Not Ready",
+              "type": "stat",
+              "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 },
+              "targets": [
+                { "expr": "sum(max by (namespace,pod) (1 - kube_pod_status_ready{condition=\"true\"}))", "legendFormat": "Pods Not Ready" }
+              ]
+            },
+            {
+              "title": "Container Restarts (last 1h)",
+              "type": "stat",
+              "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 },
+              "targets": [
+                { "expr": "sum(increase(kube_pod_container_status_restarts_total[1h]))", "legendFormat": "Restarts/1h" }
+              ]
+            },
+            {
+              "title": "Node CPU % (avg by node)",
+              "type": "timeseries",
+              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+              "targets": [
+                { "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}" }
+              ]
+            },
+            {
+              "title": "Node Memory % (avg by node)",
+              "type": "timeseries",
+              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+              "targets": [
+                { "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))", "legendFormat": "{{instance}}" }
+              ]
+            },
+            {
               "title": "Guardrail (Node Root Disk Free %)",
               "type": "gauge",
-              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
               "targets": [
                 { "expr": "min(100 * (node_filesystem_avail_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"}))", "legendFormat": "Min Root Free %" }
               ],
@@ -151,17 +200,17 @@ dashboards:
               }
             },
             {
-              "title": "Immune System (Pods Running)",
-              "type": "stat",
-              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+              "title": "PVC Usage % (Grafana + Prometheus)",
+              "type": "timeseries",
+              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
               "targets": [
-                { "expr": "sum(kube_pod_status_phase{phase=\"Running\"})", "legendFormat": "Running Pods" }
+                { "expr": "100 * (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\"})", "legendFormat": "{{persistentvolumeclaim}}" }
               ]
             },
             {
-              "title": "App Stack (Monitoring Pods Ready)",
+              "title": "App Stack (Monitoring + ArgoCD Pods Ready)",
               "type": "state-timeline",
-              "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+              "gridPos": { "h": 10, "w": 24, "x": 0, "y": 24 },
               "targets": [
                 { "expr": "kube_pod_container_status_ready{namespace=~\"monitoring|argocd\"}", "legendFormat": "{{namespace}}/{{pod}}", "format": "time_series", "instant": false, "range": true }
               ]
