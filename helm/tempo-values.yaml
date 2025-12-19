@@ -6,7 +6,7 @@ persistence:
 
 tempo:
   retention: 168h
-  
+
   # Inject S3 credentials for Tempo (AWS SDK expects AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)
   extraEnvFrom:
     - secretRef:
@@ -22,7 +22,7 @@ tempo:
         # IMPORTANT: do not embed credentials in config; let AWS SDK pick them up from env
         insecure: false
         forcepathstyle: true
-      
+
       wal:
         path: /tmp/tempo/wal
       local:

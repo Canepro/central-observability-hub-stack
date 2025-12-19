@@ -9,7 +9,7 @@ config:
   clients:
     - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
       tenant_id: "1"  # Default tenant ID for cluster-wide logs
-  
+
   # Scrape configs
   snippets:
     scrapeConfigs: |
@@ -121,4 +121,3 @@ securityContext:
   readOnlyRootFilesystem: true
   runAsUser: 0
   runAsGroup: 0
-
