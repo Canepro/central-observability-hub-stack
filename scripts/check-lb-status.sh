@@ -23,7 +23,7 @@ kubectl get events -A --sort-by='.lastTimestamp' | grep -i "loadbalancer\|servic
 # Check for the problematic Grafana service
 echo ""
 echo "🔍 Checking Grafana service status:"
-kubectl get svc prometheus-grafana -n monitoring 2>/dev/null || echo "  Grafana service not found in monitoring namespace"
+kubectl get svc grafana -n monitoring 2>/dev/null || echo "  Grafana service not found in monitoring namespace"
 
 echo ""
 echo "💡 Recommendations:"

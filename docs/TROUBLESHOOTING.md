@@ -213,6 +213,19 @@ kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
 
 ## Pod Issues
 
+### Grafana stuck with 2 pods (one in Init:0/2 / PodInitializing)
+
+**Symptoms**
+- ArgoCD shows the `grafana` app as Degraded/Progressing
+- `kubectl get pods -n monitoring | grep grafana` shows two Grafana pods
+- The newer pod is stuck in `Init:0/2` with init containers waiting to mount `/var/lib/grafana`
+
+**Root cause**
+Grafana uses a single **ReadWriteOnce** PVC. With the default **RollingUpdate** strategy, Kubernetes may try to start a new pod before terminating the old pod, and the PVC cannot be mounted by both.
+
+**Fix (recommended)**
+Configure Grafana to use `deploymentStrategy: Recreate` in `helm/grafana-values.yaml` so the old pod is terminated before the new one starts (brief downtime during rollout).
+
 ### Immutable Field Error (StatefulSet)
 
 **Symptoms**: Helm upgrade fails with `Forbidden: updates to statefulset spec for fields other than...`
