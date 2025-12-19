@@ -209,6 +209,18 @@ kubectl get endpoints -n monitoring <service-name>
 kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
 ```
 
+### kubectl: TLS handshake timeout (OKE specific)
+
+**Symptoms**: The first `kubectl` command fails with `Unable to connect to the server: net/http: TLS handshake timeout`, but the second try works perfectly.
+
+**Root cause**:
+This is usually caused by the latency of the OCI CLI exec-plugin (`oci ce cluster generate-token`) generating a fresh authentication token. The process can sometimes exceed the default client timeout on the first run.
+
+**Solution**:
+- Simply retry the command.
+- Ensure your OCI CLI is up to date: `oci setup repair-file-permissions`.
+- If it persists, you can increase the timeout by setting an environment variable: `export KUBECTL_EXTERNAL_TOKEN_TIMEOUT=30`.
+
 ---
 
 ## Pod Issues
