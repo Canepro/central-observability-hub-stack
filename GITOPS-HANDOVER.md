@@ -18,6 +18,13 @@ This document serves as the final operational map for the entire Multi-Cluster e
 | **RocketChat** | https://rocketchat.canepro.me | The Main Application Entry Point |
 | **K8s API** | https://k8.canepro.me:6443 | Direct kubectl access to the Spoke cluster |
 
+### 🔑 ArgoCD Initial Access
+To retrieve the initial `admin` password:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d ; echo
+```
+
 ## 📂 3. GitOps Configuration (Sources of Truth)
 
 | Repository | Branch | Path | Managed By |
