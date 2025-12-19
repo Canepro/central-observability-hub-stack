@@ -346,6 +346,5 @@ Edit `k8s/alertmanager-config.yaml` and apply.
 ---
 
 ## Related Documentation
-- [Deployment Guide](DEPLOYMENT.md)
-- [Architecture Documentation](ARCHITECTURE.md)
+- [Hub Architecture](../hub-docs/ARCHITECTURE.md)
 - [Troubleshooting Guide](TROUBLESHOOTING.md)

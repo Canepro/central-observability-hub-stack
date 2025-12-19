@@ -287,9 +287,8 @@ If you absolutely need direct LoadBalancers (not recommended), at minimum:
 
 ## Related Documentation
 
-- [Linking Services Guide](LINKING-SERVICES.md) - Connection methods
-- [Configuration Guide](CONFIGURATION.md) - Detailed configuration
-- [Architecture Documentation](ARCHITECTURE.md) - System design
+- [Configuration Guide](../docs/CONFIGURATION.md) - Detailed configuration
+- [Hub Architecture](ARCHITECTURE.md) - System design
 
 ---
 
