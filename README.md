@@ -1,199 +1,70 @@
-# Grafana Observability Stack on OKE
+# OKE Observability Hub
 
-Centralized observability hub for monitoring and aggregating metrics, logs, and traces from multiple Rocket.Chat deployments and other applications across environments.
+A centralized, production-ready observability platform deployed on Oracle Kubernetes Engine (OKE), designed to aggregate telemetry data (metrics, logs, traces) across multi-cluster and multi-cloud environments.
 
 ## 🎯 Overview
+This stack serves as the **Central Brain** for your infrastructure. It is optimized for the **OCI Always Free Tier**, providing a high-performance "Single Pane of Glass" visualization layer with zero licensing costs.
 
-This stack provides a production-ready, centralized observability platform deployed on Oracle Kubernetes Engine (OKE). It aggregates telemetry data from multiple sources, enabling unified monitoring, alerting, and visualization across your infrastructure.
+- **Centralized Logs**: Loki (S3-backed)
+- **Centralized Metrics**: Prometheus (Remote Write Receiver)
+- **Centralized Traces**: Tempo (S3-backed)
+- **Unified Visualization**: Grafana
+- **GitOps Management**: ArgoCD (App-of-Apps)
 
-## 🏗️ Infrastructure
+## 🗺️ Documentation Roadmap
 
-- **Cluster**: Oracle Kubernetes Engine (OKE) in Ashburn
-- **Nodes**: 2 worker nodes (VM.Standard.A1.Flex, 2 OCPU, 12GB RAM each)
-- **Kubernetes**: v1.34.1
-- **Domain**:
-  - `grafana.canepro.me` (Dashboards)
-  - `observability.canepro.me` (Data Ingestion)
-- **Tenancy**: Always Free tier
+| Document | Purpose |
+|----------|---------|
+| **[hub-docs/README.md](hub-docs/README.md)** | **The Hub Map**: Component versions, roles, and architecture overview. |
+| **[GITOPS-HANDOVER.md](GITOPS-HANDOVER.md)** | **Key to the Kingdom**: Operational guide for managing Hub and Spokes. |
+| **[hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md)** | **Admin Guide**: Retention policies, OCI storage, and maintenance. |
+| **[hub-docs/ARCHITECTURE.md](hub-docs/ARCHITECTURE.md)** | **System Design**: Deep dive into components and storage hybrid model. |
+| **[hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md)** | **ArgoCD Ops**: Syncing, patching, and managing Hub apps. |
+| **[docs/QUICKSTART.md](docs/QUICKSTART.md)** | **5-Minute Guide**: Accessing Grafana and importing dashboards. |
+| **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** | **Integration Guide**: Connecting external clusters and applications. |
+| **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** | **Solutions**: Common issues and fixes. |
+
+## 🏗️ Infrastructure at a Glance
+
+- **Region**: Oracle Cloud (Ashburn)
+- **Compute**: 2x ARM64 Worker Nodes (Always Free)
+- **Storage**: Hybrid Model (50GB Block Volumes + Infinite S3 Object Storage)
 - **Ingress**: NGINX Ingress Controller with Let's Encrypt SSL/TLS
+- **Domains**:
+  - `grafana.canepro.me` (Visualization)
+  - `observability.canepro.me` (Secure Data Ingestion)
+  - `argocd.canepro.me` (GitOps Control Plane)
 
-## 📦 Stack Components
+## 🚀 Management (GitOps First)
+This entire stack is managed declaratively via ArgoCD.
 
-| Component | Purpose | Deployment Mode | Storage |
-|-----------|---------|----------------|---------|
-| **Grafana** | Visualization & dashboards | Deployment | 50 GiB PVC |
-| **Prometheus** | Metrics collection & alerting | Standalone | 50 GiB PVC |
-| **Loki** | Log aggregation | Single Binary | **S3 (OCI)** |
-| **Tempo** | Distributed tracing | Monolithic | **S3 (OCI)** |
-| **Alertmanager** | Alert routing | StatefulSet | 5 GiB PVC |
-| **Promtail** | Log collection agent | DaemonSet | N/A |
-| **NGINX Ingress** | Load balancer & SSL termination | Deployment | N/A |
+### How to apply changes:
+1. **Modify**: Edit the values in `helm/` or application manifests in `argocd/applications/`.
+2. **Commit & Push**: Push changes to the `main` branch.
+3. **Sync**: ArgoCD automatically detects and applies changes using **Server-Side Apply**.
 
-## 🔐 Access
-
-### Grafana Dashboard
-
-- **URL**: <https://grafana.canepro.me>
-- **Username**: `admin`
-- **Password**: Retrieve with:
-
-  ```bash
-  kubectl get secret grafana -n monitoring \
-    -o jsonpath="{.data.admin-password}" | base64 -d ; echo
-  ```
-###Execute the reset command in the running Grafana pod
-  ```bash
-  # Get the pod name first
-  POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
-  # Reset the 'admin' user password to 'admin123'
-  kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
-  ```
-
-### Data Ingestion (Secure)
-
-All external telemetry is sent to `https://observability.canepro.me` using **Basic Auth**.
-
-- **Metrics (Remote Write)**: `/api/v1/write`
-- **Logs (Loki Push)**: `/loki/api/v1/push`
-- **Traces (OTLP HTTP)**: `/v1/traces`
-
-**Credentials**: Stored in `observability-auth` secret (monitoring namespace).
-
-## 📋 Helm Chart Versions
-
-| Component | Chart | Version | App Version |
-|-----------|-------|---------|-------------|
-| Grafana | grafana/grafana | 7.3.0 | 12.x |
-| Prometheus | prometheus-community/prometheus | 27.47.0 | v3.x |
-| Loki | grafana/loki | 6.46.0 | 3.x |
-| Tempo | grafana/tempo | 1.24.0 | 2.x |
-| Promtail | grafana/promtail | 6.17.1 | 3.x |
-| NGINX Ingress | ingress-nginx/ingress-nginx | Latest | Latest |
-| cert-manager | cert-manager/cert-manager | v1.13.3 | v1.13.3 |
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- OKE cluster running
-- `kubectl` configured to access the cluster
-- `helm` v3.x installed
-- Domain `canepro.me` with DNS access
-
-### Terraform (OKE + Argo CD)
-
-This repo also includes Terraform to manage OKE infrastructure and install Argo CD via Helm.
-
-#### Prerequisites
-
-- `terraform` installed
-- `oci` CLI installed and authenticated (Helm provider uses `oci ce cluster generate-token`)
-- Cluster is reachable (public endpoint in `terraform/main.tf`)
-
-#### Deploy Argo CD
-
+### Initial Access:
+Retrieve the Grafana admin password from your cluster:
 ```bash
-terraform -chdir=terraform init -upgrade
-terraform -chdir=terraform plan -out=argocd_grafana.tfplan
-terraform -chdir=terraform apply "argocd_grafana.tfplan"
+kubectl get secret grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d ; echo
 ```
 
-#### Notes
-
-- Terraform plan files are ignored by git: `*.tfplan` / `*.tfplan.*` (see `.gitignore`).
-- The node pool ignores image drift on `node_source_details[0].image_id` to avoid accidental node rotation.
-- Argo CD is exposed at `https://argocd.canepro.me` via NGINX Ingress, with TLS issued by cert-manager (`letsencrypt-prod`).
-- If you need the initial admin password:
-
+**Forgot Password?** Reset it via CLI:
 ```bash
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d ; echo
+POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
+kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
 ```
-
-### Deployment
-
-```bash
-# 1. Add Helm repositories
-helm repo add grafana https://grafana.github.io/helm-charts
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-
-# 2. Create monitoring namespace
-kubectl create namespace monitoring
-
-# 3. Create Secrets (S3 & Auth)
-# See docs/DEPLOYMENT.md for secret creation steps
-
-# 4. Deploy components
-helm install loki grafana/loki --version 6.46.0 -f helm/loki-values.yaml -n monitoring
-helm install prometheus prometheus-community/prometheus \
-  --version 27.47.0 -f helm/prometheus-values.yaml -n monitoring
-helm install grafana grafana/grafana --version 7.3.0 -f helm/grafana-values.yaml -n monitoring
-helm install tempo grafana/tempo --version 1.24.0 -f helm/tempo-values.yaml -n monitoring
-helm install promtail grafana/promtail --version 6.17.1 -f helm/promtail-values.yaml -n monitoring
-
-# 5. Set up Ingress and SSL
-kubectl apply -f k8s/observability-ingress-secure.yaml
-```
-
-## 📚 Documentation
-
-- **[QUICKSTART.md](docs/QUICKSTART.md)** - Get started in 5 minutes! 🚀
-- **[ARGOCD-RUNBOOK.md](docs/ARGOCD-RUNBOOK.md)** - Argo CD operations for this repo (sync, upgrade, delete, immutable resources)
-- **[DEPLOYMENT-STATUS.md](docs/DEPLOYMENT-STATUS.md)** - Current deployment status and configuration summary
-- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Complete step-by-step deployment guide
-- **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** - **Integration Guide for Remote Clusters** 🔗
-- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## 📁 Directory Structure
-
 ```text
-├── helm/              # Helm values files for each component
-│   ├── grafana-values.yaml
-│   ├── loki-values.yaml
-│   ├── prometheus-values.yaml
-│   ├── promtail-values.yaml
-│   ├── tempo-values.yaml
-│   └── nginx-ingress-values.yaml
-├── k8s/               # Kubernetes manifests
-│   ├── grafana-ingress.yaml
-│   ├── observability-ingress-secure.yaml  # Public Data Ingestion Ingress
-│   └── cert-manager-clusterissuer.yaml
-├── docs/              # Documentation
-│   ├── external-config/  # Config templates for remote agents
-└── README.md          # This file
+├── argocd/               # ArgoCD Application manifests (The Control Plane)
+├── hub-docs/             # Central Hub specific documentation
+├── docs/                 # General integration and troubleshooting guides
+├── helm/                 # Component-specific Helm values
+├── k8s/                  # Raw Kubernetes manifests (Ingress, SSL, etc.)
+├── scripts/              # Useful maintenance scripts
+└── GITOPS-HANDOVER.md    # Multi-cluster operational roadmap
 ```
-
-## 🔒 Security Features
-
-- **HTTPS/TLS**: Let's Encrypt SSL certificates via cert-manager
-- **Data Ingestion Auth**: Basic Authentication for all ingestion endpoints
-- **S3 Encrypted Storage**: Logs and Traces stored securely in OCI Object Storage
-- **Network Policies**: Internal services use ClusterIP (no external exposure without Auth)
-
-## 🔄 Maintenance
-
-### Update Components
-
-```bash
-# Update Helm repositories
-helm repo update
-
-# Upgrade components
-helm upgrade loki grafana/loki -f helm/loki-values.yaml -n monitoring
-helm upgrade prometheus prometheus-community/prometheus \
-  -f helm/prometheus-values.yaml -n monitoring
-```
-
-## 🆘 Support
-
-For issues and troubleshooting:
-
-1. Check [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-2. Review pod logs: `kubectl logs <pod-name> -n monitoring`
-3. Check component status: `kubectl get pods -n monitoring`
 
 ---
-
-**Status**: ✅ Production Ready
+**Status**: ✅ Platform Fully Operational & Managed via GitOps

@@ -53,3 +53,14 @@ While this Hub monitors the Spokes, ArgoCD's own health is tracked via:
 2. **Commit & Push**: Git push to `main`.
 3. **ArgoCD Sync**: ArgoCD will detect the change. Ensure **Server-Side Apply** is enabled to handle large manifest updates safely.
 
+## 🔑 Grafana Admin Password Reset
+If you lose access to the Grafana UI, you can reset the admin password directly from the cluster:
+
+```bash
+# 1. Get the pod name first
+POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
+
+# 2. Reset the 'admin' user password (e.g., to 'admin123')
+kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
+```
+

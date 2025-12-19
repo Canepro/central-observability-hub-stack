@@ -4,7 +4,7 @@ Guide for configuring external applications to send metrics, logs, and traces to
 
 ## Quick Start
 
-**New to linking services?** Start with [Linking Services Guide](LINKING-SERVICES.md) for step-by-step instructions.
+This guide provides step-by-step instructions for connecting your applications to the central observability hub.
 
 ## Table of Contents
 
