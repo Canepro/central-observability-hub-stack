@@ -48,11 +48,7 @@ server:
 alertmanager:
   enabled: true
   persistence:
-    enabled: true
-    size: 5Gi
-    storageClass: oci-bv
-    accessModes:
-      - ReadWriteOnce
+    enabled: false
   resources:
     requests:
       cpu: 50m
