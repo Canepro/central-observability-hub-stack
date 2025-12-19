@@ -15,7 +15,7 @@ This document serves as the final operational map for the entire Multi-Cluster e
 |---------|-----|---------|
 | **ArgoCD UI** | https://argocd.canepro.me | Single Source of Truth & Deployment Control |
 | **Grafana** | https://grafana.canepro.me | Centralized Logs (Loki) & Metrics (Prometheus) |
-| **RocketChat** | https://rocketchat.canepro.me | The Main Application Entry Point |
+| **RocketChat** | https://k8.canepro.me | The Main Application Front-End |
 | **K8s API** | https://k8.canepro.me:6443 | Direct kubectl access to the Spoke cluster |
 
 ### 🔑 ArgoCD Initial Access
