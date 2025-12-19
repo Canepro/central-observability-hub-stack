@@ -10,6 +10,7 @@ assertNoLeakedSecrets: false
 replicas: 1
 deploymentStrategy:
   type: Recreate
+  rollingUpdate: null
 image:
   repository: grafana/grafana
   tag: 11.1.0  # Pinning to a stable version to avoid 'uid' schema errors
