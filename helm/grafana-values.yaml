@@ -66,3 +66,99 @@ datasources:
         access: proxy
         url: http://tempo.monitoring.svc.cluster.local:3200
         editable: true
+
+# Dashboard provisioning
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    master-health:
+      json: |
+        {
+          "title": "Master Health Dashboard",
+          "uid": "master-health",
+          "tags": ["hub", "spoke", "health"],
+          "timezone": "browser",
+          "templating": {
+            "list": [
+              {
+                "name": "cluster",
+                "type": "query",
+                "query": "label_values(up, cluster)",
+                "refresh": 1,
+                "includeAll": true,
+                "multi": false
+              }
+            ]
+          },
+          "panels": [
+            {
+              "title": "Heartbeat (Cluster Connectivity)",
+              "type": "stat",
+              "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+              "targets": [
+                { "expr": "up{cluster=\"oke-hub\"}", "legendFormat": "OKE Hub" },
+                { "expr": "up{cluster=\"k3s-spoke\"}", "legendFormat": "K3s Spoke" },
+                { "expr": "argocd_app_info{health_status=\"Healthy\"}", "legendFormat": "ArgoCD Health" }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    { "type": "value", "options": { "1": { "text": "ONLINE", "color": "green" }, "0": { "text": "OFFLINE", "color": "red" } } }
+                  ]
+                }
+              }
+            },
+            {
+              "title": "Guardrail (Spoke Disk Usage %)",
+              "type": "gauge",
+              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+              "targets": [
+                { "expr": "(node_filesystem_avail_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"} / node_filesystem_size_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"}) * 100", "legendFormat": "Root Disk Free" }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percent",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "color": "red", "value": null },
+                      { "color": "yellow", "value": 10 },
+                      { "color": "green", "value": 15 }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "title": "Immune System (Prune Job)",
+              "type": "stat",
+              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+              "targets": [
+                { "expr": "kube_cronjob_next_schedule_time{cronjob=\"k3s-image-prune\"}", "legendFormat": "Next Cleanup" }
+              ],
+              "fieldConfig": {
+                "defaults": { "unit": "dateTimeFromNow" }
+              }
+            },
+            {
+              "title": "App Stack (RocketChat Microservices)",
+              "type": "state-timeline",
+              "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+              "targets": [
+                { "expr": "kube_pod_container_status_ready{namespace=\"rocketchat\", cluster=\"k3s-spoke\"}", "legendFormat": "{{pod}}" }
+              ]
+            }
+          ]
+        }
