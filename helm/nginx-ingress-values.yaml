@@ -9,7 +9,7 @@ controller:
     annotations:
       # Use OCI Network Load Balancer (Always Free & Fast)
       oci.oraclecloud.com/load-balancer-type: "nlb"
-  
+
   # Resource limits for Always Free tier
   resources:
     requests:
@@ -18,14 +18,14 @@ controller:
     limits:
       cpu: 500m
       memory: 512Mi
-  
+
   # Replica count
   replicaCount: 1
-  
+
   # Disable admission webhook (can cause timeout issues)
   admissionWebhooks:
     enabled: false
-  
+
   # Enable metrics for Prometheus
   metrics:
     enabled: false
@@ -34,7 +34,7 @@ controller:
       namespace: monitoring
       labels:
         release: prometheus
-  
+
   # Enable SSL passthrough for TLS termination
   extraArgs:
     enable-ssl-passthrough: ""
