@@ -224,7 +224,7 @@ kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
 Grafana uses a single **ReadWriteOnce** PVC. With the default **RollingUpdate** strategy, Kubernetes may try to start a new pod before terminating the old pod, and the PVC cannot be mounted by both.
 
 **Fix (recommended)**
-Configure Grafana to use `deploymentStrategy: Recreate` in `helm/grafana-values.yaml` so the old pod is terminated before the new one starts (brief downtime during rollout).
+Configure Grafana rollout to avoid creating a second pod while using an RWO PVC. In `helm/grafana-values.yaml`, use `type: RollingUpdate` with `maxSurge: 0` (and `maxUnavailable: 1`) so the old pod is terminated before the new one starts (brief downtime during rollout).
 
 ### Immutable Field Error (StatefulSet)
 
