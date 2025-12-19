@@ -37,11 +37,21 @@ service:
 # Resource limits for Always Free tier
 resources:
   requests:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 200m
+    memory: 512Mi
   limits:
     cpu: 1
     memory: 1Gi
+
+# Health probe configuration to handle slow startup on free-tier nodes
+readinessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 5
+livenessProbe:
+  initialDelaySeconds: 120
+  periodSeconds: 20
+  failureThreshold: 3
 
 # Grafana configuration
 grafana.ini:
