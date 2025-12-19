@@ -1,0 +1,81 @@
+name: DevOps Quality Gate
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 1' # Weekly audit on Mondays
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Validate Helm Charts
+        run: |
+          echo "Checking Helm templates..."
+          for values in helm/*-values.yaml; do
+            echo "Testing $values..."
+            # Note: We simulate a template run. Since these are values files for 
+            # external charts, we'd ideally use 'helm lint' if we had the charts local,
+            # but for this repo, we verify the YAML structure at minimum.
+            yamllint -d "{extends: relaxed, rules: {line-length: disable}}" $values
+          done
+
+      - name: Kube-Linter (Security & Best Practices)
+        uses: stackrox/kube-linter-action@v1
+        with:
+          directory: k8s/
+          # This scans your static manifests in k8s/ for security issues
+
+  oci-storage-audit:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OCI CLI
+        run: |
+          bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults
+          echo "/home/runner/bin" >> $GITHUB_PATH
+
+      - name: Run Storage Audit
+        env:
+          OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
+          OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_KEY_CONTENT }}
+          OCI_CLI_REGION: us-ashburn-1
+        run: |
+          # Configure OCI CLI from env vars
+          mkdir -p ~/.oci
+          echo "[DEFAULT]" > ~/.oci/config
+          echo "user=${OCI_CLI_USER}" >> ~/.oci/config
+          echo "fingerprint=${OCI_CLI_FINGERPRINT}" >> ~/.oci/config
+          echo "tenancy=${OCI_CLI_TENANCY}" >> ~/.oci/config
+          echo "region=${OCI_CLI_REGION}" >> ~/.oci/config
+          echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
+          
+          echo "${OCI_CLI_KEY_CONTENT}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+          
+          ./scripts/check-oci-storage.sh
+
+  argocd-validator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate ArgoCD Applications
+        run: |
+          # Simple check to ensure Application manifests are valid YAML
+          for app in argocd/applications/*.yaml; do
+            yamllint -d "{extends: relaxed}" $app
+          done
+
