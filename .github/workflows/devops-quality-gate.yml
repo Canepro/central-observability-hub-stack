@@ -6,6 +6,7 @@ on:
     branches: [ main ]
   schedule:
     - cron: '0 0 * * 1' # Weekly audit on Mondays
+  workflow_dispatch: # Allows manual triggering from the Actions tab
 
 jobs:
   lint-and-validate:
