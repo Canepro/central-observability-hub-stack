@@ -25,23 +25,24 @@ echo ""
 
 # Check all pods
 echo -e "${BOLD}2. Checking Pod Status${RESET}"
-echo "Fetching pod status..."
-PODS=$(kubectl get pods -n $NAMESPACE -o json)
+echo "Checking pod status by label..."
 
 check_pods() {
-    local label=$1
+    local label_selector=$1
     local component=$2
-    local count=$(echo "$PODS" | jq -r ".items[] | select(.metadata.labels.\"$label\" != null) | .metadata.name" | wc -l)
+    local target_ns=${3:-$NAMESPACE}
+    # Use -l for label filtering directly in kubectl for better reliability
+    local count=$(kubectl get pods -n $target_ns -l "$label_selector" --no-headers 2>/dev/null | wc -l)
     
     if [ $count -gt 0 ]; then
-        local running=$(echo "$PODS" | jq -r ".items[] | select(.metadata.labels.\"$label\" != null) | select(.status.phase == \"Running\") | .metadata.name" | wc -l)
+        local running=$(kubectl get pods -n $target_ns -l "$label_selector" --no-headers 2>/dev/null | grep "Running" | wc -l)
         if [ $running -eq $count ]; then
             echo -e "${GREEN}✓${RESET} $component: $running/$count pods running"
         else
-            echo -e "${RED}✗${RESET} $component: $running/$count pods running"
+            echo -e "${YELLOW}⚠${RESET} $component: $running/$count pods running (some not ready)"
         fi
     else
-        echo -e "${YELLOW}⚠${RESET} $component: No pods found"
+        echo -e "${RED}✗${RESET} $component: No pods found with selector $label_selector in $target_ns"
     fi
 }
 
@@ -53,6 +54,7 @@ check_pods "app.kubernetes.io/name=tempo" "Tempo"
 check_pods "app.kubernetes.io/name=promtail" "Promtail"
 check_pods "app.kubernetes.io/name=prometheus-node-exporter" "Node Exporter"
 check_pods "app.kubernetes.io/name=kube-state-metrics" "Kube State Metrics"
+check_pods "app.kubernetes.io/name=metrics-server" "Metrics Server" "kube-system"
 
 echo ""
 
@@ -87,8 +89,10 @@ if [ "$GRAFANA_TYPE" == "LoadBalancer" ]; then
     else
         echo -e "${YELLOW}⚠${RESET} Grafana LoadBalancer: IP pending"
     fi
+elif [ "$GRAFANA_TYPE" == "ClusterIP" ]; then
+    echo -e "${GREEN}✓${RESET} Grafana Service Type: ClusterIP (Managed via Ingress)"
 else
-    echo -e "${YELLOW}⚠${RESET} Grafana service type: $GRAFANA_TYPE (not LoadBalancer)"
+    echo -e "${RED}✗${RESET} Grafana Service Type: $GRAFANA_TYPE"
 fi
 
 echo ""
@@ -109,10 +113,10 @@ check_service() {
     fi
 }
 
-check_service "prometheus-prometheus-prometheus" "9090" "/-/healthy" "Prometheus"
+check_service "prometheus-server" "80" "/-/healthy" "Prometheus"
 check_service "loki-gateway" "80" "/ready" "Loki"
 check_service "tempo" "3200" "/ready" "Tempo"
-check_service "alertmanager-operated" "9093" "/-/healthy" "Alertmanager"
+check_service "prometheus-alertmanager" "9093" "/-/healthy" "Alertmanager"
 
 echo ""
 
@@ -125,29 +129,33 @@ else
 fi
 echo ""
 
-# Check Helm releases
-echo -e "${BOLD}7. Checking Helm Releases${RESET}"
+# Check ArgoCD Applications
+echo -e "${BOLD}7. Checking ArgoCD Applications${RESET}"
 
-check_helm_release() {
-    local release=$1
+check_argocd_app() {
+    local app=$1
     local name=$2
     
-    if helm list -n $NAMESPACE | grep -q "^$release"; then
-        local status=$(helm list -n $NAMESPACE | grep "^$release" | awk '{print $8}')
-        if [ "$status" == "deployed" ]; then
-            echo -e "${GREEN}✓${RESET} $name: deployed"
+    if kubectl get application -n argocd $app &> /dev/null; then
+        local health=$(kubectl get application -n argocd $app -o jsonpath='{.status.health.status}')
+        local sync=$(kubectl get application -n argocd $app -o jsonpath='{.status.sync.status}')
+        
+        if [ "$health" == "Healthy" ] && [ "$sync" == "Synced" ]; then
+            echo -e "${GREEN}✓${RESET} $name: $health ($sync)"
         else
-            echo -e "${RED}✗${RESET} $name: $status"
+            echo -e "${YELLOW}⚠${RESET} $name: $health ($sync)"
         fi
     else
-        echo -e "${RED}✗${RESET} $name: not found"
+        echo -e "${RED}✗${RESET} $name Application not found in ArgoCD"
     fi
 }
 
-check_helm_release "prometheus" "Prometheus Stack"
-check_helm_release "loki" "Loki"
-check_helm_release "tempo" "Tempo"
-check_helm_release "promtail" "Promtail"
+check_argocd_app "grafana" "Grafana"
+check_argocd_app "prometheus" "Prometheus"
+check_argocd_app "loki" "Loki"
+check_argocd_app "tempo" "Tempo"
+check_argocd_app "promtail" "Promtail"
+check_argocd_app "metrics-server" "Metrics Server"
 
 echo ""
 

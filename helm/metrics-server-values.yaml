@@ -1,0 +1,16 @@
+# Metrics Server Helm Chart Values
+# No PVC required - In-memory aggregator
+# Standard for OKE/OCI Free Tier
+
+args:
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
