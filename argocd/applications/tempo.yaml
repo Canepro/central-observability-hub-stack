@@ -26,5 +26,3 @@ spec:
       - CreateNamespace=true
       - Replace=true
       - ServerSideApply=true
-
-
