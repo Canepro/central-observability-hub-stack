@@ -6,6 +6,7 @@ Welcome to the Central Observability Hub. This cluster serves as the "Brain" of 
 The OKE Hub is designed to be a high-performance, cost-effective "Single Pane of Glass" for the entire infrastructure. It ingests metrics, logs, and traces from various spoke clusters (like K3s) and external applications.
 
 ### Key Responsibilities:
+- **Master Health Dashboard**: A single "Single Pane of Glass" dashboard for Hub and Spoke health.
 - **Centralized Storage**: Long-term persistence of telemetry data using OCI Object Storage.
 - **Unified Visualization**: A single Grafana instance for querying data across all environments.
 - **Declarative Management**: The entire stack is managed via GitOps (ArgoCD), ensuring consistency and easy recovery.
