@@ -11,7 +11,7 @@ configmapReload:
 server:
   # Retention
   retention: "15d"
-  
+
   # Enable Remote Write Receiver (CRITICAL for external metrics)
   extraFlags:
     - web.enable-remote-write-receiver
