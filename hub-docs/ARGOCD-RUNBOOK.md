@@ -153,6 +153,12 @@ spec:
         - /spec/volumeClaimTemplates
 ```
 
+### Grafana can look Degraded during rollouts (RWO PVC attach contention)
+
+If Grafana uses a **ReadWriteOnce** PVC, the default **RollingUpdate** strategy can lead to a second Grafana pod getting stuck in `Init:0/2` / `PodInitializing` because the PVC is still mounted by the old pod.
+
+**Preferred fix**: set Grafana to `deploymentStrategy: Recreate` (brief downtime during rollout, but avoids a stuck “extra” pod and ArgoCD Degraded state).
+
 ### “Helm template requires canary enabled”
 
 Some Loki chart versions enforce a validation rule that requires Loki Canary to be enabled.

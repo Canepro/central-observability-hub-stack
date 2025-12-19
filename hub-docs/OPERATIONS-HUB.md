@@ -64,3 +64,17 @@ POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o j
 kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
 ```
 
+## 🧩 Grafana Rollouts (RWO PVC + RollingUpdate Pitfall)
+Grafana uses a single **ReadWriteOnce** (RWO) PVC for `/var/lib/grafana`. If the Deployment uses the default **RollingUpdate** strategy, Kubernetes may try to start a *new* Grafana pod while the *old* one is still running, which can block the PVC attach/mount.
+
+**Symptoms**
+- ArgoCD shows `grafana` as **Degraded/Progressing**
+- You see 2 Grafana pods, with one stuck in `Init:0/2` / `PodInitializing`
+- `kubectl describe pod <pending>` shows init containers waiting with `/var/lib/grafana from storage (rw)`
+
+**Fix (recommended)**
+- Use `deploymentStrategy: Recreate` for Grafana so Kubernetes terminates the old pod *before* starting the new one (brief downtime during rollout, but no deadlock).
+
+**One-time remediation**
+If you’re already stuck mid-rollout, once `Recreate` is applied, the pending pod should be cleaned up and the new pod will mount the PVC cleanly.
+

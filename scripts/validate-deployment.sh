@@ -77,7 +77,7 @@ echo ""
 
 # Check Services
 echo -e "${BOLD}4. Checking Services${RESET}"
-GRAFANA_SVC=$(kubectl get svc prometheus-grafana -n $NAMESPACE -o json 2>/dev/null || echo "{}")
+GRAFANA_SVC=$(kubectl get svc grafana -n $NAMESPACE -o json 2>/dev/null || echo "{}")
 GRAFANA_TYPE=$(echo "$GRAFANA_SVC" | jq -r '.spec.type // "NotFound"')
 GRAFANA_IP=$(echo "$GRAFANA_SVC" | jq -r '.status.loadBalancer.ingress[0].ip // "Pending"')
 
@@ -111,7 +111,7 @@ check_service() {
 
 check_service "prometheus-prometheus-prometheus" "9090" "/-/healthy" "Prometheus"
 check_service "loki-gateway" "80" "/ready" "Loki"
-check_service "tempo" "3100" "/ready" "Tempo"
+check_service "tempo" "3200" "/ready" "Tempo"
 check_service "alertmanager-operated" "9093" "/-/healthy" "Alertmanager"
 
 echo ""

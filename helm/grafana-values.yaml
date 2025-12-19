@@ -8,6 +8,8 @@ assertNoLeakedSecrets: false
 
 # Deployment configuration
 replicas: 1
+deploymentStrategy:
+  type: Recreate
 image:
   repository: grafana/grafana
   tag: 11.1.0  # Pinning to a stable version to avoid 'uid' schema errors

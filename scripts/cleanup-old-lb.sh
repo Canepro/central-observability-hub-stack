@@ -16,14 +16,14 @@ read -p "⚠️  Do you want to delete the Grafana LoadBalancer service? (y/n) "
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🗑️  Deleting Grafana LoadBalancer service..."
-    kubectl delete svc prometheus-grafana -n monitoring 2>/dev/null || echo "  Service not found or already deleted"
+    kubectl delete svc grafana -n monitoring 2>/dev/null || echo "  Service not found or already deleted"
     
     # Wait a moment
     sleep 5
     
     # Recreate as ClusterIP
     echo "🔄 Recreating Grafana service as ClusterIP..."
-    kubectl patch svc prometheus-grafana -n monitoring -p '{"spec":{"type":"ClusterIP"}}' 2>/dev/null || \
+    kubectl patch svc grafana -n monitoring -p '{"spec":{"type":"ClusterIP"}}' 2>/dev/null || \
     echo "  Service will be recreated by Helm on next upgrade"
     
     echo "✅ Cleanup complete!"
