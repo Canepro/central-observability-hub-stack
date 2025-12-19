@@ -41,6 +41,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 4. **Verify**: Watch the Rolling Update in the ArgoCD UI.
 
 ### 🛡️ Automated Guardrails
+- **OCI Storage Audit**: Use `./scripts/check-oci-storage.sh` to verify we are under the 200GB Always Free limit (currently at 194GB).
 - **Self-Healing Storage**: A CronJob runs periodically to prune unused images and prevent disk pressure on the Spoke.
 - **Retention**: Logs and Traces are kept for 7 days (168h) to stay within OKE free-tier storage limits.
 - **Server-Side Apply (SSA)**: Enabled for all applications to handle large Kubernetes manifests automatically.

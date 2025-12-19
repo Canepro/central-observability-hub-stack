@@ -55,6 +55,13 @@ POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o j
 kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
 ```
 
+## 🤖 Automation & CI/CD
+This repository includes a **DevOps Quality Gate** via GitHub Actions (`.github/workflows/devops-quality-gate.yml`):
+- **YAML Linting**: Ensures all manifests follow standard formatting.
+- **Security Scanning**: Uses `kube-linter` to check for K8s security best practices.
+- **OCI Storage Audit**: Runs weekly to ensure the "Always Free" 200GB limit is not exceeded.
+- **ArgoCD Validation**: Validates application manifests before they reach the cluster.
+
 ## 📁 Directory Structure
 ```text
 ├── argocd/               # ArgoCD Application manifests (The Control Plane)
