@@ -9,8 +9,12 @@ assertNoLeakedSecrets: false
 # Deployment configuration
 replicas: 1
 deploymentStrategy:
-  type: Recreate
-  rollingUpdate: null
+  # RWO PVC + default RollingUpdate can deadlock during rollout if maxSurge > 0.
+  # Use RollingUpdate with maxSurge=0 so the old pod is terminated before a new one is created.
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
 image:
   repository: grafana/grafana
   tag: 11.1.0  # Pinning to a stable version to avoid 'uid' schema errors

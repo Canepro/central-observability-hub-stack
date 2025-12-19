@@ -157,7 +157,7 @@ spec:
 
 If Grafana uses a **ReadWriteOnce** PVC, the default **RollingUpdate** strategy can lead to a second Grafana pod getting stuck in `Init:0/2` / `PodInitializing` because the PVC is still mounted by the old pod.
 
-**Preferred fix**: set Grafana to `deploymentStrategy: Recreate` (brief downtime during rollout, but avoids a stuck “extra” pod and ArgoCD Degraded state).
+**Preferred fix**: keep `type: RollingUpdate` but set `maxSurge: 0` (and `maxUnavailable: 1`). This forces “delete old → create new” behavior while staying compatible with the chart/template and avoids a stuck “extra” pod (brief downtime during rollout).
 
 ### “Helm template requires canary enabled”
 
