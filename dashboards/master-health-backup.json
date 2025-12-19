@@ -1,0 +1,144 @@
+{
+  "id": 4,
+  "panels": [
+    {
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "text": "OFFLINE"
+                },
+                "1": {
+                  "color": "green",
+                  "text": "ONLINE"
+                }
+              },
+              "type": "value"
+            }
+          ]
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "up{cluster=\"oke-hub\"}",
+          "legendFormat": "OKE Hub"
+        },
+        {
+          "expr": "up{cluster=\"k3s-spoke\"}",
+          "legendFormat": "K3s Spoke"
+        },
+        {
+          "expr": "argocd_app_info{health_status=\"Healthy\"}",
+          "legendFormat": "ArgoCD Health"
+        }
+      ],
+      "title": "Heartbeat (Cluster Connectivity)",
+      "type": "stat"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "green",
+                "value": 15
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "(node_filesystem_avail_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"} / node_filesystem_size_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"}) * 100",
+          "legendFormat": "Root Disk Free"
+        }
+      ],
+      "title": "Guardrail (Spoke Disk Usage %)",
+      "type": "gauge"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeFromNow"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "kube_cronjob_next_schedule_time{cronjob=\"k3s-image-prune\"}",
+          "legendFormat": "Next Cleanup"
+        }
+      ],
+      "title": "Immune System (Prune Job)",
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "kube_pod_container_status_ready{namespace=\"rocketchat\", cluster=\"k3s-spoke\"}",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "title": "App Stack (RocketChat Microservices)",
+      "type": "state-timeline"
+    }
+  ],
+  "tags": [
+    "hub",
+    "spoke",
+    "health"
+  ],
+  "templating": {
+    "list": [
+      {
+        "includeAll": true,
+        "multi": false,
+        "name": "cluster",
+        "query": "label_values(up, cluster)",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "timezone": "browser",
+  "title": "Master Health Dashboard",
+  "uid": "master-health",
+  "version": 1
+}
