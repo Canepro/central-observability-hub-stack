@@ -163,7 +163,7 @@ echo ""
 echo -e "${BOLD}8. Checking Resource Usage${RESET}"
 if kubectl top nodes &> /dev/null; then
     echo "Node resource usage:"
-    kubectl top nodes | awk 'NR==1 || /Ready/'
+    kubectl top nodes
     echo ""
     echo "Top 5 pods by CPU:"
     kubectl top pods -n $NAMESPACE --sort-by=cpu | head -6
