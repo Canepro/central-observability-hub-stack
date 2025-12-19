@@ -115,34 +115,26 @@ dashboards:
                 "query": "label_values(up, cluster)",
                 "refresh": 1,
                 "includeAll": true,
+                "allValue": ".*",
                 "multi": false
               }
             ]
           },
           "panels": [
             {
-              "title": "Heartbeat (Cluster Connectivity)",
+              "title": "Heartbeat (Targets Up)",
               "type": "stat",
               "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
               "targets": [
-                { "expr": "up{cluster=\"oke-hub\"}", "legendFormat": "OKE Hub" },
-                { "expr": "up{cluster=\"k3s-spoke\"}", "legendFormat": "K3s Spoke" },
-                { "expr": "argocd_app_info{health_status=\"Healthy\"}", "legendFormat": "ArgoCD Health" }
-              ],
-              "fieldConfig": {
-                "defaults": {
-                  "mappings": [
-                    { "type": "value", "options": { "1": { "text": "ONLINE", "color": "green" }, "0": { "text": "OFFLINE", "color": "red" } } }
-                  ]
-                }
-              }
+                { "expr": "sum(up)", "legendFormat": "Targets Up" }
+              ]
             },
             {
-              "title": "Guardrail (Spoke Disk Usage %)",
+              "title": "Guardrail (Node Root Disk Free %)",
               "type": "gauge",
               "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
               "targets": [
-                { "expr": "(node_filesystem_avail_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"} / node_filesystem_size_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"}) * 100", "legendFormat": "Root Disk Free" }
+                { "expr": "min(100 * (node_filesystem_avail_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"}))", "legendFormat": "Min Root Free %" }
               ],
               "fieldConfig": {
                 "defaults": {
@@ -159,22 +151,19 @@ dashboards:
               }
             },
             {
-              "title": "Immune System (Prune Job)",
+              "title": "Immune System (Pods Running)",
               "type": "stat",
               "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
               "targets": [
-                { "expr": "kube_cronjob_next_schedule_time{cronjob=\"k3s-image-prune\"}", "legendFormat": "Next Cleanup" }
-              ],
-              "fieldConfig": {
-                "defaults": { "unit": "dateTimeFromNow" }
-              }
+                { "expr": "sum(kube_pod_status_phase{phase=\"Running\"})", "legendFormat": "Running Pods" }
+              ]
             },
             {
-              "title": "App Stack (RocketChat Microservices)",
+              "title": "App Stack (Monitoring Pods Ready)",
               "type": "state-timeline",
               "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
               "targets": [
-                { "expr": "kube_pod_container_status_ready{namespace=\"rocketchat\", cluster=\"k3s-spoke\"}", "legendFormat": "{{pod}}" }
+                { "expr": "kube_pod_container_status_ready{namespace=~\"monitoring|argocd\"}", "legendFormat": "{{namespace}}/{{pod}}", "format": "time_series", "instant": false, "range": true }
               ]
             }
           ]
