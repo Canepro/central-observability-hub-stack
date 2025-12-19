@@ -53,6 +53,13 @@ kubectl -n argocd annotate application loki argocd.argoproj.io/refresh=hard --ov
 
 Then sync again.
 
+### ArgoCD CLI flag differences (version gotchas)
+
+Depending on your `argocd` CLI version, some flags may not exist (for example `argocd app sync --server-side-apply` or `argocd app diff --resource`).
+
+- Prefer **manifest-driven** behavior (e.g., `syncOptions: [ServerSideApply=true]`) rather than CLI flags.
+- If a flag errors as “unknown flag”, use the UI or a plain `argocd app sync <app> --grpc-web`.
+
 ### Check status and error reasons
 
 Quick status:
@@ -98,17 +105,52 @@ Argo will fail with:
 
 Fix pattern:
 
-1. Delete the StatefulSet (and PVCs, if you intentionally want to discard that state):
+#### Pattern A: Orphan-delete (safe for keeping data)
+
+Use this when you want to delete the controller object but **keep Pods and PVCs** intact, then let ArgoCD recreate/adopt.
+
+Example (Prometheus Alertmanager):
+
+```bash
+# Run against the HUB cluster (OKE) where Prometheus lives
+kubectl -n monitoring delete sts prometheus-alertmanager --cascade=orphan
+
+# Force ArgoCD to re-read Git and reconcile
+kubectl -n argocd annotate application prometheus argocd.argoproj.io/refresh=hard --overwrite
+argocd app sync prometheus --grpc-web
+```
+
+If ArgoCD still shows “OutOfSync” but the resource is Healthy, it’s usually a **diff-noise** issue (defaults / null fields).
+
+#### Pattern B: Delete + (optionally) delete PVCs (destructive)
+
+Delete the StatefulSet (and PVCs, if you intentionally want to discard that state):
 
 ```bash
 kubectl -n monitoring delete sts loki --cascade=orphan
 kubectl -n monitoring delete pvc storage-loki-0 --ignore-not-found
 ```
 
-2. Sync the Argo app again:
+Sync the Argo app again:
 
 ```bash
 kubectl -n argocd patch application loki --type merge -p '{"operation":{"sync":{"prune":true}}}'
+```
+
+#### Preventing recurring “OutOfSync” noise for a specific StatefulSet
+
+If a StatefulSet remains Healthy but ArgoCD reports OutOfSync due to Kubernetes defaulted fields in `volumeClaimTemplates`, add a targeted `ignoreDifferences` rule to the Argo Application manifest.
+
+Example (only ignore the problematic field for Alertmanager):
+
+```yaml
+spec:
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: prometheus-alertmanager
+      jsonPointers:
+        - /spec/volumeClaimTemplates
 ```
 
 ### “Helm template requires canary enabled”

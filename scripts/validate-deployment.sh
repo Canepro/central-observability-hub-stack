@@ -186,7 +186,7 @@ if [ "$GRAFANA_IP" != "Pending" ] && [ "$GRAFANA_IP" != "null" ] && [ "$GRAFANA_
     echo "  URL: http://$GRAFANA_IP"
     echo "  Username: admin"
     echo "  Password: Run the following command to retrieve:"
-    echo "    kubectl get secret prometheus-grafana -n $NAMESPACE -o jsonpath=\"{.data.admin-password}\" | base64 -d ; echo"
+    echo "    kubectl get secret grafana -n $NAMESPACE -o jsonpath=\"{.data.admin-password}\" | base64 -d ; echo"
     echo ""
 fi
 
@@ -196,6 +196,6 @@ echo "  2. Configure external applications to send metrics/logs/traces"
 echo "  3. Import dashboards from Grafana community"
 echo "  4. Set up alerting rules and notifications"
 echo ""
-echo "Documentation: docs/DEPLOYMENT.md, docs/CONFIGURATION.md"
+echo "Documentation: hub-docs/README.md, docs/QUICKSTART.md, docs/CONFIGURATION.md"
 echo ""
 
