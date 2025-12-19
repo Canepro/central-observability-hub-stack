@@ -7,6 +7,16 @@ This repo uses an **App-of-Apps** pattern:
 
 All applications are managed by Argo CD with `prune: true` and `selfHeal: true`.
 
+## Initial Setup & Access
+
+### Retrieve Admin Password
+If you need the initial admin password for the ArgoCD UI:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d ; echo
+```
+
 ## How to think about updates
 
 - **Edit repo files** (`helm/*.yaml`, `k8s/*.yaml`, `argocd/applications/*.yaml`)

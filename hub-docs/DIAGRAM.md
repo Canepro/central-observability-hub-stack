@@ -4,13 +4,13 @@ This diagram visualizes how data flows from various Spoke clusters and external 
 
 ```mermaid
 graph LR
-    subgraph spokes [Spoke Clusters (K3s, Podman, etc.)]
+    subgraph spokes ["Spoke Clusters (K3s, Podman, etc.)"]
         PromAgent[Prometheus Agent]
         LokiAgent[Promtail / FluentBit]
         AppTraces[OTEL SDK / Collector]
     end
 
-    subgraph hub [OKE Hub Cluster (Central Hub)]
+    subgraph hub ["OKE Hub Cluster (Central Hub)"]
         LB[OCI Load Balancer]
         
         subgraph backend [Storage & Backend]
