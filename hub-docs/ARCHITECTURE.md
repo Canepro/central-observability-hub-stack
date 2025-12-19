@@ -116,11 +116,13 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 ### Hybrid Storage Model (Free Tier Optimized)
 
 1. **Block Volumes (PVC)**: Used for high-performance, random-access workloads.
-   - Prometheus TSDB
-   - Grafana Database
-   - Alertmanager State
+   - Prometheus TSDB (50Gi)
+   - Grafana Database (50Gi)
 
-2. **Object Storage (S3)**: Used for bulk, long-term data storage (Lower Cost).
+2. **Ephemeral Storage (emptyDir)**: Used for non-critical transient state to save on OCI quotas.
+   - Alertmanager State (Silence/Alert history)
+
+3. **Object Storage (S3)**: Used for bulk, long-term data storage (Lower Cost).
    - Loki Chunks & Indexes
    - Tempo Traces
 

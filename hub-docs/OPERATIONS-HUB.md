@@ -3,14 +3,24 @@
 This guide focuses on the specific maintenance and operational requirements of the OKE Hub stack.
 
 ## 🛡️ Retention Policies (Always Free Tier Optimization)
-To stay within the 200Gi Block Volume limit and manage Object Storage costs, the following retention policies are enforced:
+To stay within the **200Gi Total Storage limit** (Boot Volumes + Block Volumes) and manage Object Storage costs, the following retention policies are enforced:
 
-| Component | Policy | Target |
-|-----------|--------|--------|
-| **Loki** | 168h (7 days) | Object Storage |
-| **Tempo** | 168h (7 days) | Object Storage |
-| **Prometheus** | 15 days | Block Volume |
-| **Grafana** | Indefinite | Block Volume |
+| Component | Policy | Storage Type | Size |
+|-----------|--------|--------------|------|
+| **Loki** | 168h (7 days) | Object Storage | N/A |
+| **Tempo** | 168h (7 days) | Object Storage | N/A |
+| **Prometheus** | 15 days | Block Volume | 50Gi |
+| **Grafana** | Indefinite | Block Volume | 50Gi |
+| **Alertmanager** | Ephemeral | emptyDir | N/A |
+
+### The 200Gi Storage Calculation
+OCI Always Free Tier provides 200GB of total storage. Our current usage:
+- **Worker Node Boot Volumes**: 2 x 47GB = 94GB
+- **Observability Hub PVCs**: 2 x 50GB = 100GB
+- **Total**: **194GB** (Buffer: 6GB)
+
+### Why Alertmanager is Ephemeral?
+To fit within the 200GB limit, Alertmanager's persistent volume (previously 50Gi) was sacrificed for `emptyDir`. This means alert silences and notification history are lost on pod restart, but metrics and long-term dashboards remain safe.
 
 ### Why 7 Days?
 The 7-day (168h) window is the "Goldilocks" setting: long enough to troubleshoot issues from the previous week, but short enough to prevent storage saturation on the Always Free Tier.
