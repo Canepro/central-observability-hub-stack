@@ -127,7 +127,7 @@ dashboards:
               "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
               "options": {
                 "mode": "markdown",
-                "content": "This is a **hub health** dashboard.\n\n- **Targets Up**: how many Prometheus scrape targets are responding.\n- **Nodes Ready / CPU / Memory / Disk**: infrastructure pressure signals.\n- **Restarts / Not Ready**: early warning that workloads are unstable.\n- **PVC Usage**: avoid hitting free-tier storage surprises.\n\nTip: set the time range to **Last 15m** when debugging, and **Last 6h/24h** to spot trends."
+                "content": "This is a **hub health** dashboard.\n\n- **Targets Up**: how many Prometheus scrape targets are responding.\n- **Nodes Ready / CPU / Memory / Disk**: infrastructure pressure signals.\n- **Restarts / Not Ready**: early warning that workloads are unstable.\n- **PVC Usage**: avoid hitting free-tier storage surprises.\n- **Egress (GiB)**: outbound bytes *this dashboard time range* (set time to **This month so far** for a monthly view).\n\nTip: set the time range to **Last 15m** when debugging, and **Last 6h/24h** to spot trends."
               }
             },
             {
@@ -208,9 +208,30 @@ dashboards:
               ]
             },
             {
+              "title": "Egress (GiB, this range)",
+              "type": "stat",
+              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+              "targets": [
+                { "expr": "sum(increase(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*\"}[$__range])) / 1024 / 1024 / 1024", "legendFormat": "Egress GiB" }
+              ],
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "gbytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "color": "green", "value": null },
+                      { "color": "yellow", "value": 8000 },
+                      { "color": "red", "value": 9500 }
+                    ]
+                  }
+                }
+              }
+            },
+            {
               "title": "App Stack (Monitoring + ArgoCD Pods Ready)",
               "type": "state-timeline",
-              "gridPos": { "h": 10, "w": 24, "x": 0, "y": 24 },
+              "gridPos": { "h": 10, "w": 24, "x": 0, "y": 32 },
               "targets": [
                 { "expr": "kube_pod_container_status_ready{namespace=~\"monitoring|argocd\"}", "legendFormat": "{{namespace}}/{{pod}}", "format": "time_series", "instant": false, "range": true }
               ]
