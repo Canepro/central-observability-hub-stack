@@ -1,144 +1,152 @@
 {
-  "id": 4,
-  "panels": [
-    {
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "text": "OFFLINE"
-                },
-                "1": {
-                  "color": "green",
-                  "text": "ONLINE"
-                }
-              },
-              "type": "value"
-            }
-          ]
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "targets": [
-        {
-          "expr": "up{cluster=\"oke-hub\"}",
-          "legendFormat": "OKE Hub"
-        },
-        {
-          "expr": "up{cluster=\"k3s-spoke\"}",
-          "legendFormat": "K3s Spoke"
-        },
-        {
-          "expr": "argocd_app_info{health_status=\"Healthy\"}",
-          "legendFormat": "ArgoCD Health"
-        }
-      ],
-      "title": "Heartbeat (Cluster Connectivity)",
-      "type": "stat"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 10
-              },
-              {
-                "color": "green",
-                "value": 15
-              }
-            ]
-          },
-          "unit": "percent"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "targets": [
-        {
-          "expr": "(node_filesystem_avail_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"} / node_filesystem_size_bytes{cluster=\"k3s-spoke\", mountpoint=\"/\"}) * 100",
-          "legendFormat": "Root Disk Free"
-        }
-      ],
-      "title": "Guardrail (Spoke Disk Usage %)",
-      "type": "gauge"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {
-          "unit": "dateTimeFromNow"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "targets": [
-        {
-          "expr": "kube_cronjob_next_schedule_time{cronjob=\"k3s-image-prune\"}",
-          "legendFormat": "Next Cleanup"
-        }
-      ],
-      "title": "Immune System (Prune Job)",
-      "type": "stat"
-    },
-    {
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 16
-      },
-      "targets": [
-        {
-          "expr": "kube_pod_container_status_ready{namespace=\"rocketchat\", cluster=\"k3s-spoke\"}",
-          "legendFormat": "{{pod}}"
-        }
-      ],
-      "title": "App Stack (RocketChat Microservices)",
-      "type": "state-timeline"
-    }
-  ],
-  "tags": [
-    "hub",
-    "spoke",
-    "health"
-  ],
+  "title": "Master Health Dashboard",
+  "uid": "master-health",
+  "tags": ["hub", "spoke", "health"],
+  "timezone": "browser",
   "templating": {
     "list": [
       {
-        "includeAll": true,
-        "multi": false,
         "name": "cluster",
+        "type": "query",
         "query": "label_values(up, cluster)",
         "refresh": 1,
-        "type": "query"
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false
       }
     ]
   },
-  "timezone": "browser",
-  "title": "Master Health Dashboard",
-  "uid": "master-health",
-  "version": 1
+  "panels": [
+    {
+      "title": "What this dashboard means",
+      "type": "text",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "This is a **hub health** dashboard.\n\n- **Targets Up**: how many Prometheus scrape targets are responding.\n- **Nodes Ready / CPU / Memory / Disk**: infrastructure pressure signals.\n- **Restarts / Not Ready**: early warning that workloads are unstable.\n- **PVC Usage**: avoid hitting free-tier storage surprises.\n- **Egress (GiB)**: outbound bytes *this dashboard time range* (set time to **This month so far** for a monthly view).\n\nTip: set the time range to **Last 15m** when debugging, and **Last 6h/24h** to spot trends."
+      }
+    },
+    {
+      "title": "Targets Up",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
+      "targets": [{ "expr": "sum(up)", "legendFormat": "Targets Up" }]
+    },
+    {
+      "title": "Nodes Ready",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 4 },
+      "targets": [{ "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})", "legendFormat": "Ready Nodes" }]
+    },
+    {
+      "title": "Pods Not Ready",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 },
+      "targets": [{ "expr": "sum(max by (namespace,pod) (1 - kube_pod_status_ready{condition=\"true\"}))", "legendFormat": "Pods Not Ready" }]
+    },
+    {
+      "title": "Container Restarts (last 1h)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 },
+      "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total[1h]))", "legendFormat": "Restarts/1h" }]
+    },
+    {
+      "title": "Node CPU % (avg by node)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [{ "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}" }]
+    },
+    {
+      "title": "Node Memory % (avg by node)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [{ "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))", "legendFormat": "{{instance}}" }]
+    },
+    {
+      "title": "Guardrail (Node Root Disk Free %)",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [{ "expr": "min(100 * (node_filesystem_avail_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"}))", "legendFormat": "Min Root Free %" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "green", "value": 15 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "PVC Usage % (Grafana + Prometheus)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [{ "expr": "100 * (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\"})", "legendFormat": "{{persistentvolumeclaim}}" }]
+    },
+    {
+      "title": "Egress (GiB, this range)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "targets": [{ "expr": "sum(increase(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*\"}[$__range])) / 1024 / 1024 / 1024", "legendFormat": "Egress GiB" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "gbytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 8000 },
+              { "color": "red", "value": 9500 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Alerts Firing",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "targets": [{ "expr": "count(ALERTS{alertstate=\"firing\"})", "legendFormat": "Firing" }]
+    },
+    {
+      "title": "ArgoCD Apps Not Healthy",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "targets": [{ "expr": "count(argocd_app_info{health_status!=\"Healthy\"})", "legendFormat": "Not Healthy" }]
+    },
+    {
+      "title": "Ingress 5xx Rate (/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "targets": [{ "expr": "sum(rate(nginx_ingress_controller_requests{status=~\"5..\"}[5m]))", "legendFormat": "5xx/s" }]
+    },
+    {
+      "title": "Ingress Latency p95 (s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" }]
+    },
+    {
+      "title": "Top Restarts (24h)",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 40 },
+      "targets": [{ "expr": "topk(10, increase(kube_pod_container_status_restarts_total[24h]))", "format": "table", "instant": true }]
+    },
+    {
+      "title": "Targets Down",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 40 },
+      "targets": [{ "expr": "topk(20, sum by (job, instance) (up == 0))", "format": "table", "instant": true }]
+    },
+    {
+      "title": "App Stack (Monitoring + ArgoCD Pods Ready)",
+      "type": "state-timeline",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 50 },
+      "targets": [{ "expr": "kube_pod_container_status_ready{namespace=~\"monitoring|argocd\"}", "legendFormat": "{{namespace}}/{{pod}}", "format": "time_series", "instant": false, "range": true }]
+    }
+  ]
 }

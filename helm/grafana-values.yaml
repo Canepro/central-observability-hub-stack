@@ -210,7 +210,7 @@ dashboards:
             {
               "title": "Egress (GiB, this range)",
               "type": "stat",
-              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+              "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
               "targets": [
                 { "expr": "sum(increase(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*\"}[$__range])) / 1024 / 1024 / 1024", "legendFormat": "Egress GiB" }
               ],
@@ -229,9 +229,57 @@ dashboards:
               }
             },
             {
+              "title": "Alerts Firing",
+              "type": "stat",
+              "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+              "targets": [
+                { "expr": "count(ALERTS{alertstate=\"firing\"})", "legendFormat": "Firing" }
+              ]
+            },
+            {
+              "title": "ArgoCD Apps Not Healthy",
+              "type": "stat",
+              "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+              "targets": [
+                { "expr": "count(argocd_app_info{health_status!=\"Healthy\"})", "legendFormat": "Not Healthy" }
+              ]
+            },
+            {
+              "title": "Ingress 5xx Rate (/s)",
+              "type": "timeseries",
+              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+              "targets": [
+                { "expr": "sum(rate(nginx_ingress_controller_requests{status=~\"5..\"}[5m]))", "legendFormat": "5xx/s" }
+              ]
+            },
+            {
+              "title": "Ingress Latency p95 (s)",
+              "type": "timeseries",
+              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+              "targets": [
+                { "expr": "histogram_quantile(0.95, sum by (le) (rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" }
+              ]
+            },
+            {
+              "title": "Top Restarts (24h)",
+              "type": "table",
+              "gridPos": { "h": 10, "w": 12, "x": 0, "y": 40 },
+              "targets": [
+                { "expr": "topk(10, increase(kube_pod_container_status_restarts_total[24h]))", "format": "table", "instant": true }
+              ]
+            },
+            {
+              "title": "Targets Down",
+              "type": "table",
+              "gridPos": { "h": 10, "w": 12, "x": 12, "y": 40 },
+              "targets": [
+                { "expr": "topk(20, sum by (job, instance) (up == 0))", "format": "table", "instant": true }
+              ]
+            },
+            {
               "title": "App Stack (Monitoring + ArgoCD Pods Ready)",
               "type": "state-timeline",
-              "gridPos": { "h": 10, "w": 24, "x": 0, "y": 32 },
+              "gridPos": { "h": 10, "w": 24, "x": 0, "y": 50 },
               "targets": [
                 { "expr": "kube_pod_container_status_ready{namespace=~\"monitoring|argocd\"}", "legendFormat": "{{namespace}}/{{pod}}", "format": "time_series", "instant": false, "range": true }
               ]
