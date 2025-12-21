@@ -63,6 +63,22 @@ While this Hub monitors the Spokes, ArgoCD's own health is tracked via:
 2. **Commit & Push**: Git push to `main`.
 3. **ArgoCD Sync**: ArgoCD will detect the change. Ensure **Server-Side Apply** is enabled to handle large manifest updates safely.
 
+## 📈 Resource Usage (Metrics Server)
+The cluster uses **metrics-server** (deployed via ArgoCD) to enable real-time resource visibility:
+- `kubectl top nodes`
+- `kubectl top pods -n monitoring`
+
+**Notes**
+- metrics-server is **stateless** and does **not** require a PVC.
+- If it is missing, `kubectl top ...` will fail and the validation script will skip resource usage.
+
+**Verify**
+```bash
+kubectl get application -n argocd metrics-server
+kubectl get pods -n kube-system -l app.kubernetes.io/name=metrics-server
+kubectl top nodes
+```
+
 ## 🔑 Grafana Admin Password Reset
 If you lose access to the Grafana UI, you can reset the admin password directly from the cluster:
 

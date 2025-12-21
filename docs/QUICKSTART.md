@@ -81,6 +81,20 @@ All datasources are pre-configured via Helm values:
 4. Click **Run query**
 5. Should see CPU usage graphs for all containers
 
+### Test 0: Validate Deployment (Recommended)
+Run the validation script to confirm pods, services, PVCs, ArgoCD app health, and (if available) resource usage:
+
+```bash
+chmod +x scripts/validate-deployment.sh
+./scripts/validate-deployment.sh
+```
+
+If the script shows `metrics-server not available`, deploy it via ArgoCD (see `argocd/applications/metrics-server.yaml`) to enable:
+```bash
+kubectl top nodes
+kubectl top pods -n monitoring
+```
+
 ### Test 2: View Logs
 
 1. **Explore**

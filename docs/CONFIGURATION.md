@@ -66,11 +66,8 @@ kubectl exec -n monitoring deployment/grafana -- \
        server:
          root_url: https://grafana.canepro.me
    ```
-2. Upgrade the release:
-   ```bash
-   helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-     -f helm/prometheus-values.yaml -n monitoring
-   ```
+2. **This repo deploys Grafana as its own ArgoCD Application** (see `argocd/applications/grafana.yaml`).
+   Update `helm/grafana-values.yaml` and commit/push; ArgoCD will apply automatically.
 
 ---
 
@@ -84,7 +81,7 @@ Configure external Prometheus instances to `remote_write` to the central Prometh
 Add to `prometheus.yml`:
 ```yaml
 remote_write:
-  - url: http://<GRAFANA-IP>:9090/api/v1/write
+  - url: http://prometheus-server.monitoring.svc.cluster.local:80/api/v1/write
     # Optional: authentication
     basic_auth:
       username: admin
@@ -98,8 +95,8 @@ remote_write:
 #### Expose Prometheus (if needed)
 ```bash
 # Create LoadBalancer for Prometheus (use with authentication!)
-kubectl expose statefulset prometheus-prometheus-prometheus \
-  --type=LoadBalancer --name=prometheus-external -n monitoring
+# This repo's service name is `prometheus-server`.
+kubectl patch svc prometheus-server -n monitoring -p '{"spec": {"type": "LoadBalancer"}}'
 ```
 
 ### Option 2: Federation
