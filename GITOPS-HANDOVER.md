@@ -32,6 +32,8 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 | `central-hub-stack` | `main` | `./argocd/` | Hub Infrastructure & Project Rules |
 | `rocketchat-k8s` | `master` | `./` | Spoke Application Stack |
 
+> Note: In this environment ArgoCD is configured to follow `main`. That’s intentional for a lab/test setup, but it means **any push to GitHub can trigger reconciliation**. Use tags as a safety net and validate after sync.
+
 ## 🛠️ 4. Maintenance & "Day 2" Operations
 
 ### 🔄 How to Perform an Upgrade

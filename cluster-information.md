@@ -137,6 +137,8 @@ To revert the entire stack to the `v1.0.0-stable` state:
   argocd app sync <app-name> --revision v1.0.0-stable
   ```
 
+> Note: In this lab/test environment, ArgoCD may still be configured to follow `main`. Using `--revision <tag>` lets you recover quickly **without changing** the tracked branch.
+
 - **Validation**: After reverting, run:
 
   ```bash

@@ -95,6 +95,10 @@ kubectl top nodes
 kubectl top pods -n monitoring
 ```
 
+### Note: Live PVC usage panel
+If the “Master Health Dashboard” shows `No data` for PVC usage, Prometheus may not be scraping kubelet volume stats.
+This repo enables them via `helm/prometheus-values.yaml` (`extraScrapeConfigs`).
+
 ### Test 2: View Logs
 
 1. **Explore**

@@ -43,6 +43,15 @@ This entire stack is managed declaratively via ArgoCD.
 2. **Commit & Push**: Push changes to the `main` branch.
 3. **Sync**: ArgoCD automatically detects and applies changes using **Server-Side Apply**.
 
+### ⚠️ Important: This repo is public and ArgoCD watches `main`
+This repository is **public** (portfolio use) but also functions as a **live GitOps source**.
+If ArgoCD is configured to track `main`, then **every push** can trigger reconciliation.
+
+**Safe workflow tips**
+- Keep “portfolio-only” edits limited to docs when possible.
+- Before pushing a risky change (anything under `argocd/` or `helm/`), run `./scripts/validate-deployment.sh` after ArgoCD syncs.
+- If you want a safety net, use git tags (see `cluster-information.md` → **Reverting to a Stable State**).
+
 ### Why `helm list` is empty
 This repo uses **ArgoCD + Helm charts**, but the workloads are rendered and applied as **native Kubernetes manifests** by ArgoCD.
 That means you should **not** expect Helm release metadata in-cluster:
