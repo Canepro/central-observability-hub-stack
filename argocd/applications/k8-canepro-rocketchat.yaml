@@ -5,16 +5,23 @@ metadata:
   namespace: argocd
 spec:
   project: canepro-spoke
-  source:
-    repoURL: https://github.com/Canepro/rocketchat-k8s.git
-    targetRevision: master
-    path: .
+  sources:
+    - repoURL: https://rocketchat.github.io/helm-charts
+      chart: rocketchat
+      targetRevision: 6.27.1
+      helm:
+        releaseName: rocketchat
+        valueFiles:
+          - $values/values.yaml
+    - repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: master
+      ref: values
   destination:
     name: k8.canepro.me
     namespace: rocketchat
   syncPolicy:
     automated:
-      prune: true
+      prune: false
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
