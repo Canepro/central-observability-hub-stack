@@ -1,0 +1,9 @@
+# Example Terraform variables file (DO NOT COMMIT YOUR REAL ONE)
+#
+# Copy this file to `terraform/terraform.tfvars` and fill in the values.
+# `terraform/terraform.tfvars` is ignored by git.
+
+compartment_id = "ocid1.compartment.oc1..<REDACTED>"
+ssh_public_key = "ssh-rsa AAAA... your-key ..."
+
+
