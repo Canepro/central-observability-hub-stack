@@ -7,6 +7,7 @@ spec:
   description: "Management for the k8.canepro.me K3s Spoke cluster"
   sourceRepos:
     - "https://github.com/Canepro/rocketchat-k8s.git"
+    - "https://rocketchat.github.io/helm-charts"
   destinations:
     - name: k8.canepro.me
       namespace: rocketchat
