@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k8-canepro-rocketchat-ops
+  namespace: argocd
+spec:
+  project: canepro-spoke
+  source:
+    repoURL: https://github.com/Canepro/rocketchat-k8s.git
+    targetRevision: master
+    path: ops
+  destination:
+    name: k8.canepro.me
+    namespace: rocketchat
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
