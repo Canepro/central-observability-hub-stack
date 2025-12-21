@@ -43,6 +43,12 @@ This entire stack is managed declaratively via ArgoCD.
 2. **Commit & Push**: Push changes to the `main` branch.
 3. **Sync**: ArgoCD automatically detects and applies changes using **Server-Side Apply**.
 
+### Why `helm list` is empty
+This repo uses **ArgoCD + Helm charts**, but the workloads are rendered and applied as **native Kubernetes manifests** by ArgoCD.
+That means you should **not** expect Helm release metadata in-cluster:
+- `helm list -n monitoring` may be empty even when everything is running.
+- Operational checks should use `kubectl` (pods/services) and ArgoCD Application health.
+
 ### Initial Access:
 Retrieve the Grafana admin password from your cluster:
 ```bash
@@ -72,6 +78,10 @@ This repository includes a **DevOps Quality Gate** via GitHub Actions (`.github/
 ├── scripts/              # Useful maintenance scripts
 └── GITOPS-HANDOVER.md    # Multi-cluster operational roadmap
 ```
+
+## 🧪 Validation & Day-2 Ops
+- **Validation script**: `scripts/validate-deployment.sh` (checks pods, services, PVCs, ArgoCD app health, and resource usage)
+- **Resource usage**: requires **metrics-server** (deployed via ArgoCD into `kube-system`) for `kubectl top ...`
 
 ---
 **Status**: ✅ Platform Fully Operational & Managed via GitOps

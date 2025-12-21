@@ -225,6 +225,28 @@ This is usually caused by the latency of the OCI CLI exec-plugin (`oci ce cluste
 
 ## Pod Issues
 
+### Grafana Readiness probe failed: "connect: connection refused"
+
+**Symptoms**
+- Grafana Deployment keeps rolling pods (new ReplicaSet every few minutes)
+- Events show:
+  - `Readiness probe failed: Get "http://<pod-ip>:3000/api/health": ... connect: connection refused`
+- ArgoCD may show `grafana` as `Progressing` while it continually restarts
+
+**Root cause**
+Grafana can be **slow to start** on OCI Always Free ARM nodes (DB migrations, plugin init, dashboard provisioning). If CPU/memory is too tight or the probes are too aggressive, the pod is marked unready and/or restarted before it finishes booting.
+
+**Fix (GitOps)**
+Tune resources and probes in `helm/grafana-values.yaml`:
+- Increase `resources.requests` (CPU/memory)
+- Add/extend `readinessProbe` and `livenessProbe` delays so Grafana has time to come up
+
+After committing/pushing, let ArgoCD apply changes. If ArgoCD seems stuck on stale state, force refresh:
+
+```bash
+kubectl -n argocd annotate application grafana argocd.argoproj.io/refresh=hard --overwrite
+```
+
 ### Grafana stuck with 2 pods (one in Init:0/2 / PodInitializing)
 
 **Symptoms**

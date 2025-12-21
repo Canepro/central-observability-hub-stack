@@ -40,6 +40,22 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 3. **Push**: `git push origin master`.
 4. **Verify**: Watch the Rolling Update in the ArgoCD UI.
 
+### 🧰 Operational Commands (Hub)
+- **Validate the stack**:
+  ```bash
+  chmod +x scripts/validate-deployment.sh
+  ./scripts/validate-deployment.sh
+  ```
+- **Force ArgoCD refresh** (useful when adding a new `argocd/applications/*.yaml` app, or if ArgoCD shows cached manifest errors):
+  ```bash
+  kubectl -n argocd patch application oke-observability-stack --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+  ```
+- **Resource usage** (requires `metrics-server`):
+  ```bash
+  kubectl top nodes
+  kubectl top pods -n monitoring
+  ```
+
 ### 🛡️ Automated Guardrails
 - **OCI Storage Audit**: Use `./scripts/check-oci-storage.sh` to verify we are under the 200GB Always Free limit (currently at 194GB).
 - **Self-Healing Storage**: A CronJob runs periodically to prune unused images and prevent disk pressure on the Spoke.
