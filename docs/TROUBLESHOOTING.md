@@ -158,13 +158,39 @@ The destination Prometheus server has Remote Write Receiver **DISABLED** by defa
 Enable the feature flag in Prometheus values.
 
 **For Standalone Prometheus Chart**:
+
 ```yaml
 server:
   extraFlags:
     - web.enable-remote-write-receiver
 ```
 
+### Grafana dashboard shows "No data" for PVC usage
+
+#### Symptoms
+
+- “PVC Usage %” panel shows `No data` while PVCs are bound and workloads are running.
+
+#### Root cause
+
+The PVC usage panel relies on kubelet volume metrics:
+
+- `kubelet_volume_stats_used_bytes`
+- `kubelet_volume_stats_capacity_bytes`
+
+These metrics are only present if Prometheus scrapes kubelet `/metrics` (often via the API server proxy).
+
+#### Fix (this repo)
+
+Ensure `helm/prometheus-values.yaml` includes the kubelet scrape job under `extraScrapeConfigs`.
+Then verify in Prometheus (Grafana Explore → Prometheus):
+
+```promql
+kubelet_volume_stats_used_bytes
+```
+
 **For Kube-Prometheus-Stack**:
+
 ```yaml
 prometheus:
   prometheusSpec:

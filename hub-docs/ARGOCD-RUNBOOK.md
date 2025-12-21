@@ -25,6 +25,15 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 Because `selfHeal` is enabled, manual “hotfixes” done directly in the cluster may be overwritten unless they are also committed to Git.
 
+## ⚠️ Public repo + Auto-Sync on `main` (risk & mitigations)
+If ArgoCD tracks the `main` branch with auto-sync enabled, then **every push to GitHub can trigger reconciliation**.
+That’s convenient for a lab/test cluster, but it can surprise you when you do “portfolio cleanup” commits.
+
+**Mitigations (choose one)**
+- **Prefer**: use tags as a rollback safety net (`v1.0.0-stable`, `v1.0.1`, etc.) and sync an app to a known-good tag when needed.
+- **UI safety switch**: temporarily disable Auto-Sync for an app before making risky edits (ArgoCD UI → Application → toggle **Auto-Sync** off).
+- **Operational discipline**: treat changes under `argocd/` and `helm/` as “deploy changes” and validate after sync with `./scripts/validate-deployment.sh`.
+
 ## Common operations
 
 ### Sync (apply latest Git state)
@@ -34,6 +43,13 @@ Sync the parent app (updates all child apps):
 ```bash
 kubectl -n argocd patch application oke-observability-stack --type merge \
   -p '{"operation":{"sync":{"prune":true}}}'
+```
+
+### Sync a specific app to a git tag / revision
+Useful for “get me back to a known good state” without changing ArgoCD’s tracked branch:
+
+```bash
+argocd app sync <app-name> --revision v1.0.0-stable
 ```
 
 Sync a single child app (recommended for isolated changes):

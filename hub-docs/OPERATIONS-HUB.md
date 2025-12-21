@@ -63,6 +63,11 @@ While this Hub monitors the Spokes, ArgoCD's own health is tracked via:
 2. **Commit & Push**: Git push to `main`.
 3. **ArgoCD Sync**: ArgoCD will detect the change. Ensure **Server-Side Apply** is enabled to handle large manifest updates safely.
 
+### ⚠️ Public repo / test environment note
+This repository is public and (by design) can be connected to ArgoCD in “auto-sync from `main`” mode.
+That’s great for a lab/test environment, but it means **any push** can cause reconciliation.
+If you’re doing portfolio-only changes, prefer doc-only commits and validate after sync.
+
 ## 📈 Resource Usage (Metrics Server)
 The cluster uses **metrics-server** (deployed via ArgoCD) to enable real-time resource visibility:
 - `kubectl top nodes`
@@ -78,6 +83,14 @@ kubectl get application -n argocd metrics-server
 kubectl get pods -n kube-system -l app.kubernetes.io/name=metrics-server
 kubectl top nodes
 ```
+
+## 💾 Live PVC usage (% full) in Grafana
+The “Master Health Dashboard” includes a PVC usage panel. Live “% full” requires kubelet volume stats metrics:
+- `kubelet_volume_stats_used_bytes`
+- `kubelet_volume_stats_capacity_bytes`
+
+In this repo those are enabled via `extraScrapeConfigs` in `helm/prometheus-values.yaml` (scraping kubelet via the API server proxy).
+If the PVC panel shows `No data`, check whether these metrics exist in Prometheus Explore first.
 
 ## 🔑 Grafana Admin Password Reset
 If you lose access to the Grafana UI, you can reset the admin password directly from the cluster:
