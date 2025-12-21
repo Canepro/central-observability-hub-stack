@@ -17,11 +17,13 @@ provider "oci" {
 # --- VARIABLES ---
 
 variable "compartment_id" {
-  default = "ocid1.tenancy.oc1..aaaaaaaadeivc3duoyx3pffmgzkcv2zo2gyuq2ftxybicrpianpnmeccgeba"
+  description = "OCI Compartment OCID (set via terraform.tfvars or TF_VAR_compartment_id)"
+  type        = string
 }
 
 variable "ssh_public_key" {
-  default = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDc/Xc6A4g+2Px5bZ+3OPpR6JwR2/ZHpMKBPlhNcgUOyH+pmHAwOe4dvWGG9K3fmlFgQK/Pq8DeM8lWaC5M6QhW3G+ZsKu/i2t/TDYJ+jApYpcAHCYeW0b8+TTS2UKINwLpl35fIGrjuuTT7yYGZ9K8G7W1+tpVIE2Jx9ltzuUQ/7DnrL7msIytgabFQDJB+nXB64oqUArVNyQhCqRPtLbrNEz9q+857Q16BL8yWwEvMMAwItQU+tTTOErh22cabOkVeG7fbAEx6ZbY14h2LVh3Unq1Bcc6exgQYuyVlwQdX7gkyKc2n/A1nRhWwGLNYgXikItSqBTFhCp7QDm8bNcp ssh-key-2025-11-13"
+  description = "SSH public key to inject into worker nodes (set via terraform.tfvars or TF_VAR_ssh_public_key)"
+  type        = string
 }
 
 # --- NETWORK ---

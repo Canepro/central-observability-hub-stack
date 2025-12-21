@@ -28,6 +28,14 @@ test-output/
 terraform/.terraform/
 terraform/terraform.tfstate*
 
+# Terraform local variables (DO NOT COMMIT)
+terraform/terraform.tfvars
+terraform/*.auto.tfvars
+terraform/override.tf
+terraform/override.tf.json
+terraform/*_override.tf
+terraform/*_override.tf.json
+
 # Terraform plans
 *.tfplan
 *.tfplan.*
