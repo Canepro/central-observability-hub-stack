@@ -34,6 +34,12 @@ agent:
             password = "YOUR_PASSWORD_HERE"
           }
         }
+        
+        external_labels = {
+          cluster   = "k8-canepro-me",
+          workspace = "production",
+          domain    = "rocketchat.canepro.me",
+        }
       }
 
       // Logs: Collect Cluster Logs
@@ -54,9 +60,8 @@ agent:
       loki.write "central" {
         endpoint {
           url = "https://observability.canepro.me/loki/api/v1/push"
-          headers = {
-            "X-Scope-OrgID" = "1",
-          }
+          // If your Loki is multi-tenant, you may need:
+          // headers = { "X-Scope-OrgID" = "<tenant-id>" }
           basic_auth {
             username = "observability-user"
             password = "YOUR_PASSWORD_HERE"

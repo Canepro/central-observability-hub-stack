@@ -6,7 +6,7 @@ Use these instructions to configure the `rocketchat-k8s` cluster (or any remote 
 
 **Hub URL**: `https://observability.canepro.me`
 **Username**: `observability-user`
-**Password**: `50JjX+diU6YmAZPl`
+**Password**: `YOUR_PASSWORD_HERE`
 
 ---
 
@@ -35,7 +35,7 @@ kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f 
 
 kubectl create secret generic observability-credentials -n monitoring \
   --from-literal=username="observability-user" \
-  --from-literal=password="50JjX+diU6YmAZPl" \
+  --from-literal=password="YOUR_PASSWORD_HERE" \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
@@ -61,7 +61,7 @@ promtail:
       - url: https://observability.canepro.me/loki/api/v1/push
         basic_auth:
           username: observability-user
-          password: 50JjX+diU6YmAZPl
+          password: YOUR_PASSWORD_HERE
 ```
 
 **Apply via Helm:**

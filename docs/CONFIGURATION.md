@@ -90,6 +90,8 @@ remote_write:
     external_labels:
       cluster: rocket-chat-azure
       environment: production
+      workspace: production
+      domain: rocketchat.azure.example.com
 ```
 
 #### Expose Prometheus (if needed)
@@ -138,6 +140,8 @@ prometheus:
             labels:
               app: 'rocketchat'
               environment: 'production'
+              workspace: 'production'
+              domain: 'rocketchat.example.com'
         metrics_path: '/metrics'
         scheme: https
 ```
@@ -277,7 +281,7 @@ const sdk = new NodeSDK({
     headers: {
       'Authorization': 'Basic ' + Buffer.from('observability-user:YOUR_PASSWORD').toString('base64')
     }
-    # Note: Path /v1/traces corresponds to the Ingress rule
+    // Note: Path /v1/traces corresponds to the Ingress rule
   }),
 });
 sdk.start();

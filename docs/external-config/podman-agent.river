@@ -29,6 +29,12 @@ prometheus.remote_write "central" {
       password = "YOUR_PASSWORD_HERE"
     }
   }
+
+  external_labels = {
+    cluster   = "podman-rocketchat",
+    workspace = "production",
+    domain    = "rocketchat.local",
+  }
 }
 
 // 2. Logs Collection (Docker/Podman)
@@ -44,9 +50,8 @@ loki.source.docker "rocketchat" {
 loki.write "central" {
   endpoint {
     url = "https://observability.canepro.me/loki/api/v1/push"
-    headers = {
-      "X-Scope-OrgID" = "1",
-    }
+    // If your Loki is multi-tenant, you may need:
+    // headers = { "X-Scope-OrgID" = "<tenant-id>" }
     
     basic_auth {
       username = "observability-user"

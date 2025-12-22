@@ -7,7 +7,7 @@
 # 2. Create credentials secret:
 #    kubectl create secret generic observability-credentials -n monitoring \
 #      --from-literal=username="observability-user" \
-#      --from-literal=password="50JjX+diU6YmAZPl"
+#      --from-literal=password="YOUR_PASSWORD_HERE"
 #
 # 3. Apply this file:
 #    kubectl apply -f prometheus-agent-canepro.yaml
@@ -25,6 +25,8 @@ data:
       external_labels:
         cluster: rocketchat-k3s
         environment: production
+        workspace: production
+        domain: rocketchat.local
 
     remote_write:
       - url: https://observability.canepro.me/api/v1/write
