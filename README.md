@@ -43,6 +43,10 @@ This entire stack is managed declaratively via ArgoCD.
 2. **Commit & Push**: Push changes to the `main` branch.
 3. **Sync**: ArgoCD automatically detects and applies changes using **Server-Side Apply**.
 
+### Upgrades (Grafana / PVC-backed components)
+For PVC-backed components (especially **Grafana** and **Prometheus**), take an OCI Block Volume snapshot/backup first and follow the runbook:
+- **Grafana upgrade runbook**: `hub-docs/OPERATIONS-HUB.md` → “Grafana upgrade runbook (Helm chart + Grafana OSS)”
+
 ### ⚠️ Important: This repo is public and ArgoCD watches `main`
 This repository is **public** (portfolio use) but also functions as a **live GitOps source**.
 If ArgoCD is configured to track `main`, then **every push** can trigger reconciliation.
