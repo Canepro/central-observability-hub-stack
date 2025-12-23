@@ -63,6 +63,92 @@ While this Hub monitors the Spokes, ArgoCD's own health is tracked via:
 2. **Commit & Push**: Git push to `main`.
 3. **ArgoCD Sync**: ArgoCD will detect the change. Ensure **Server-Side Apply** is enabled to handle large manifest updates safely.
 
+### ✅ Grafana upgrade runbook (Helm chart + Grafana OSS)
+Grafana is deployed by ArgoCD as a Helm chart:
+- Chart pin: `argocd/applications/grafana.yaml` → `spec.sources[0].targetRevision`
+- Grafana image pin: `helm/grafana-values.yaml` → `image.tag`
+
+Because Grafana uses a **50Gi RWO PVC** (`/var/lib/grafana`), always take a snapshot/backup before major upgrades.
+
+#### 0) Pre-flight: identify the Grafana PVC + PV
+
+```bash
+kubectl -n monitoring get pvc grafana
+kubectl -n monitoring get pv | grep -i grafana
+kubectl -n monitoring describe pv <pv-name>
+```
+
+From the PV output, capture the **OCI Block Volume OCID** (`ocid1.volume...`).
+
+#### 1) Snapshot (OCI Block Volume “snapshot” = volume backup)
+Create a **FULL** manual backup:
+
+```bash
+oci bv backup create \
+  --volume-id <VOLUME_OCID> \
+  --type FULL \
+  --display-name grafana-pre-upgrade-$(date +%F)
+```
+
+Wait until it is `AVAILABLE`:
+
+```bash
+oci bv backup get --backup-id <VOLUME_BACKUP_OCID> \
+  --query "data.{name:\"display-name\",state:\"lifecycle-state\",time:\"time-created\"}" \
+  --output table
+```
+
+#### 2) Update Git pins (chart + image)
+Edit:
+- `argocd/applications/grafana.yaml` → bump `targetRevision` (chart version)
+- `helm/grafana-values.yaml` → bump `image.tag` (Grafana OSS version)
+
+Commit + push:
+
+```bash
+git add argocd/applications/grafana.yaml helm/grafana-values.yaml
+git commit -m "Upgrade Grafana: chart <chart>, image <grafana>"
+git push origin main
+```
+
+#### 3) Sync + watch rollout
+Force Argo to refresh, then let Auto-Sync apply (or click Sync in UI):
+
+```bash
+kubectl -n argocd annotate application grafana argocd.argoproj.io/refresh=hard --overwrite
+```
+
+Watch rollout:
+
+```bash
+kubectl -n monitoring rollout status deploy/grafana --timeout=10m
+kubectl -n monitoring get pods -l app.kubernetes.io/name=grafana -o wide
+kubectl -n monitoring logs deploy/grafana --tail=200
+```
+
+Verify version via ingress:
+
+```bash
+curl -s https://grafana.canepro.me/api/health
+```
+
+#### 4) Rollback options
+**Fast rollback (GitOps revert)**:
+
+```bash
+git revert HEAD
+git push origin main
+kubectl -n argocd annotate application grafana argocd.argoproj.io/refresh=hard --overwrite
+```
+
+**Data rollback (restore from OCI backup)**:
+Use the OCI Console to restore the backup into a new volume, then re-attach by recreating the PV/PVC binding (cluster-specific). Only needed if the Grafana DB itself is corrupted.
+
+#### 5) ArgoCD “OutOfSync” noise after upgrades (safe suppression)
+Some resources (commonly the `Secret/monitoring/grafana`) can pick up controller-managed metadata (e.g., `app.kubernetes.io/managed-by: Helm`) that causes ArgoCD to report OutOfSync even when the app is Healthy.
+
+If this happens, prefer a **narrow** ArgoCD `ignoreDifferences` rule that ignores only that metadata label on that one resource (do **not** ignore `data` / `stringData`).
+
 ### ⚠️ Public repo / test environment note
 This repository is public and (by design) can be connected to ArgoCD in “auto-sync from `main`” mode.
 That’s great for a lab/test environment, but it means **any push** can cause reconciliation.

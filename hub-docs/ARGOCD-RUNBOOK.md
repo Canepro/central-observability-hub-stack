@@ -175,6 +175,14 @@ If Grafana uses a **ReadWriteOnce** PVC, the default **RollingUpdate** strategy 
 
 **Preferred fix**: keep `type: RollingUpdate` but set `maxSurge: 0` (and `maxUnavailable: 1`). This forces “delete old → create new” behavior while staying compatible with the chart/template and avoids a stuck “extra” pod (brief downtime during rollout).
 
+### Suppress harmless “OutOfSync” drift on Grafana Secret metadata
+After Helm/chart upgrades, ArgoCD may show `OutOfSync` for `Secret/monitoring/grafana` due to controller-managed metadata labels like:
+- `app.kubernetes.io/managed-by: Helm`
+
+This label is **informational** and does not change Grafana behavior. If ArgoCD keeps reporting drift but the app is Healthy, use a *targeted* ignore rule in `argocd/applications/grafana.yaml`:
+- Only ignore `.metadata.labels."app.kubernetes.io/managed-by"`
+- Do **not** ignore secret `data` fields (that could hide real drift)
+
 ### “Helm template requires canary enabled”
 
 Some Loki chart versions enforce a validation rule that requires Loki Canary to be enabled.
