@@ -16,7 +16,7 @@ This stack is optimized to run within the Oracle Cloud "Always Free" tier constr
 
 | Component | Version | Role | Storage Type |
 |-----------|---------|------|--------------|
-| **Grafana** | 11.1.0 | Visualization & Dashboards | OCI Block Volume (50Gi) |
+| **Grafana** | 12.3.0 | Visualization & Dashboards | OCI Block Volume (50Gi) |
 | **Loki** | 3.5.7 | Log Aggregation | OCI Object Storage (S3 API) |
 | **Prometheus** | 25.8.0 | Metrics & Alerting | OCI Block Volume (50Gi) |
 | **Tempo** | 1.24.0 | Distributed Tracing | OCI Object Storage (S3 API) |

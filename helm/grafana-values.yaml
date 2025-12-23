@@ -1,7 +1,7 @@
 # Grafana Helm Chart Values
 # Chart: grafana/grafana
-# Version: 7.3.0+
-# App Version: 12.x
+# Version: 10.4.0 (pinned via ArgoCD Application)
+# App Version: 12.x (Grafana OSS)
 
 # ArgoCD/Helm render safeguard: allow admin password in values (prefer secret/env in production)
 assertNoLeakedSecrets: false
@@ -17,7 +17,7 @@ deploymentStrategy:
     maxUnavailable: 1
 image:
   repository: grafana/grafana
-  tag: 11.1.0  # Pinning to a stable version to avoid 'uid' schema errors
+  tag: 12.3.0  # Pin for controlled upgrades; verify the tag exists if bumping further.
   pullPolicy: IfNotPresent
 
 # Persistence
