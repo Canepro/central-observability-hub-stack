@@ -37,10 +37,13 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 ## 🛠️ 4. Maintenance & "Day 2" Operations
 
 ### 🔄 How to Perform an Upgrade
-1. **Modify**: Open the relevant YAML in the manifests/ folder of the Git repo.
-2. **Commit**: Update the image tag or version (e.g., from `7.12.2` to `7.13.0`).
-3. **Push**: `git push origin master`.
-4. **Verify**: Watch the Rolling Update in the ArgoCD UI.
+1. **Plan**: Identify whether the component is stateless or uses a PVC. For PVC-backed components (Grafana/Prometheus), take a snapshot/backup first.
+2. **Modify**: Update the pinned chart version (`argocd/applications/*.yaml` → `targetRevision`) and/or image tag (`helm/*.yaml`).
+3. **Commit**: Commit the change in Git.
+4. **Push**: `git push origin main` (ArgoCD follows `main` in this environment).
+5. **Sync/Verify**:
+   - Check the app in ArgoCD UI (Healthy + Synced)
+   - Validate pods/services: `./scripts/validate-deployment.sh`
 
 ### 🧰 Operational Commands (Hub)
 - **Validate the stack**:
