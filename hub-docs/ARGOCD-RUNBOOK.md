@@ -183,6 +183,10 @@ This label is **informational** and does not change Grafana behavior. If ArgoCD 
 - Only ignore `.metadata.labels."app.kubernetes.io/managed-by"`
 - Do **not** ignore secret `data` fields (that could hide real drift)
 
+**ArgoCD compatibility note**:
+- Prefer `jsonPointers` over `jqPathExpressions` for broad compatibility across ArgoCD versions.
+- JSON Pointer requires escaping `/` as `~1`, so the label key becomes `app.kubernetes.io~1managed-by`.
+
 ### “Helm template requires canary enabled”
 
 Some Loki chart versions enforce a validation rule that requires Loki Canary to be enabled.
