@@ -25,8 +25,9 @@ spec:
       kind: Secret
       name: grafana
       namespace: monitoring
-      jqPathExpressions:
-        - .metadata.labels."app.kubernetes.io/managed-by"
+      # Use jsonPointers for broad ArgoCD compatibility (older versions may not support jqPathExpressions).
+      jsonPointers:
+        - /metadata/labels/app.kubernetes.io~1managed-by
   syncPolicy:
     automated:
       prune: true
