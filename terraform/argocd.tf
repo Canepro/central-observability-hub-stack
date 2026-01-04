@@ -9,6 +9,8 @@ resource "helm_release" "argocd" {
   values = [
     <<EOF
 server:
+  metrics:
+    enabled: true
   extraArgs:
     - --insecure
   ingress:
@@ -31,19 +33,29 @@ server:
     requests:
       cpu: 50m
       memory: 128Mi
+
+controller:
+  metrics:
+    enabled: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+repoServer:
+  metrics:
+    enabled: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+applicationSet:
+  metrics:
+    enabled: true
+
 redis-ha:
   enabled: false
-controller:
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-repoServer:
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
 EOF
   ]
 }
-
