@@ -15,9 +15,10 @@ deploymentStrategy:
   rollingUpdate:
     maxSurge: 0
     maxUnavailable: 1
+
 image:
   repository: grafana/grafana
-  tag: 12.3.0  # Pin for controlled upgrades; verify the tag exists if bumping further.
+  tag: 12.3.0  # Pin for controlled upgrades
   pullPolicy: IfNotPresent
 
 # Persistence
@@ -53,6 +54,14 @@ livenessProbe:
   periodSeconds: 20
   failureThreshold: 3
 
+# Injecting SMTP Password via Environment Variable from Secret
+# This keeps the sensitive App Password out of the public GitHub repo.
+envValueFrom:
+  GF_SMTP_PASSWORD:
+    secretKeyRef:
+      name: grafana-smtp-credentials
+      key: password
+
 # Grafana configuration
 grafana.ini:
   server:
@@ -60,7 +69,17 @@ grafana.ini:
   security:
     admin_user: admin
     admin_password: admin  # Change on first login
-    secret_key: "observability-hub-secret-key" # Static key to prevent encryption/DB errors
+    secret_key: "observability-hub-secret-key" 
+  
+  # SMTP Configuration
+  # The password is automatically injected via the GF_SMTP_PASSWORD env var above.
+  smtp:
+    enabled: true
+    host: smtp.gmail.com:587
+    user: canepro07@gmail.com
+    from_address: canepro07@gmail.com
+    from_name: Grafana Alerts
+    startTLS_policy: MandatoryStartTLS
 
 # Datasource provisioning
 datasources:
@@ -98,6 +117,7 @@ dashboardProviders:
         options:
           path: /var/lib/grafana/dashboards/default
 
+# Inline Dashboards
 dashboards:
   default:
     master-health:
