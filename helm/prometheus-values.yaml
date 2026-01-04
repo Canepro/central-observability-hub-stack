@@ -2,6 +2,57 @@
 # Chart: prometheus-community/prometheus
 # Version: 27.47.0+
 
+# --- 🚨 CRITICAL: TOP LEVEL CONFIGURATION 🚨 ---
+# serverFiles must be at the top level, NOT nested under 'server:'
+serverFiles:
+  alerting_rules.yml:
+    groups:
+      - name: WorldTreeAlerts
+        rules:
+          # 1. Spoke Heartbeat: Kind Cluster (Training)
+          # Logic: If the 'up' metric for the Kind cluster job is 0 for 2m, the proxy or lab is down.
+          - alert: KindSpokeOffline
+            expr: up{job="kind-kind-cluster"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Kind Spoke Offline"
+              description: "The L4 proxy on port 6443 or the Lab Server is unreachable."
+
+          # 2. Hub Infrastructure: OKE Storage
+          # Logic: Alert when PVCs or Node volumes have < 15% space remaining.
+          - alert: OKEStorageWarning
+            expr: (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) * 100 < 15
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Low Disk Space on OKE"
+              description: "OKE Storage on {{ $labels.node }} is below 15% free space."
+
+          # 3. GitOps Heartbeat: Argo CD Controller
+          # Logic: Ensure the metrics service enabled via Terraform is being scraped.
+          - alert: ArgoCDControllerDown
+            expr: up{job="argocd-application-controller-metrics"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "ArgoCD Monitoring Down"
+              description: "The ArgoCD application-controller is not reporting metrics."
+
+          # 4. GitOps Health: Application Status
+          # Logic: Alerts if any Argo CD application enters a 'Degraded' state (Sync failure, CrashLoop, etc).
+          - alert: ArgoCDApplicationDegraded
+            expr: argocd_app_info{health_status="Degraded"} == 1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "GitOps Application Degraded"
+              description: "Application {{ $labels.name }} in project {{ $labels.project }} is in a failed state."
+
 # Add kubelet volume stats so Grafana can show live PVC usage (% full).
 extraScrapeConfigs: |
   - job_name: kubelet-volume-stats
@@ -24,69 +75,20 @@ extraScrapeConfigs: |
 
 configmapReload:
   prometheus:
+    # sidecar to reload config when configmap changes
     extraArgs:
       listen-address: 0.0.0.0:8080
 
 server:
-  # --- Alerts-as-Code: World Tree Rules ---
-  serverFiles:
-    alerting_rules.yml:
-      groups:
-        - name: WorldTreeAlerts
-          rules:
-            # 1. Spoke Heartbeat: Kind Cluster (Training)
-            # Logic: If the 'up' metric for the Kind cluster job is 0 for 2m, the proxy or lab is down.
-            - alert: KindSpokeOffline
-              expr: up{job="kind-kind-cluster"} == 0
-              for: 2m
-              labels:
-                severity: critical
-              annotations:
-                summary: "Kind Spoke Offline"
-                description: "The L4 proxy on port 6443 or the Lab Server is unreachable."
-
-            # 2. Hub Infrastructure: OKE Storage
-            # Logic: Alert when PVCs or Node volumes have < 15% space remaining.
-            - alert: OKEStorageWarning
-              expr: (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) * 100 < 15
-              for: 5m
-              labels:
-                severity: warning
-              annotations:
-                summary: "Low Disk Space on OKE"
-                description: "OKE Storage on {{ $labels.node }} is below 15% free space."
-
-            # 3. GitOps Heartbeat: Argo CD Controller
-            # Logic: Ensure the metrics service we just enabled via Terraform is being scraped.
-            - alert: ArgoCDControllerDown
-              expr: up{job="argocd-application-controller-metrics"} == 0
-              for: 2m
-              labels:
-                severity: critical
-              annotations:
-                summary: "ArgoCD Monitoring Down"
-                description: "The ArgoCD application-controller is not reporting metrics."
-
-            # 4. GitOps Health: Application Status
-            # Logic: Alerts if any Argo CD application enters a 'Degraded' state (Sync failure, CrashLoop, etc).
-            - alert: ArgoCDApplicationDegraded
-              expr: argocd_app_info{health_status="Degraded"} == 1
-              for: 5m
-              labels:
-                severity: critical
-              annotations:
-                summary: "GitOps Application Degraded"
-                description: "Application {{ $labels.name }} in project {{ $labels.project }} is in a failed state."
-
-  # Retention
+  # Retention setting for historical metrics
   retention: "15d"
 
-  # Lifecycle flags allow us to reload config via HTTP POST
+  # Lifecycle flags allow us to reload config via HTTP POST /-/reload
   extraFlags:
     - web.enable-remote-write-receiver
     - web.enable-lifecycle
 
-  # Storage configuration for OKE
+  # Storage configuration for OKE (Oracle Block Volume)
   persistentVolume:
     enabled: true
     size: 50Gi
@@ -94,7 +96,7 @@ server:
     accessModes:
       - ReadWriteOnce
 
-  # Resource limits for Hub stability
+  # Resource limits for Hub cluster stability
   resources:
     requests:
       cpu: 500m
@@ -108,7 +110,7 @@ server:
     servicePort: 80
     type: ClusterIP
 
-  # Global Intervals
+  # Global Scrape Intervals
   global:
     scrape_interval: 30s
     evaluation_interval: 30s
