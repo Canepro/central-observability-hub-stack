@@ -115,9 +115,11 @@ server:
     scrape_interval: 30s
     evaluation_interval: 30s
 
-# Alertmanager configuration
+# Alertmanager configuration for Multi-Cluster SMTP Notifications
 alertmanager:
   enabled: true
+
+  # Lab-friendly persistence and resource settings
   persistence:
     enabled: false
   resources:
@@ -127,6 +129,37 @@ alertmanager:
     limits:
       cpu: 500m
       memory: 512Mi
+
+  # Securely inject the Gmail App Password from your K8s Secret
+  extraEnvVars:
+    - name: SMTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: grafana-smtp-credentials
+          key: password
+
+  config:
+    global:
+      resolve_timeout: 5m
+      smtp_from: 'canepro07@gmail.com'
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_auth_username: 'canepro07@gmail.com'
+      # Variable injected via extraEnvVars
+      smtp_auth_password: "${SMTP_PASSWORD}"
+      smtp_require_tls: true
+
+    route:
+      group_by: ['alertname', 'cluster', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'gmail-notifications'
+
+    receivers:
+    - name: 'gmail-notifications'
+      email_configs:
+      - to: 'canepro07@gmail.com'
+        send_resolved: true # Send an email when the issue is cleared
 
 # Node Exporter for Infrastructure Metrics
 nodeExporter:
