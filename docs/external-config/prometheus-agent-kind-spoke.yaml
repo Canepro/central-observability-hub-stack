@@ -1,0 +1,277 @@
+# Prometheus Agent for Kind Spoke Cluster (Lab Server)
+# This agent scrapes Node Exporter and Kube-State-Metrics from the Kind cluster
+# and pushes metrics to the OKE Hub via Remote Write
+#
+# USAGE ON KIND SPOKE CLUSTER:
+# 1. Ensure Node Exporter and Kube-State-Metrics are deployed:
+#    - Node Exporter: Usually deployed as a DaemonSet
+#    - Kube-State-Metrics: Usually deployed as a Deployment
+#
+# 2. Create monitoring namespace:
+#    kubectl create namespace monitoring
+#
+# 3. Create credentials secret (use same credentials as Hub observability-auth):
+#    kubectl create secret generic observability-credentials -n monitoring \
+#      --from-literal=username="observability-user" \
+#      --from-literal=password="YOUR_PASSWORD_HERE"
+#
+# 4. Apply this file:
+#    kubectl apply -f prometheus-agent-kind-spoke.yaml
+#
+# 5. Verify metrics are being pushed:
+#    kubectl logs -n monitoring -l app=prometheus-agent-kind-spoke
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-agent-kind-spoke-config
+  namespace: monitoring
+  labels:
+    app: prometheus-agent-kind-spoke
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+      external_labels:
+        cluster: kind-kind-cluster
+        environment: lab
+        workspace: training
+        domain: kind.local
+
+    remote_write:
+      - url: https://observability.canepro.me/api/v1/write
+        basic_auth:
+          username_file: /etc/secrets/username
+          password_file: /etc/secrets/password
+        queue_config:
+          capacity: 2500
+          max_shards: 200
+          max_samples_per_send: 1000
+          batch_send_deadline: 5s
+        write_relabel_configs:
+          # Add cluster label to all metrics
+          - source_labels: []
+            target_label: cluster
+            replacement: kind-kind-cluster
+
+    scrape_configs:
+      # Scrape Node Exporter (if deployed as DaemonSet)
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+                - kube-system
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_label_app_kubernetes_io_name]
+            regex: '.*node.*exporter.*|.*node-exporter.*'
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: '${1}:9100'
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: 'node_.*'
+            action: keep
+
+      # Scrape Kube-State-Metrics (if deployed)
+      - job_name: 'kube-state-metrics'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+                - kube-system
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_label_app_kubernetes_io_name]
+            regex: '.*kube.*state.*metrics.*|.*kube-state-metrics.*'
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: '${1}:8080'
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: 'kube_.*'
+            action: keep
+
+      # Scrape Kubelet metrics (cAdvisor, node metrics)
+      - job_name: 'kubernetes-nodes'
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: '(container_|machine_|node_).*'
+            action: keep
+
+      # Scrape Kubernetes pods with prometheus.io/scrape annotation
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-agent-kind-spoke
+  namespace: monitoring
+  labels:
+    app: prometheus-agent-kind-spoke
+    cluster: kind-kind-cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-agent-kind-spoke
+  template:
+    metadata:
+      labels:
+        app: prometheus-agent-kind-spoke
+        cluster: kind-kind-cluster
+    spec:
+      serviceAccountName: prometheus-agent-kind-spoke
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.45.0
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--enable-feature=agent'
+          - '--web.enable-lifecycle'
+        ports:
+        - containerPort: 9090
+          name: web
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: storage
+          mountPath: /prometheus
+        - name: secrets
+          mountPath: /etc/secrets
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-agent-kind-spoke-config
+      - name: storage
+        emptyDir: {}
+      - name: secrets
+        secret:
+          secretName: observability-credentials
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-agent-kind-spoke
+  namespace: monitoring
+  labels:
+    app: prometheus-agent-kind-spoke
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-agent-kind-spoke
+  labels:
+    app: prometheus-agent-kind-spoke
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/metrics
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-agent-kind-spoke
+  labels:
+    app: prometheus-agent-kind-spoke
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-agent-kind-spoke
+subjects:
+- kind: ServiceAccount
+  name: prometheus-agent-kind-spoke
+  namespace: monitoring

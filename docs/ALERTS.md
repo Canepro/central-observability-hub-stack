@@ -45,8 +45,13 @@ In the event of a cluster rebuild, the SMTP secret must be restored manually to 
 # Run on the OKE Cluster
 kubectl create secret generic grafana-smtp-credentials \
   --from-literal=password='your-app-password' \
+  --from-literal=user='your-email@gmail.com' \
+  --from-literal=from_address='your-email@gmail.com' \
+  --from-literal=to_address='your-email@gmail.com' \
   -n monitoring
 ```
+
+**Note**: All SMTP credentials (password, user, from_address, to_address) are stored in the secret to avoid exposing PII in the public repository.
 
 ## 7. Benefits and Achievements
 
