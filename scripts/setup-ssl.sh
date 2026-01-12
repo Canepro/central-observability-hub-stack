@@ -45,7 +45,7 @@ fi
 echo ""
 echo "🔧 Creating Let's Encrypt ClusterIssuer..."
 # Update email in the ClusterIssuer
-sed "s/admin@canepro.me/$EMAIL/g" "$PROJECT_ROOT/k8s/cert-manager-clusterissuer.yaml" | kubectl apply -f -
+sed "s/your-email@example.com/$EMAIL/g" "$PROJECT_ROOT/k8s/cert-manager-clusterissuer.yaml" | kubectl apply -f -
 
 # Wait a moment for ClusterIssuer to be ready
 sleep 5
