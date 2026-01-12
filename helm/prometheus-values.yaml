@@ -130,22 +130,37 @@ alertmanager:
       cpu: 500m
       memory: 512Mi
 
-  # Securely inject the Gmail App Password from your K8s Secret
+  # Securely inject SMTP credentials from your K8s Secret
   extraEnvVars:
     - name: SMTP_PASSWORD
       valueFrom:
         secretKeyRef:
           name: grafana-smtp-credentials
           key: password
+    - name: SMTP_USER
+      valueFrom:
+        secretKeyRef:
+          name: grafana-smtp-credentials
+          key: user
+    - name: SMTP_FROM
+      valueFrom:
+        secretKeyRef:
+          name: grafana-smtp-credentials
+          key: from_address
+    - name: SMTP_TO
+      valueFrom:
+        secretKeyRef:
+          name: grafana-smtp-credentials
+          key: to_address
 
   config:
     global:
       resolve_timeout: 5m
-      smtp_from: 'canepro07@gmail.com'
+      # Variables injected via extraEnvVars
+      smtp_from: '${SMTP_FROM}'
       smtp_smarthost: 'smtp.gmail.com:587'
-      smtp_auth_username: 'canepro07@gmail.com'
-      # Variable injected via extraEnvVars
-      smtp_auth_password: "${SMTP_PASSWORD}"
+      smtp_auth_username: '${SMTP_USER}'
+      smtp_auth_password: '${SMTP_PASSWORD}'
       smtp_require_tls: true
 
     route:
@@ -158,7 +173,7 @@ alertmanager:
     receivers:
     - name: 'gmail-notifications'
       email_configs:
-      - to: 'canepro07@gmail.com'
+      - to: '${SMTP_TO}'
         send_resolved: true # Send an email when the issue is cleared
 
 # Node Exporter for Infrastructure Metrics

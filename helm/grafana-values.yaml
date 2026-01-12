@@ -54,13 +54,21 @@ livenessProbe:
   periodSeconds: 20
   failureThreshold: 3
 
-# Injecting SMTP Password via Environment Variable from Secret
-# This keeps the sensitive App Password out of the public GitHub repo.
+# Injecting SMTP Credentials via Environment Variables from Secret
+# This keeps sensitive credentials (password, email) out of the public GitHub repo.
 envValueFrom:
   GF_SMTP_PASSWORD:
     secretKeyRef:
       name: grafana-smtp-credentials
       key: password
+  GF_SMTP_USER:
+    secretKeyRef:
+      name: grafana-smtp-credentials
+      key: user
+  GF_SMTP_FROM_ADDRESS:
+    secretKeyRef:
+      name: grafana-smtp-credentials
+      key: from_address
 
 # Grafana configuration
 grafana.ini:
@@ -72,12 +80,14 @@ grafana.ini:
     secret_key: "observability-hub-secret-key" 
   
   # SMTP Configuration
-  # The password is automatically injected via the GF_SMTP_PASSWORD env var above.
+  # Credentials are automatically injected via environment variables above:
+  # - GF_SMTP_PASSWORD: Password from secret
+  # - GF_SMTP_USER: Email/username from secret
+  # - GF_SMTP_FROM_ADDRESS: From address from secret
   smtp:
     enabled: true
     host: smtp.gmail.com:587
-    user: canepro07@gmail.com
-    from_address: canepro07@gmail.com
+    # user and from_address are set via environment variables
     from_name: Grafana Alerts
     startTLS_policy: MandatoryStartTLS
 
