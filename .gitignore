@@ -28,6 +28,10 @@ test-output/
 terraform/.terraform/
 terraform/terraform.tfstate*
 
+# Local-only remediation working docs (keep untracked)
+SECURITY-REMEDIATION-PLAN.md
+SECURITY-REMEDIATION-REVIEW.md
+
 # Terraform local variables (DO NOT COMMIT)
 terraform/terraform.tfvars
 terraform/*.auto.tfvars
