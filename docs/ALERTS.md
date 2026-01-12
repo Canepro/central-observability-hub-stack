@@ -53,6 +53,44 @@ kubectl create secret generic grafana-smtp-credentials \
 
 **Note**: All SMTP credentials (password, user, from_address, to_address) are stored in the secret to avoid exposing PII in the public repository.
 
+### Required keys (Grafana + Alertmanager)
+
+This repo config injects SMTP config via env vars from `grafana-smtp-credentials`. The secret **must** contain:
+
+- `password` (SMTP password / Gmail App Password)
+- `user` (SMTP username, often the email)
+- `from_address` (email used in the `From:` header)
+- `to_address` (recipient address for Alertmanager notifications)
+
+If `from_address` / `user` are missing, Grafana may fail to start with `CreateContainerConfigError` like:
+`couldn't find key from_address in Secret monitoring/grafana-smtp-credentials`.
+
+### Safe update / rotation (no delete)
+
+Use `apply` to upsert values (recommended when rotating passwords):
+
+```bash
+# Run on the OKE Cluster
+kubectl -n monitoring create secret generic grafana-smtp-credentials \
+  --from-literal=password='NEW_APP_PASSWORD' \
+  --from-literal=user='your-email@gmail.com' \
+  --from-literal=from_address='your-email@gmail.com' \
+  --from-literal=to_address='your-email@gmail.com' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Verify the keys:
+
+```bash
+kubectl -n monitoring get secret grafana-smtp-credentials -o json | jq -r '.data | keys[]'
+```
+
+Restart Grafana to re-read env vars:
+
+```bash
+kubectl -n monitoring rollout restart deploy/grafana
+```
+
 ## 7. Benefits and Achievements
 
 1. Infrastructure as Code (IaC): Alerts are version-controlled in prometheus-values.yaml.
