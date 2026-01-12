@@ -77,8 +77,8 @@ grafana.ini:
   security:
     admin_user: admin
     admin_password: admin  # Change on first login
-    secret_key: "observability-hub-secret-key" 
-  
+    secret_key: "observability-hub-secret-key"
+
   # SMTP Configuration
   # Credentials are automatically injected via environment variables above:
   # - GF_SMTP_PASSWORD: Password from secret
