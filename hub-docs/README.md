@@ -3,13 +3,16 @@
 Welcome to the Central Observability Hub. This cluster serves as the "Brain" of the ecosystem, providing centralized storage, analysis, and visualization for all multi-cluster telemetry.
 
 ## 🎯 Role of the OKE Hub
-The OKE Hub is designed to be a high-performance, cost-effective "Single Pane of Glass" for the entire infrastructure. It ingests metrics, logs, and traces from various spoke clusters (like K3s) and external applications.
+The OKE Hub is designed to be a high-performance, cost-effective "Single Pane of Glass" for the entire infrastructure. It ingests metrics, logs, and traces from various spoke clusters and external applications.
 
 ### Key Responsibilities:
-- **Master Health Dashboard**: A single "Single Pane of Glass" dashboard for Hub and Spoke health.
-- **Centralized Storage**: Long-term persistence of telemetry data using OCI Object Storage.
-- **Unified Visualization**: A single Grafana instance for querying data across all environments.
-- **Declarative Management**: The entire stack is managed via GitOps (ArgoCD), ensuring consistency and easy recovery.
+- **🌳 Unified World Tree Dashboard**: Multi-cluster health visualization with cluster filtering
+- **Centralized Storage**: Long-term persistence of telemetry data using OCI Object Storage
+- **Unified Visualization**: A single Grafana instance for querying data across all environments
+- **Declarative Management**: The entire stack is managed via GitOps (ArgoCD), ensuring consistency and easy recovery
+- **Cluster Labeling**: All metrics are labeled with `cluster` for multi-cluster filtering
+  - Hub: `cluster="oke-hub"`
+  - Spokes: `cluster="aks-canepro"`, etc.
 
 ## 🛠️ The Backend Stack (Always Free Tier)
 This stack is optimized to run within the Oracle Cloud "Always Free" tier constraints while maintaining production-grade capabilities.
@@ -36,4 +39,5 @@ The OKE Hub manages its own observability stack using the "App-of-Apps" pattern.
 - [INGRESS-SETUP.md](INGRESS-SETUP.md) - NGINX Ingress and SSL/TLS Configuration
 - [SECURITY-RECOMMENDATIONS.md](SECURITY-RECOMMENDATIONS.md) - Best Practices for Secure Ingestion
 - [GITOPS-HANDOVER.md](../GITOPS-HANDOVER.md) - Multi-Cluster Operational Map
+- [../docs/MULTI-CLUSTER-SETUP-COMPLETE.md](../docs/MULTI-CLUSTER-SETUP-COMPLETE.md) - Multi-Cluster Setup Complete Guide
 

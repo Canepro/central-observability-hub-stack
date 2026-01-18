@@ -22,18 +22,28 @@ This stack serves as the **Central Brain** for your infrastructure. It is optimi
 | **[hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md)** | **ArgoCD Ops**: Syncing, patching, and managing Hub apps. |
 | **[docs/QUICKSTART.md](docs/QUICKSTART.md)** | **5-Minute Guide**: Accessing Grafana and importing dashboards. |
 | **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** | **Integration Guide**: Connecting external clusters and applications. |
+| **[docs/MULTI-CLUSTER-SETUP-COMPLETE.md](docs/MULTI-CLUSTER-SETUP-COMPLETE.md)** | **Multi-Cluster Guide**: Complete setup and verification for hub-and-spoke architecture. |
 | **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** | **Solutions**: Common issues and fixes. |
 
 ## 🏗️ Infrastructure at a Glance
 
+### Hub Cluster (OKE)
 - **Region**: Oracle Cloud (Ashburn)
 - **Compute**: 2x ARM64 Worker Nodes (Always Free)
 - **Storage**: Hybrid Model (50GB Block Volumes + Infinite S3 Object Storage)
 - **Ingress**: NGINX Ingress Controller with Let's Encrypt SSL/TLS
+- **Cluster Label**: `oke-hub`
 - **Domains**:
   - `grafana.canepro.me` (Visualization)
   - `observability.canepro.me` (Secure Data Ingestion)
   - `argocd.canepro.me` (GitOps Control Plane)
+
+### Spoke Clusters
+- **AKS (Azure UK South)**: Rocket.Chat production deployment (`aks-canepro`)
+  - Remote-writes metrics to hub
+  - Sends logs via Promtail
+  - Sends traces via OpenTelemetry Collector
+- **Additional spokes**: See [docs/MULTI-CLUSTER-SETUP-COMPLETE.md](docs/MULTI-CLUSTER-SETUP-COMPLETE.md)
 
 ## 🚀 Management (GitOps First)
 This entire stack is managed declaratively via ArgoCD.
