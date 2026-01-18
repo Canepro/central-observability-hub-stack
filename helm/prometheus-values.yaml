@@ -4,26 +4,12 @@
 
 # --- 🚨 CRITICAL: TOP LEVEL CONFIGURATION 🚨 ---
 # serverFiles must be at the top level, NOT nested under 'server:'
+# NOTE: Do NOT include 'global:' or 'alerting:' in serverFiles.prometheus.yml
+# as the chart generates those from server.global and alertmanager sections.
 serverFiles:
-  # Prometheus server config override (enables cluster label via scrape relabeling).
-  # Goal: ensure ALL locally-scraped OKE series include `cluster="oke-hub"`,
-  # so Grafana dashboards that filter on `cluster` include the hub as well as spokes.
-  # NOTE: This must be a YAML map (not a multi-line string). The chart templates
-  # ignore non-map types for this key, which results in the default config being used.
+  # Custom Prometheus config with cluster label relabeling for all scrape jobs.
+  # This ensures hub metrics are queryable with cluster="oke-hub" in dashboards.
   prometheus.yml:
-    global:
-      evaluation_interval: 30s
-      scrape_interval: 30s
-      scrape_timeout: 10s
-
-      # Note: external_labels are mainly for federation/remote_write identity.
-      # Dashboard filtering relies on per-series labels; we set those via relabel_configs below.
-      external_labels:
-        cluster: oke-hub
-        environment: production
-        workspace: hub
-        domain: observability.canepro.me
-
     rule_files:
       - /etc/config/recording_rules.yml
       - /etc/config/alerting_rules.yml
@@ -36,10 +22,7 @@ serverFiles:
           - targets:
               - localhost:9090
         relabel_configs:
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
 
       - job_name: kubernetes-apiservers
@@ -53,10 +36,7 @@ serverFiles:
               - __meta_kubernetes_namespace
               - __meta_kubernetes_service_name
               - __meta_kubernetes_endpoint_port_name
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
         scheme: https
         tls_config:
@@ -77,10 +57,7 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
         scheme: https
         tls_config:
@@ -101,10 +78,7 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
         scheme: https
         tls_config:
@@ -135,7 +109,7 @@ serverFiles:
               - __meta_kubernetes_service_annotation_prometheus_io_path
             target_label: __metrics_path__
           - action: replace
-            regex: (.+?)(?::\\d+)?;(\\d+)
+            regex: (.+?)(?::\d+)?;(\d+)
             replacement: $1:$2
             source_labels:
               - __address__
@@ -158,16 +132,15 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_pod_node_name
             target_label: node
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
 
       - job_name: kubernetes-service-endpoints-slow
         honor_labels: true
         kubernetes_sd_configs:
           - role: endpoints
+        scrape_interval: 5m
+        scrape_timeout: 30s
         relabel_configs:
           - action: keep
             regex: true
@@ -184,7 +157,7 @@ serverFiles:
               - __meta_kubernetes_service_annotation_prometheus_io_path
             target_label: __metrics_path__
           - action: replace
-            regex: (.+?)(?::\\d+)?;(\\d+)
+            regex: (.+?)(?::\d+)?;(\d+)
             replacement: $1:$2
             source_labels:
               - __address__
@@ -207,13 +180,8 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_pod_node_name
             target_label: node
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
-        scrape_interval: 5m
-        scrape_timeout: 30s
 
       - job_name: prometheus-pushgateway
         honor_labels: true
@@ -224,10 +192,7 @@ serverFiles:
             regex: pushgateway
             source_labels:
               - __meta_kubernetes_service_annotation_prometheus_io_probe
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
 
       - job_name: kubernetes-services
@@ -259,10 +224,7 @@ serverFiles:
           - source_labels:
               - __meta_kubernetes_service_name
             target_label: service
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
 
       - job_name: kubernetes-pods
@@ -289,14 +251,14 @@ serverFiles:
               - __meta_kubernetes_pod_annotation_prometheus_io_path
             target_label: __metrics_path__
           - action: replace
-            regex: (\\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+            regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
             replacement: '[$2]:$1'
             source_labels:
               - __meta_kubernetes_pod_annotation_prometheus_io_port
               - __meta_kubernetes_pod_ip
             target_label: __address__
           - action: replace
-            regex: (\\d+);((([0-9]+?)(\\.|$)){4})
+            regex: (\d+);((([0-9]+?)(\.|$)){4})
             replacement: $2:$1
             source_labels:
               - __meta_kubernetes_pod_annotation_prometheus_io_port
@@ -323,16 +285,15 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_pod_node_name
             target_label: node
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
 
       - job_name: kubernetes-pods-slow
         honor_labels: true
         kubernetes_sd_configs:
           - role: pod
+        scrape_interval: 5m
+        scrape_timeout: 30s
         relabel_configs:
           - action: keep
             regex: true
@@ -349,14 +310,14 @@ serverFiles:
               - __meta_kubernetes_pod_annotation_prometheus_io_path
             target_label: __metrics_path__
           - action: replace
-            regex: (\\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+            regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
             replacement: '[$2]:$1'
             source_labels:
               - __meta_kubernetes_pod_annotation_prometheus_io_port
               - __meta_kubernetes_pod_ip
             target_label: __address__
           - action: replace
-            regex: (\\d+);((([0-9]+?)(\\.|$)){4})
+            regex: (\d+);((([0-9]+?)(\.|$)){4})
             replacement: $2:$1
             source_labels:
               - __meta_kubernetes_pod_annotation_prometheus_io_port
@@ -383,13 +344,8 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_pod_node_name
             target_label: node
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
-        scrape_interval: 5m
-        scrape_timeout: 30s
 
       # Custom scrape: kubelet PVC stats for OKE dashboarding
       - job_name: kubelet-volume-stats
@@ -405,43 +361,18 @@ serverFiles:
           - source_labels: [__meta_kubernetes_node_name]
             target_label: __metrics_path__
             replacement: /api/v1/nodes/${1}/proxy/metrics
-          - source_labels: [cluster]
-            regex: ""
-            action: replace
-            target_label: cluster
+          - target_label: cluster
             replacement: oke-hub
         metric_relabel_configs:
           - source_labels: [__name__]
             action: keep
             regex: kubelet_volume_stats_(used_bytes|capacity_bytes|available_bytes|inodes|inodes_free)
 
-    alerting:
-      alertmanagers:
-        - kubernetes_sd_configs:
-            - role: pod
-          tls_config:
-            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_namespace]
-              regex: monitoring
-              action: keep
-            - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
-              regex: prometheus
-              action: keep
-            - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
-              regex: alertmanager
-              action: keep
-            - source_labels: [__meta_kubernetes_pod_container_port_number]
-              regex: "9093"
-              action: keep
-
   alerting_rules.yml:
     groups:
       - name: WorldTreeAlerts
         rules:
           # 1. Spoke Heartbeat: Kind Cluster (Training)
-          # Logic: If the 'up' metric for the Kind cluster job is 0 for 2m, the proxy or lab is down.
           - alert: KindSpokeOffline
             expr: up{job="kind-kind-cluster"} == 0
             for: 2m
@@ -452,7 +383,6 @@ serverFiles:
               description: "The L4 proxy on port 6443 or the Lab Server is unreachable."
 
           # 2. Hub Infrastructure: OKE Storage
-          # Logic: Alert when PVCs or Node volumes have < 15% space remaining.
           - alert: OKEStorageWarning
             expr: (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) * 100 < 15
             for: 5m
@@ -463,7 +393,6 @@ serverFiles:
               description: "OKE Storage on {{ $labels.node }} is below 15% free space."
 
           # 3. GitOps Heartbeat: Argo CD Controller
-          # Logic: Ensure the metrics service enabled via Terraform is being scraped.
           - alert: ArgoCDControllerDown
             expr: up{job="argocd-application-controller-metrics"} == 0
             for: 2m
@@ -474,7 +403,6 @@ serverFiles:
               description: "The ArgoCD application-controller is not reporting metrics."
 
           # 4. GitOps Health: Application Status
-          # Logic: Alerts if any Argo CD application enters a 'Degraded' state (Sync failure, CrashLoop, etc).
           - alert: ArgoCDApplicationDegraded
             expr: argocd_app_info{health_status="Degraded"} == 1
             for: 5m
@@ -486,25 +414,20 @@ serverFiles:
 
 configmapReload:
   prometheus:
-    # sidecar to reload config when configmap changes
     extraArgs:
       listen-address: 0.0.0.0:8080
 
 server:
-  # Retention setting for historical metrics
   retention: "15d"
 
-  # Lifecycle flags allow us to reload config via HTTP POST /-/reload
   extraFlags:
     - web.enable-remote-write-receiver
     - web.enable-lifecycle
 
   # Pod annotations to force restart when config changes
-  # Update the timestamp to trigger a rolling restart via GitOps
   podAnnotations:
-    config-reload-timestamp: "2026-01-18T20:30:00Z"
+    config-reload-timestamp: "2026-01-18T20:45:00Z"
 
-  # Storage configuration for OKE (Oracle Block Volume)
   persistentVolume:
     enabled: true
     size: 50Gi
@@ -512,7 +435,6 @@ server:
     accessModes:
       - ReadWriteOnce
 
-  # Resource limits for Hub cluster stability
   resources:
     requests:
       cpu: 500m
@@ -521,28 +443,23 @@ server:
       cpu: 2
       memory: 2Gi
 
-  # Service configuration
   service:
     servicePort: 80
     type: ClusterIP
 
-  # Global Scrape Intervals and External Labels
+  # Global config (chart generates this into prometheus.yml)
   global:
     scrape_interval: 30s
     evaluation_interval: 30s
-    # External labels: Added to all metrics scraped by this Prometheus server
-    # This identifies metrics from the OKE Hub cluster itself
     external_labels:
       cluster: oke-hub
       environment: production
       workspace: hub
       domain: observability.canepro.me
 
-# Alertmanager configuration for Multi-Cluster SMTP Notifications
+# Alertmanager configuration
 alertmanager:
   enabled: true
-
-  # Lab-friendly persistence and resource settings
   persistence:
     enabled: false
   resources:
@@ -553,7 +470,6 @@ alertmanager:
       cpu: 500m
       memory: 512Mi
 
-  # Securely inject SMTP credentials from your K8s Secret
   extraEnvVars:
     - name: SMTP_PASSWORD
       valueFrom:
@@ -579,7 +495,6 @@ alertmanager:
   config:
     global:
       resolve_timeout: 5m
-      # Variables injected via extraEnvVars
       smtp_from: '${SMTP_FROM}'
       smtp_smarthost: 'smtp.gmail.com:587'
       smtp_auth_username: '${SMTP_USER}'
@@ -597,7 +512,7 @@ alertmanager:
     - name: 'gmail-notifications'
       email_configs:
       - to: '${SMTP_TO}'
-        send_resolved: true # Send an email when the issue is cleared
+        send_resolved: true
 
 # Node Exporter for Infrastructure Metrics
 nodeExporter:
