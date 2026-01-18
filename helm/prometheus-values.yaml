@@ -88,6 +88,11 @@ server:
     - web.enable-remote-write-receiver
     - web.enable-lifecycle
 
+  # Pod annotations to force restart when config changes
+  # Update the timestamp to trigger a rolling restart via GitOps
+  podAnnotations:
+    config-reload-timestamp: "2026-01-18T19:09:00Z"
+
   # Storage configuration for OKE (Oracle Block Volume)
   persistentVolume:
     enabled: true
