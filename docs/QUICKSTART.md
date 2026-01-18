@@ -52,12 +52,15 @@ All datasources are pre-configured via Helm values:
 
 | ID | Name | Purpose |
 |----|------|---------|
+| **Custom** | **🌳 Unified World Tree** | **Multi-cluster health dashboard** (see `dashboards/unified-world-tree.json`) |
 | **315** | Kubernetes Cluster Monitoring | Overall cluster health |
 | **1860** | Node Exporter Full | Detailed node metrics (CPU, RAM, disk) |
 | **13639** | Loki Dashboard | Loki performance & ingestion stats |
 | **16537** | Tempo Dashboard | Tracing performance |
 | **12019** | Kubernetes Cluster (Prometheus) | Pod/container metrics |
 | **7249** | Kubernetes Cluster Monitoring | Alternative cluster view |
+
+**Note**: The **🌳 Unified World Tree** dashboard provides a multi-cluster view with a `cluster` variable dropdown. Import it from `dashboards/unified-world-tree.json` in this repo for best results.
 
 ### Method 2: Browse Dashboards
 
@@ -70,16 +73,30 @@ All datasources are pre-configured via Helm values:
 
 ## 🔍 Test Your Stack (5 minutes)
 
-### Test 1: View Cluster Metrics
+### Test 1: Verify Multi-Cluster Visibility
 
 1. **Explore** (compass icon in sidebar)
 2. Select **Prometheus** datasource
 3. Enter query:
    ```promql
-   rate(container_cpu_usage_seconds_total{container!=""}[5m])
+   count by (cluster) (up)
    ```
 4. Click **Run query**
-5. Should see CPU usage graphs for all containers
+5. Should see counts for multiple clusters:
+   - `oke-hub` (OKE Hub cluster itself)
+   - `aks-canepro` (AKS spoke cluster)
+   - Additional spoke clusters (if configured)
+
+### Test 2: View Cluster Metrics
+
+1. **Explore** (compass icon in sidebar)
+2. Select **Prometheus** datasource
+3. Enter query:
+   ```promql
+   rate(container_cpu_usage_seconds_total{cluster=~"oke-hub|aks-canepro",container!=""}[5m])
+   ```
+4. Click **Run query**
+5. Should see CPU usage graphs for containers across all clusters
 
 ### Test 0: Validate Deployment (Recommended)
 Run the validation script to confirm pods, services, PVCs, ArgoCD app health, and (if available) resource usage:
@@ -99,18 +116,22 @@ kubectl top pods -n monitoring
 If the “Master Health Dashboard” shows `No data` for PVC usage, Prometheus may not be scraping kubelet volume stats.
 This repo enables them via `helm/prometheus-values.yaml` (`extraScrapeConfigs`).
 
-### Test 2: View Logs
+### Test 3: View Logs (Multi-Cluster)
 
 1. **Explore**
 2. Select **Loki** datasource
 3. Enter query:
    ```logql
+   {cluster="oke-hub",namespace="monitoring"}
+   ```
+4. Or query across all clusters:
+   ```logql
    {namespace="monitoring"}
    ```
-4. Click **Run query**
-5. Should see logs from monitoring namespace pods
+5. Click **Run query**
+6. Should see logs from monitoring namespace across all clusters
 
-### Test 3: Send Test Log
+### Test 4: Send Test Log
 
 ```bash
 # Port-forward to Loki
@@ -130,9 +151,17 @@ kill %1
 
 ---
 
-## 🔗 Connect External Applications
+## 🔗 Connect External Clusters & Applications
 
-### For Rocket.Chat Deployments
+### Multi-Cluster Setup
+
+This hub is designed to aggregate telemetry from multiple clusters (spoke clusters). See **[MULTI-CLUSTER-SETUP-COMPLETE.md](MULTI-CLUSTER-SETUP-COMPLETE.md)** for:
+
+- Current connected clusters and their status
+- How to add new spoke clusters
+- Troubleshooting cluster visibility
+
+### For Application-Level Integration
 
 See **[CONFIGURATION.md](CONFIGURATION.md)** for detailed guides on:
 

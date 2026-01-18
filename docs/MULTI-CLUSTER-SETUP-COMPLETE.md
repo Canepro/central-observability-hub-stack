@@ -6,21 +6,24 @@ Your multi-cluster monitoring setup is now working! This document explains the c
 
 ## Current Setup Status
 
-### Working Clusters
+### ✅ Working Clusters
 
 1. **OKE Hub** (`oke-hub`)
    - **Location**: Oracle Cloud, Ashburn
    - **Role**: Central observability hub
-   - **Metrics**: Now properly labeled with `cluster=oke-hub`
+   - **Metrics**: ✅ 13 targets with `cluster=oke-hub` label
    - **Components**: Prometheus, Grafana, Loki, Tempo, ArgoCD
+   - **Last Verified**: 2026-01-18
 
 2. **AKS Spoke** (`aks-canepro`)
    - **Location**: Azure UK South
    - **Role**: Production Rocket.Chat deployment
-   - **Metrics**: ✅ Successfully sending to OKE Hub
-   - **Targets**: 15 (nodes, Rocket.Chat services, cert-manager, traefik, etc.)
+   - **Metrics**: ✅ 15 targets successfully sending to OKE Hub
+   - **Components**: Prometheus agent, Promtail, OpenTelemetry Collector
+   - **Dashboards**: Visible in Grafana with cluster filter
+   - **Last Verified**: 2026-01-18
 
-### Pending Clusters
+### 📋 Pending Clusters
 
 3. **Kind Spoke** (Podman)
    - **Status**: Not currently running
