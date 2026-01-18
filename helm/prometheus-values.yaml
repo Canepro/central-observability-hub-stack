@@ -8,7 +8,9 @@ serverFiles:
   # Prometheus server config override (enables cluster label via scrape relabeling).
   # Goal: ensure ALL locally-scraped OKE series include `cluster="oke-hub"`,
   # so Grafana dashboards that filter on `cluster` include the hub as well as spokes.
-  prometheus.yml: |
+  # NOTE: This must be a YAML map (not a multi-line string). The chart templates
+  # ignore non-map types for this key, which results in the default config being used.
+  prometheus.yml:
     global:
       evaluation_interval: 30s
       scrape_interval: 30s
@@ -500,7 +502,7 @@ server:
   # Pod annotations to force restart when config changes
   # Update the timestamp to trigger a rolling restart via GitOps
   podAnnotations:
-    config-reload-timestamp: "2026-01-18T19:09:00Z"
+    config-reload-timestamp: "2026-01-18T20:30:00Z"
 
   # Storage configuration for OKE (Oracle Block Volume)
   persistentVolume:
