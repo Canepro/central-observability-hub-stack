@@ -110,10 +110,17 @@ server:
     servicePort: 80
     type: ClusterIP
 
-  # Global Scrape Intervals
+  # Global Scrape Intervals and External Labels
   global:
     scrape_interval: 30s
     evaluation_interval: 30s
+    # External labels: Added to all metrics scraped by this Prometheus server
+    # This identifies metrics from the OKE Hub cluster itself
+    external_labels:
+      cluster: oke-hub
+      environment: production
+      workspace: hub
+      domain: observability.canepro.me
 
 # Alertmanager configuration for Multi-Cluster SMTP Notifications
 alertmanager:
