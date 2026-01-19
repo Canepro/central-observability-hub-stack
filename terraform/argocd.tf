@@ -8,6 +8,9 @@ resource "helm_release" "argocd" {
 
   values = [
     <<EOF
+global:
+  domain: argocd.canepro.me
+
 server:
   metrics:
     enabled: true
@@ -20,10 +23,10 @@ server:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    hosts:
-      - argocd.canepro.me
-    tls:
-      - secretName: argocd-tls
+    hostname: argocd.canepro.me
+    tls: true
+    extraTls:
+      - secretName: argocd-server-tls
         hosts:
           - argocd.canepro.me
   resources:

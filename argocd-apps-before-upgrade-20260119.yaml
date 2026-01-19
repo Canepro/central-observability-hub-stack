@@ -1,0 +1,6104 @@
+apiVersion: v1
+items:
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    creationTimestamp: "2026-01-15T22:57:46Z"
+    generation: 1888
+    labels:
+      app: external-secrets
+      cluster: aks-canepro
+    name: aks-rocketchat-external-secrets
+    namespace: argocd
+    resourceVersion: "21020846"
+    uid: ce2c8f59-87c3-4fcb-b7a8-47d05f499e39
+  spec:
+    destination:
+      namespace: external-secrets
+      server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+    project: default
+    source:
+      chart: external-secrets
+      helm:
+        releaseName: external-secrets
+        values: |
+          installCRDs: true
+          serviceAccount:
+            create: true
+            name: external-secrets
+            annotations:
+              # Azure Workload Identity client id (UAMI clientId)
+              azure.workload.identity/client-id: "fe3d3d95-fb61-4a42-8d82-ec0852486531"
+          podLabels:
+            # Required for Azure Workload Identity token injection
+            azure.workload.identity/use: "true"
+      repoURL: https://charts.external-secrets.io
+      targetRevision: 0.10.5
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+        limit: 5
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-15T22:57:48Z"
+      deployedAt: "2026-01-15T22:58:02Z"
+      id: 0
+      revision: 0.10.5
+      source:
+        chart: external-secrets
+        helm:
+          releaseName: external-secrets
+          values: |
+            installCRDs: true
+            serviceAccount:
+              create: true
+              name: external-secrets
+              annotations:
+                # Azure Workload Identity client id (UAMI clientId)
+                azure.workload.identity/client-id: "fe3d3d95-fb61-4a42-8d82-ec0852486531"
+            podLabels:
+              # Required for Azure Workload Identity token injection
+              azure.workload.identity/use: "true"
+        repoURL: https://charts.external-secrets.io
+        targetRevision: 0.10.5
+    - deployStartedAt: "2026-01-15T22:58:17Z"
+      deployedAt: "2026-01-15T22:58:30Z"
+      id: 1
+      revision: 0.10.5
+      source:
+        chart: external-secrets
+        helm:
+          releaseName: external-secrets
+          values: |
+            installCRDs: true
+            serviceAccount:
+              create: true
+              name: external-secrets
+              annotations:
+                # Azure Workload Identity client id (UAMI clientId)
+                azure.workload.identity/client-id: "fe3d3d95-fb61-4a42-8d82-ec0852486531"
+            podLabels:
+              # Required for Azure Workload Identity token injection
+              azure.workload.identity/use: "true"
+        repoURL: https://charts.external-secrets.io
+        targetRevision: 0.10.5
+    operationState:
+      finishedAt: "2026-01-15T22:58:54Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: clustersecretstores.external-secrets.io
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: gcraccesstokens.generators.external-secrets.io
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: githubaccesstokens.generators.external-secrets.io
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: vaultdynamicsecrets.generators.external-secrets.io
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: clusterexternalsecrets.external-secrets.io
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: secretstores.external-secrets.io
+          revision: 0.10.5
+          syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+      phase: Succeeded
+      startedAt: "2026-01-15T22:58:47Z"
+      syncResult:
+        resources:
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/githubaccesstokens.generators.external-secrets.io
+            unchanged
+          name: githubaccesstokens.generators.external-secrets.io
+          namespace: external-secrets
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/clusterexternalsecrets.external-secrets.io
+            unchanged
+          name: clusterexternalsecrets.external-secrets.io
+          namespace: external-secrets
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/gcraccesstokens.generators.external-secrets.io
+            unchanged
+          name: gcraccesstokens.generators.external-secrets.io
+          namespace: external-secrets
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/vaultdynamicsecrets.generators.external-secrets.io
+            unchanged
+          name: vaultdynamicsecrets.generators.external-secrets.io
+          namespace: external-secrets
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/secretstores.external-secrets.io
+            unchanged
+          name: secretstores.external-secrets.io
+          namespace: external-secrets
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/clustersecretstores.external-secrets.io
+            unchanged
+          name: clustersecretstores.external-secrets.io
+          namespace: external-secrets
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: 0.10.5
+        source:
+          chart: external-secrets
+          helm:
+            releaseName: external-secrets
+            values: |
+              installCRDs: true
+              serviceAccount:
+                create: true
+                name: external-secrets
+                annotations:
+                  # Azure Workload Identity client id (UAMI clientId)
+                  azure.workload.identity/client-id: "fe3d3d95-fb61-4a42-8d82-ec0852486531"
+              podLabels:
+                # Required for Azure Workload Identity token injection
+                azure.workload.identity/use: "true"
+          repoURL: https://charts.external-secrets.io
+          targetRevision: 0.10.5
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - kind: Secret
+      name: external-secrets-webhook
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: external-secrets-webhook
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: external-secrets
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: external-secrets-cert-controller
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: external-secrets-webhook
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: externalsecret-validate
+      status: Synced
+      version: v1
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: secretstore-validate
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: acraccesstokens.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: clusterexternalsecrets.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: clustersecretstores.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: ecrauthorizationtokens.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: externalsecrets.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: fakes.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: gcraccesstokens.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: githubaccesstokens.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: passwords.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: pushsecrets.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: secretstores.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: uuids.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: vaultdynamicsecrets.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: webhooks.generators.external-secrets.io
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: external-secrets
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: external-secrets-cert-controller
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: external-secrets-webhook
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: external-secrets-cert-controller
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: external-secrets-controller
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: external-secrets-edit
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: external-secrets-servicebindings
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: external-secrets-view
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: external-secrets-cert-controller
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: external-secrets-controller
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: external-secrets-leaderelection
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: external-secrets-leaderelection
+      namespace: external-secrets
+      status: Synced
+      version: v1
+    sourceType: Helm
+    summary:
+      images:
+      - oci.external-secrets.io/external-secrets/external-secrets:v0.10.5
+    sync:
+      comparedTo:
+        destination:
+          namespace: external-secrets
+          server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+        source:
+          chart: external-secrets
+          helm:
+            releaseName: external-secrets
+            values: |
+              installCRDs: true
+              serviceAccount:
+                create: true
+                name: external-secrets
+                annotations:
+                  # Azure Workload Identity client id (UAMI clientId)
+                  azure.workload.identity/client-id: "fe3d3d95-fb61-4a42-8d82-ec0852486531"
+              podLabels:
+                # Required for Azure Workload Identity token injection
+                azure.workload.identity/use: "true"
+          repoURL: https://charts.external-secrets.io
+          targetRevision: 0.10.5
+      revision: 0.10.5
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"app":"rocketchat","cluster":"aks-canepro"},"name":"aks-rocketchat-helm","namespace":"argocd"},"spec":{"destination":{"namespace":"rocketchat","server":"https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443"},"project":"default","sources":[{"chart":"rocketchat","helm":{"releaseName":"rocketchat","valueFiles":["$values/values.yaml"]},"repoURL":"https://rocketchat.github.io/helm-charts","targetRevision":"6.28.0"},{"ref":"values","repoURL":"https://github.com/Canepro/rocketchat-k8s.git","targetRevision":"aks-migration"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"retry":{"backoff":{"duration":"5s","factor":2,"maxDuration":"3m"},"limit":5},"syncOptions":["CreateNamespace=true","PrunePropagationPolicy=foreground","PruneLast=true"]}}}
+    creationTimestamp: "2026-01-15T00:59:22Z"
+    generation: 5439
+    labels:
+      app: rocketchat
+      cluster: aks-canepro
+    name: aks-rocketchat-helm
+    namespace: argocd
+    resourceVersion: "21020803"
+    uid: 5a9d154d-217d-4fa5-bc99-d1f3d3d64997
+  spec:
+    destination:
+      namespace: rocketchat
+      server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+    ignoreDifferences:
+    - group: networking.k8s.io
+      jsonPointers:
+      - /spec/rules/0/http/paths
+      kind: Ingress
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+    project: default
+    sources:
+    - chart: rocketchat
+      helm:
+        releaseName: rocketchat
+        valueFiles:
+        - $values/values.yaml
+      repoURL: https://rocketchat.github.io/helm-charts
+      targetRevision: 6.29.0
+    - ref: values
+      repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: aks-migration
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+        limit: 5
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-15T17:53:17Z"
+      deployedAt: "2026-01-15T17:53:20Z"
+      id: 1
+      revisions:
+      - 6.28.0
+      - b3b334feac893ff30f0aab845b6782d17cf959b9
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.28.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T01:22:12Z"
+      deployedAt: "2026-01-16T01:22:16Z"
+      id: 2
+      revisions:
+      - 6.28.0
+      - 9e6acd4d6c5ccb6db01021621d0307d9263a9dcc
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.28.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T01:27:39Z"
+      deployedAt: "2026-01-16T01:27:43Z"
+      id: 3
+      revisions:
+      - 6.28.0
+      - f9019e62824e167d3eaf13b33033be657b41f2a8
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.28.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T01:31:18Z"
+      deployedAt: "2026-01-16T01:31:21Z"
+      id: 4
+      revisions:
+      - 6.28.0
+      - 9bc8cedc189d1a8c075f7ff891a903de3d7bb0d0
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.28.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T01:44:30Z"
+      deployedAt: "2026-01-16T01:44:33Z"
+      id: 5
+      revisions:
+      - 6.28.0
+      - aca0e5fb3fbd849c7691140cbce89b4a4e78fda1
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.28.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T01:48:49Z"
+      deployedAt: "2026-01-16T01:48:53Z"
+      id: 6
+      revisions:
+      - 6.28.0
+      - bf1184d64dc07f767332928acba9c27ff9829e89
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.28.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T02:26:16Z"
+      deployedAt: "2026-01-16T02:26:19Z"
+      id: 7
+      revisions:
+      - 6.29.0
+      - de075fb6c72c7875bd844d55eaa1d43fea45281c
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.29.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T02:28:13Z"
+      deployedAt: "2026-01-16T02:28:16Z"
+      id: 8
+      revisions:
+      - 6.29.0
+      - de075fb6c72c7875bd844d55eaa1d43fea45281c
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.29.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T02:31:50Z"
+      deployedAt: "2026-01-16T02:31:53Z"
+      id: 9
+      revisions:
+      - 6.29.0
+      - de075fb6c72c7875bd844d55eaa1d43fea45281c
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.29.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T03:50:56Z"
+      deployedAt: "2026-01-16T03:51:00Z"
+      id: 10
+      revisions:
+      - 6.29.0
+      - 5009c31ae2a4a8a7746d464ea8eee11d6f83505a
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.29.0
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    operationState:
+      finishedAt: "2026-01-16T03:51:00Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          username: admin
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        sync:
+          revision: 6.29.0
+          syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          syncStrategy:
+            hook: {}
+      phase: Succeeded
+      startedAt: "2026-01-16T03:50:56Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Secret
+          message: secret/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: PersistentVolumeClaim
+          message: persistentvolumeclaim/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-presence unchanged
+          name: rocketchat-presence
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-authorization unchanged
+          name: rocketchat-authorization
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-rocketchat-monolith-ms-metrics unchanged
+          name: rocketchat-rocketchat-monolith-ms-metrics
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-account unchanged
+          name: rocketchat-account
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-ddp-streamer unchanged
+          name: rocketchat-ddp-streamer
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-account configured
+          name: rocketchat-account
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-rocketchat configured
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-ddp-streamer configured
+          name: rocketchat-ddp-streamer
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-presence configured
+          name: rocketchat-presence
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-authorization configured
+          name: rocketchat-authorization
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/rocketchat-rocketchat configured
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 6.29.0
+        - 5009c31ae2a4a8a7746d464ea8eee11d6f83505a
+        source:
+          repoURL: ""
+        sources:
+        - chart: rocketchat
+          helm:
+            releaseName: rocketchat
+            valueFiles:
+            - $values/values.yaml
+          repoURL: https://rocketchat.github.io/helm-charts
+          targetRevision: 6.29.0
+        - ref: values
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - health:
+        status: Healthy
+      kind: PersistentVolumeClaim
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: Secret
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-account
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-authorization
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-ddp-streamer
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-presence
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-rocketchat-monolith-ms-metrics
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: rocketchat-account
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: rocketchat-authorization
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: rocketchat-ddp-streamer
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: rocketchat-presence
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      health:
+        status: Healthy
+      kind: Ingress
+      name: rocketchat-rocketchat
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      externalURLs:
+      - https://k8.canepro.me/
+      - https://k8.canepro.me/sockjs
+      - https://k8.canepro.me/websocket
+      images:
+      - registry.rocket.chat/rocketchat/rocket.chat:7.13.2
+      - rocketchat/account-service:7.13.2
+      - rocketchat/authorization-service:7.13.2
+      - rocketchat/ddp-streamer-service:7.13.2
+      - rocketchat/presence-service:7.13.2
+    sync:
+      comparedTo:
+        destination:
+          namespace: rocketchat
+          server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+        ignoreDifferences:
+        - group: networking.k8s.io
+          jsonPointers:
+          - /spec/rules/0/http/paths
+          kind: Ingress
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+        source:
+          repoURL: ""
+        sources:
+        - chart: rocketchat
+          helm:
+            releaseName: rocketchat
+            valueFiles:
+            - $values/values.yaml
+          repoURL: https://rocketchat.github.io/helm-charts
+          targetRevision: 6.29.0
+        - ref: values
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+      revisions:
+      - 6.29.0
+      - c24a3f11b614e2e60480b63a4b7499134d6b7009
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    creationTimestamp: "2026-01-15T18:07:52Z"
+    generation: 1957
+    labels:
+      app: mongodb-operator
+      cluster: aks-canepro
+    name: aks-rocketchat-mongodb-operator
+    namespace: argocd
+    resourceVersion: "21020819"
+    uid: 8b879220-90d8-42bb-bd11-007e707beb3a
+  spec:
+    destination:
+      namespace: rocketchat
+      server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+    project: default
+    source:
+      chart: mongodb-kubernetes
+      helm:
+        releaseName: mongodb-kubernetes-operator
+      repoURL: https://mongodb.github.io/helm-charts
+      targetRevision: 1.6.1
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+        limit: 5
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-15T18:07:53Z"
+      deployedAt: "2026-01-15T18:07:59Z"
+      id: 0
+      revision: 1.6.1
+      source:
+        chart: mongodb-kubernetes
+        helm:
+          releaseName: mongodb-kubernetes-operator
+        repoURL: https://mongodb.github.io/helm-charts
+        targetRevision: 1.6.1
+    operationState:
+      finishedAt: "2026-01-15T18:08:08Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: mongodb.mongodb.com
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: mongodbmulticluster.mongodb.com
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: opsmanagers.mongodb.com
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: mongodbsearch.mongodb.com
+          - group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            name: mongodbcommunity.mongodbcommunity.mongodb.com
+          revision: 1.6.1
+          syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+      phase: Succeeded
+      startedAt: "2026-01-15T18:08:04Z"
+      syncResult:
+        resources:
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/mongodbcommunity.mongodbcommunity.mongodb.com
+            unchanged
+          name: mongodbcommunity.mongodbcommunity.mongodb.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/mongodbsearch.mongodb.com
+            unchanged
+          name: mongodbsearch.mongodb.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/mongodbmulticluster.mongodb.com
+            unchanged
+          name: mongodbmulticluster.mongodb.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/opsmanagers.mongodb.com
+            unchanged
+          name: opsmanagers.mongodb.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/mongodb.mongodb.com
+            unchanged
+          name: mongodb.mongodb.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: 1.6.1
+        source:
+          chart: mongodb-kubernetes
+          helm:
+            releaseName: mongodb-kubernetes-operator
+          repoURL: https://mongodb.github.io/helm-charts
+          targetRevision: 1.6.1
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - kind: ServiceAccount
+      name: mongodb-kubernetes-appdb
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: mongodb-kubernetes-database-pods
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: mongodb-kubernetes-operator
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: mongodb-kubernetes-ops-manager
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: clustermongodbroles.mongodb.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: mongodb.mongodb.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: mongodbcommunity.mongodbcommunity.mongodb.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: mongodbmulticluster.mongodb.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: mongodbsearch.mongodb.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: mongodbusers.mongodb.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: opsmanagers.mongodb.com
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: mongodb-kubernetes-operator
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: mongodb-kubernetes-operator-cluster-telemetry
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: mongodb-kubernetes-operator-rocketchat-cluster-mongodb-role
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: mongodb-kubernetes-operator-rocketchat-webhook-cr
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: mongodb-kubernetes-operator-rocketchat-cluster-mongodb-role-binding
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: mongodb-kubernetes-operator-rocketchat-cluster-telemetry-binding
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: mongodb-kubernetes-operator-rocketchat-webhook-crb
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: mongodb-kubernetes-appdb
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: mongodb-kubernetes-operator
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: mongodb-kubernetes-operator-pvc-resize
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: mongodb-kubernetes-appdb
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: mongodb-kubernetes-operator
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: mongodb-kubernetes-operator-pvc-resize-binding
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    sourceType: Helm
+    summary:
+      images:
+      - quay.io/mongodb/mongodb-kubernetes:1.6.1
+    sync:
+      comparedTo:
+        destination:
+          namespace: rocketchat
+          server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+        source:
+          chart: mongodb-kubernetes
+          helm:
+            releaseName: mongodb-kubernetes-operator
+          repoURL: https://mongodb.github.io/helm-charts
+          targetRevision: 1.6.1
+      revision: 1.6.1
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"app":"rocketchat-ops","cluster":"aks-canepro"},"name":"aks-rocketchat-ops","namespace":"argocd"},"spec":{"destination":{"namespace":"rocketchat","server":"https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443"},"project":"default","source":{"kustomize":null,"path":"ops","repoURL":"https://github.com/Canepro/rocketchat-k8s.git","targetRevision":"aks-migration"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"retry":{"backoff":{"duration":"5s","factor":2,"maxDuration":"3m"},"limit":5},"syncOptions":["CreateNamespace=true","PrunePropagationPolicy=foreground","PruneLast=true"]}}}
+    creationTimestamp: "2026-01-15T00:33:32Z"
+    generation: 2761
+    labels:
+      app: rocketchat-ops
+      cluster: aks-canepro
+    name: aks-rocketchat-ops
+    namespace: argocd
+    resourceVersion: "21020804"
+    uid: 7bcc6857-5835-4ca2-8fc7-5626a7acd44d
+  operation:
+    initiatedBy:
+      username: admin
+    retry:
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+      limit: 5
+    sync:
+      revision: c24a3f11b614e2e60480b63a4b7499134d6b7009
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      syncStrategy:
+        hook: {}
+  spec:
+    destination:
+      namespace: rocketchat
+      server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+    project: default
+    source:
+      path: ops
+      repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: aks-migration
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+        limit: 5
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Missing
+    history:
+    - deployStartedAt: "2026-01-15T01:20:08Z"
+      deployedAt: "2026-01-15T01:25:41Z"
+      id: 0
+      revision: 21bbd5433867d2afa83cc8c28c4cace62b4be578
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T01:26:14Z"
+      deployedAt: "2026-01-15T01:26:20Z"
+      id: 1
+      revision: 21bbd5433867d2afa83cc8c28c4cace62b4be578
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T02:05:30Z"
+      deployedAt: "2026-01-15T02:05:37Z"
+      id: 2
+      revision: cb744df824380180d74a5f5d1b9564875e581e3a
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T14:52:34Z"
+      deployedAt: "2026-01-15T14:52:40Z"
+      id: 3
+      revision: 4e5f455af7387a75d181318dd565de57773cef29
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T14:52:49Z"
+      deployedAt: "2026-01-15T14:52:55Z"
+      id: 4
+      revision: 4e5f455af7387a75d181318dd565de57773cef29
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T14:55:41Z"
+      deployedAt: "2026-01-15T14:55:46Z"
+      id: 5
+      revision: 4e5f455af7387a75d181318dd565de57773cef29
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T15:41:39Z"
+      deployedAt: "2026-01-15T15:41:45Z"
+      id: 6
+      revision: 0d79f57f3b7dff582e065dc1e2ed8953cdad9632
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T16:39:10Z"
+      deployedAt: "2026-01-15T16:39:16Z"
+      id: 7
+      revision: df4868328198ca9ee5c3f2dd8790c0faf7727e57
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    operationState:
+      message: waiting for healthy state of /PersistentVolumeClaim/rocketchat-uploads
+      operation:
+        initiatedBy:
+          username: admin
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        sync:
+          revision: c24a3f11b614e2e60480b63a4b7499134d6b7009
+          syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          syncStrategy:
+            hook: {}
+      phase: Running
+      startedAt: "2026-01-18T23:30:22Z"
+      syncResult:
+        resources:
+        - group: policy
+          hookPhase: Succeeded
+          kind: PodDisruptionBudget
+          message: poddisruptionbudget.policy/rocketchat-nats configured
+          name: rocketchat-nats
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ServiceAccount
+          message: serviceaccount/node-exporter unchanged
+          name: node-exporter
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ServiceAccount
+          message: serviceaccount/promtail unchanged
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ServiceAccount
+          message: serviceaccount/kube-state-metrics unchanged
+          name: kube-state-metrics
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ServiceAccount
+          message: serviceaccount/prometheus-agent unchanged
+          name: prometheus-agent
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: Secret
+          message: secret/rocketchat-nats-connection configured
+          name: rocketchat-nats-connection
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ConfigMap
+          message: configmap/otel-collector-config unchanged
+          name: otel-collector-config
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ConfigMap
+          message: configmap/promtail-config unchanged
+          name: promtail-config
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ConfigMap
+          message: configmap/rocketchat-nats-config unchanged
+          name: rocketchat-nats-config
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: ConfigMap
+          message: configmap/prometheus-agent-config unchanged
+          name: prometheus-agent-config
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: PersistentVolumeClaim
+          message: persistentvolumeclaim/rocketchat-uploads unchanged
+          name: rocketchat-uploads
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Succeeded
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/podmonitors.monitoring.coreos.com
+            unchanged
+          name: podmonitors.monitoring.coreos.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Succeeded
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/servicemonitors.monitoring.coreos.com
+            unchanged
+          name: servicemonitors.monitoring.coreos.com
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Succeeded
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/kube-state-metrics reconciled.
+            clusterrole.rbac.authorization.k8s.io/kube-state-metrics unchanged
+          name: kube-state-metrics
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Succeeded
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/promtail reconciled. clusterrole.rbac.authorization.k8s.io/promtail
+            unchanged
+          name: promtail
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Succeeded
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/prometheus-agent reconciled.
+            clusterrole.rbac.authorization.k8s.io/prometheus-agent unchanged
+          name: prometheus-agent
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Succeeded
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/kube-state-metrics
+            reconciled. clusterrolebinding.rbac.authorization.k8s.io/kube-state-metrics
+            unchanged
+          name: kube-state-metrics
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Succeeded
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/prometheus-agent reconciled.
+            clusterrolebinding.rbac.authorization.k8s.io/prometheus-agent unchanged
+          name: prometheus-agent
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Succeeded
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/promtail reconciled.
+            clusterrolebinding.rbac.authorization.k8s.io/promtail unchanged
+          name: promtail
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: Service
+          message: service/kube-state-metrics unchanged
+          name: kube-state-metrics
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: Service
+          message: service/node-exporter unchanged
+          name: node-exporter
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: Service
+          message: service/rocketchat-nats-metrics unchanged
+          name: rocketchat-nats-metrics
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: Service
+          message: service/rocketchat-nats unchanged
+          name: rocketchat-nats
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Succeeded
+          kind: Service
+          message: service/otel-collector unchanged
+          name: otel-collector
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: DaemonSet
+          message: daemonset.apps/promtail unchanged
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: DaemonSet
+          message: daemonset.apps/node-exporter unchanged
+          name: node-exporter
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: Deployment
+          message: deployment.apps/kube-state-metrics unchanged
+          name: kube-state-metrics
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: Deployment
+          message: deployment.apps/otel-collector unchanged
+          name: otel-collector
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: Deployment
+          message: deployment.apps/rocketchat-nats-box unchanged
+          name: rocketchat-nats-box
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: Deployment
+          message: deployment.apps/prometheus-agent unchanged
+          name: prometheus-agent
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Succeeded
+          kind: StatefulSet
+          message: 'partitioned roll out complete: 1 new pods have been updated...'
+          name: rocketchat-nats
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: batch
+          hookPhase: Succeeded
+          kind: Job
+          message: Reached expected number of succeeded pods
+          name: otel-tracegen-2025-12-23-10
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: batch
+          hookPhase: Succeeded
+          kind: CronJob
+          message: cronjob.batch/k3s-image-prune unchanged
+          name: k3s-image-prune
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: cert-manager.io
+          hookPhase: Succeeded
+          kind: ClusterIssuer
+          message: The ACME account was registered with the ACME server
+          name: production-cert-issuer
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: monitoring.coreos.com
+          hookPhase: Succeeded
+          kind: ServiceMonitor
+          message: servicemonitor.monitoring.coreos.com/rocketchat-microservices unchanged
+          name: rocketchat-microservices
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: monitoring.coreos.com
+          hookPhase: Succeeded
+          kind: ServiceMonitor
+          message: servicemonitor.monitoring.coreos.com/rocketchat-nats unchanged
+          name: rocketchat-nats
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: monitoring.coreos.com
+          hookPhase: Succeeded
+          kind: ServiceMonitor
+          message: servicemonitor.monitoring.coreos.com/rocketchat-mongodb unchanged
+          name: rocketchat-mongodb
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: monitoring.coreos.com
+          hookPhase: Succeeded
+          kind: ServiceMonitor
+          message: servicemonitor.monitoring.coreos.com/rocketchat-main unchanged
+          name: rocketchat-main
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: c24a3f11b614e2e60480b63a4b7499134d6b7009
+        source:
+          path: ops
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - kind: ConfigMap
+      name: otel-collector-config
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: prometheus-agent-config
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: promtail-config
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: rocketchat-nats-config
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Progressing
+      kind: PersistentVolumeClaim
+      name: mongo-pvc
+      namespace: rocketchat
+      requiresPruning: true
+      status: OutOfSync
+      version: v1
+    - health:
+        status: Progressing
+      kind: PersistentVolumeClaim
+      name: rocketchat-uploads
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: Secret
+      name: rocketchat-nats-connection
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: kube-state-metrics
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: node-exporter
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: otel-collector
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-nats
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: rocketchat-nats-metrics
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: kube-state-metrics
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: node-exporter
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus-agent
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: promtail
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: podmonitors.monitoring.coreos.com
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: servicemonitors.monitoring.coreos.com
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: DaemonSet
+      name: node-exporter
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: DaemonSet
+      name: promtail
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: kube-state-metrics
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: otel-collector
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: prometheus-agent
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: rocketchat-nats-box
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        message: 'partitioned roll out complete: 1 new pods have been updated...'
+        status: Healthy
+      kind: StatefulSet
+      name: rocketchat-nats
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: batch
+      kind: CronJob
+      name: k3s-image-prune
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: batch
+      health:
+        status: Missing
+      kind: Job
+      name: otel-tracegen-2025-12-23-10
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: cert-manager.io
+      health:
+        message: The ACME account was registered with the ACME server
+        status: Healthy
+      kind: ClusterIssuer
+      name: production-cert-issuer
+      status: Synced
+      version: v1
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      name: rocketchat-main
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      name: rocketchat-microservices
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      name: rocketchat-mongodb
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      name: rocketchat-nats
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: policy
+      kind: PodDisruptionBudget
+      name: rocketchat-nats
+      namespace: rocketchat
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: kube-state-metrics
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: prometheus-agent
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: promtail
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: kube-state-metrics
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: prometheus-agent
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: promtail
+      status: Synced
+      version: v1
+    sourceType: Kustomize
+    summary:
+      images:
+      - alpine:3.19
+      - alpine:3.20
+      - grafana/promtail:3.6.0
+      - nats:2.4-alpine
+      - natsio/nats-box:0.8.1
+      - natsio/nats-server-config-reloader:0.6.3
+      - natsio/prometheus-nats-exporter:0.9.1
+      - otel/opentelemetry-collector-contrib:0.142.0
+      - prom/node-exporter:v1.10.2
+      - prom/prometheus:v3.8.1
+      - registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.17.0
+    sync:
+      comparedTo:
+        destination:
+          namespace: rocketchat
+          server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+        source:
+          path: ops
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+      revision: c24a3f11b614e2e60480b63a4b7499134d6b7009
+      status: OutOfSync
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    creationTimestamp: "2026-01-15T22:58:03Z"
+    generation: 1883
+    labels:
+      app: rocketchat-secrets
+      cluster: aks-canepro
+    name: aks-rocketchat-secrets
+    namespace: argocd
+    resourceVersion: "21020787"
+    uid: 578e66db-cd42-4372-b3ef-02debd47b7c9
+  spec:
+    destination:
+      namespace: rocketchat
+      server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+    project: default
+    source:
+      path: ops/secrets
+      repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: aks-migration
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+        limit: 5
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-15T22:58:05Z"
+      deployedAt: "2026-01-15T22:58:50Z"
+      id: 0
+      revision: a73a6377433b977c08a1bb879ee0273efd564434
+      source:
+        path: ops/secrets
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-15T22:59:10Z"
+      deployedAt: "2026-01-15T22:59:12Z"
+      id: 1
+      revision: a73a6377433b977c08a1bb879ee0273efd564434
+      source:
+        path: ops/secrets
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-17T02:18:47Z"
+      deployedAt: "2026-01-17T02:18:51Z"
+      id: 2
+      revision: 6b96be9df5e05197a4a9ae1ce8338f67f4adcbc5
+      source:
+        path: ops/secrets
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-17T02:20:55Z"
+      deployedAt: "2026-01-17T02:20:57Z"
+      id: 3
+      revision: 6b96be9df5e05197a4a9ae1ce8338f67f4adcbc5
+      source:
+        path: ops/secrets
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    operationState:
+      finishedAt: "2026-01-17T02:20:57Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          username: admin
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        sync:
+          revision: 6b96be9df5e05197a4a9ae1ce8338f67f4adcbc5
+          syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          syncStrategy:
+            hook: {}
+      phase: Succeeded
+      startedAt: "2026-01-17T02:20:55Z"
+      syncResult:
+        resources:
+        - group: external-secrets.io
+          hookPhase: Running
+          kind: ClusterSecretStore
+          message: clustersecretstore.external-secrets.io/azure-keyvault unchanged
+          name: azure-keyvault
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1beta1
+        - group: external-secrets.io
+          hookPhase: Running
+          kind: ExternalSecret
+          message: externalsecret.external-secrets.io/mongodb-rocketchat-password
+            configured
+          name: mongodb-rocketchat-password
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1beta1
+        - group: external-secrets.io
+          hookPhase: Running
+          kind: ExternalSecret
+          message: externalsecret.external-secrets.io/observability-credentials configured
+          name: observability-credentials
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1beta1
+        - group: external-secrets.io
+          hookPhase: Running
+          kind: ExternalSecret
+          message: externalsecret.external-secrets.io/mongodb-admin-password configured
+          name: mongodb-admin-password
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1beta1
+        - group: external-secrets.io
+          hookPhase: Running
+          kind: ExternalSecret
+          message: externalsecret.external-secrets.io/metrics-endpoint-password configured
+          name: metrics-endpoint-password
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1beta1
+        - group: external-secrets.io
+          hookPhase: Running
+          kind: ExternalSecret
+          message: externalsecret.external-secrets.io/rocketchat-mongodb-external
+            configured
+          name: rocketchat-mongodb-external
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1beta1
+        revision: 6b96be9df5e05197a4a9ae1ce8338f67f4adcbc5
+        source:
+          path: ops/secrets
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - group: external-secrets.io
+      health:
+        message: store validated
+        status: Healthy
+      kind: ClusterSecretStore
+      name: azure-keyvault
+      status: Synced
+      version: v1beta1
+    - group: external-secrets.io
+      health:
+        message: Secret was synced
+        status: Healthy
+      kind: ExternalSecret
+      name: observability-credentials
+      namespace: monitoring
+      status: Synced
+      version: v1beta1
+    - group: external-secrets.io
+      health:
+        message: Secret was synced
+        status: Healthy
+      kind: ExternalSecret
+      name: metrics-endpoint-password
+      namespace: rocketchat
+      status: Synced
+      version: v1beta1
+    - group: external-secrets.io
+      health:
+        message: Secret was synced
+        status: Healthy
+      kind: ExternalSecret
+      name: mongodb-admin-password
+      namespace: rocketchat
+      status: Synced
+      version: v1beta1
+    - group: external-secrets.io
+      health:
+        message: Secret was synced
+        status: Healthy
+      kind: ExternalSecret
+      name: mongodb-rocketchat-password
+      namespace: rocketchat
+      status: Synced
+      version: v1beta1
+    - group: external-secrets.io
+      health:
+        message: Secret was synced
+        status: Healthy
+      kind: ExternalSecret
+      name: rocketchat-mongodb-external
+      namespace: rocketchat
+      status: Synced
+      version: v1beta1
+    sourceType: Kustomize
+    summary: {}
+    sync:
+      comparedTo:
+        destination:
+          namespace: rocketchat
+          server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+        source:
+          path: ops/secrets
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+      revision: c24a3f11b614e2e60480b63a4b7499134d6b7009
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    creationTimestamp: "2026-01-16T01:02:22Z"
+    generation: 1856
+    labels:
+      app: traefik
+      cluster: aks-canepro
+    name: aks-traefik
+    namespace: argocd
+    resourceVersion: "21020856"
+    uid: 5c9e2377-5b8c-4f66-a7d1-7fc28d9ff6a5
+  spec:
+    destination:
+      namespace: traefik
+      server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+    project: default
+    sources:
+    - chart: traefik
+      helm:
+        releaseName: traefik
+        valueFiles:
+        - $values/traefik-values.yaml
+      repoURL: https://traefik.github.io/charts
+      targetRevision: 34.4.1
+    - ref: values
+      repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: aks-migration
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+        limit: 5
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-16T01:02:24Z"
+      deployedAt: "2026-01-16T01:02:35Z"
+      id: 0
+      revisions:
+      - 34.4.1
+      - 842ff42b28da1d2d56a0a643b32df5234c23cfd9
+      source:
+        repoURL: ""
+      sources:
+      - chart: traefik
+        helm:
+          releaseName: traefik
+          valueFiles:
+          - $values/traefik-values.yaml
+        repoURL: https://traefik.github.io/charts
+        targetRevision: 34.4.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    - deployStartedAt: "2026-01-16T01:40:28Z"
+      deployedAt: "2026-01-16T01:40:34Z"
+      id: 1
+      revisions:
+      - 34.4.1
+      - aca0e5fb3fbd849c7691140cbce89b4a4e78fda1
+      source:
+        repoURL: ""
+      sources:
+      - chart: traefik
+        helm:
+          releaseName: traefik
+          valueFiles:
+          - $values/traefik-values.yaml
+        repoURL: https://traefik.github.io/charts
+        targetRevision: 34.4.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: aks-migration
+    operationState:
+      finishedAt: "2026-01-16T01:40:34Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          username: admin
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        sync:
+          revision: 34.4.1
+          syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          syncStrategy:
+            hook: {}
+      phase: Succeeded
+      startedAt: "2026-01-16T01:40:28Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/traefik unchanged
+          name: traefik
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/accesscontrolpolicies.hub.traefik.io
+            unchanged
+          name: accesscontrolpolicies.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/managedsubscriptions.hub.traefik.io
+            unchanged
+          name: managedsubscriptions.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/ingressrouteudps.traefik.io
+            unchanged
+          name: ingressrouteudps.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/middlewaretcps.traefik.io
+            unchanged
+          name: middlewaretcps.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/ingressroutetcps.traefik.io
+            unchanged
+          name: ingressroutetcps.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/ingressroutes.traefik.io
+            unchanged
+          name: ingressroutes.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/tlsstores.traefik.io
+            unchanged
+          name: tlsstores.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/serverstransports.traefik.io
+            unchanged
+          name: serverstransports.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/serverstransporttcps.traefik.io
+            unchanged
+          name: serverstransporttcps.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apibundles.hub.traefik.io
+            unchanged
+          name: apibundles.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/tlsoptions.traefik.io
+            unchanged
+          name: tlsoptions.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/traefikservices.traefik.io
+            unchanged
+          name: traefikservices.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apiaccesses.hub.traefik.io
+            unchanged
+          name: apiaccesses.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apiplans.hub.traefik.io
+            unchanged
+          name: apiplans.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apiportals.hub.traefik.io
+            unchanged
+          name: apiportals.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apicatalogitems.hub.traefik.io
+            unchanged
+          name: apicatalogitems.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/aiservices.hub.traefik.io
+            unchanged
+          name: aiservices.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apis.hub.traefik.io
+            unchanged
+          name: apis.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/referencegrants.gateway.networking.k8s.io
+            configured
+          name: referencegrants.gateway.networking.k8s.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/middlewares.traefik.io
+            unchanged
+          name: middlewares.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apiversions.hub.traefik.io
+            unchanged
+          name: apiversions.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/apiratelimits.hub.traefik.io
+            unchanged
+          name: apiratelimits.hub.traefik.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/gatewayclasses.gateway.networking.k8s.io
+            configured
+          name: gatewayclasses.gateway.networking.k8s.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/grpcroutes.gateway.networking.k8s.io
+            configured
+          name: grpcroutes.gateway.networking.k8s.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/gateways.gateway.networking.k8s.io
+            configured
+          name: gateways.gateway.networking.k8s.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apiextensions.k8s.io
+          hookPhase: Running
+          kind: CustomResourceDefinition
+          message: customresourcedefinition.apiextensions.k8s.io/httproutes.gateway.networking.k8s.io
+            configured
+          name: httproutes.gateway.networking.k8s.io
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/traefik-traefik reconciled.
+            clusterrole.rbac.authorization.k8s.io/traefik-traefik unchanged
+          name: traefik-traefik
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/traefik-traefik reconciled.
+            clusterrolebinding.rbac.authorization.k8s.io/traefik-traefik unchanged
+          name: traefik-traefik
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/traefik unchanged
+          name: traefik
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/traefik configured
+          name: traefik
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: IngressClass
+          message: ingressclass.networking.k8s.io/traefik unchanged
+          name: traefik
+          namespace: traefik
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 34.4.1
+        - aca0e5fb3fbd849c7691140cbce89b4a4e78fda1
+        source:
+          repoURL: ""
+        sources:
+        - chart: traefik
+          helm:
+            releaseName: traefik
+            valueFiles:
+            - $values/traefik-values.yaml
+          repoURL: https://traefik.github.io/charts
+          targetRevision: 34.4.1
+        - ref: values
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - health:
+        status: Healthy
+      kind: Service
+      name: traefik
+      namespace: traefik
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: traefik
+      namespace: traefik
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: accesscontrolpolicies.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: aiservices.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apiaccesses.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apibundles.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apicatalogitems.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apiplans.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apiportals.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apiratelimits.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apis.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: apiversions.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: gatewayclasses.gateway.networking.k8s.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: gateways.gateway.networking.k8s.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: grpcroutes.gateway.networking.k8s.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: httproutes.gateway.networking.k8s.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: ingressroutes.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: ingressroutetcps.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: ingressrouteudps.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: managedsubscriptions.hub.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: middlewares.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: middlewaretcps.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: referencegrants.gateway.networking.k8s.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: serverstransports.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: serverstransporttcps.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: tlsoptions.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: tlsstores.traefik.io
+      status: Synced
+      version: v1
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: traefikservices.traefik.io
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: traefik
+      namespace: traefik
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: IngressClass
+      name: traefik
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: traefik-traefik
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: traefik-traefik
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - docker.io/traefik:v3.3.4
+    sync:
+      comparedTo:
+        destination:
+          namespace: traefik
+          server: https://aks-canepro-wfcra91z.hcp.uksouth.azmk8s.io:443
+        source:
+          repoURL: ""
+        sources:
+        - chart: traefik
+          helm:
+            releaseName: traefik
+            valueFiles:
+            - $values/traefik-values.yaml
+          repoURL: https://traefik.github.io/charts
+          targetRevision: 34.4.1
+        - ref: values
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: aks-migration
+      revisions:
+      - 34.4.1
+      - c24a3f11b614e2e60480b63a4b7499134d6b7009
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"grafana","namespace":"argocd"},"spec":{"destination":{"namespace":"monitoring","server":"https://kubernetes.default.svc"},"ignoreDifferences":[{"group":"","jsonPointers":["/metadata/labels/app.kubernetes.io~1managed-by"],"kind":"Secret","name":"grafana","namespace":"monitoring"}],"project":"default","sources":[{"chart":"grafana","helm":{"valueFiles":["$values/helm/grafana-values.yaml"]},"repoURL":"https://grafana.github.io/helm-charts","targetRevision":"10.4.0"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true","ServerSideApply=true","RespectIgnoreDifferences=true"]}}}
+    creationTimestamp: "2025-12-17T18:42:04Z"
+    generation: 58565
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: grafana
+    namespace: argocd
+    resourceVersion: "21022136"
+    uid: f39f3953-1d58-4168-987a-795d7d25a147
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    ignoreDifferences:
+    - group: ""
+      jsonPointers:
+      - /metadata/labels/app.kubernetes.io~1managed-by
+      kind: Secret
+      name: grafana
+      namespace: monitoring
+    project: default
+    sources:
+    - chart: grafana
+      helm:
+        valueFiles:
+        - $values/helm/grafana-values.yaml
+      repoURL: https://grafana.github.io/helm-charts
+      targetRevision: 10.4.0
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-12T20:45:48Z"
+      deployedAt: "2026-01-12T20:45:50Z"
+      id: 66
+      revisions:
+      - 10.4.0
+      - d03dc57ba502399532221c56b9f47c6b5bea6ce2
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-12T20:51:48Z"
+      deployedAt: "2026-01-12T20:51:50Z"
+      id: 67
+      revisions:
+      - 10.4.0
+      - 1c5f740d7ed05af6abdf63a057c643174d70440e
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-12T21:57:48Z"
+      deployedAt: "2026-01-12T21:57:50Z"
+      id: 68
+      revisions:
+      - 10.4.0
+      - 67e4672c98252dfa4eb3dc3e1ae86cb5946966bb
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T17:57:51Z"
+      deployedAt: "2026-01-18T17:57:54Z"
+      id: 69
+      revisions:
+      - 10.4.0
+      - 719f4fce626f16a4579a3035e0385d1ef7c6127b
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T19:31:15Z"
+      deployedAt: "2026-01-18T19:31:17Z"
+      id: 70
+      revisions:
+      - 10.4.0
+      - fbfe9cfa7e04105cfec6055a7d5e56880549bc92
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T19:57:50Z"
+      deployedAt: "2026-01-18T19:57:53Z"
+      id: 71
+      revisions:
+      - 10.4.0
+      - e7b527ba04bb69a761de45f52fe280c01d6b6f37
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T20:35:13Z"
+      deployedAt: "2026-01-18T20:35:14Z"
+      id: 72
+      revisions:
+      - 10.4.0
+      - 8c925149d35a9ac875b7950d1ac5201f8322ef19
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T20:43:30Z"
+      deployedAt: "2026-01-18T20:43:32Z"
+      id: 73
+      revisions:
+      - 10.4.0
+      - 4140a2e70297bbb0197b294ca0d38e4f9659726a
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T21:03:50Z"
+      deployedAt: "2026-01-18T21:03:52Z"
+      id: 74
+      revisions:
+      - 10.4.0
+      - 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:16:30Z"
+      deployedAt: "2026-01-19T19:16:32Z"
+      id: 75
+      revisions:
+      - 10.4.0
+      - 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        repoURL: ""
+      sources:
+      - chart: grafana
+        helm:
+          valueFiles:
+          - $values/helm/grafana-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 10.4.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:35:49Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apps
+            kind: Deployment
+            name: grafana
+          revisions:
+          - 10.4.0
+          - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+          syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+      phase: Succeeded
+      startedAt: "2026-01-19T19:35:48Z"
+      syncResult:
+        resources:
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/grafana serverside-applied
+          name: grafana
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 10.4.0
+        - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          repoURL: ""
+        sources:
+        - chart: grafana
+          helm:
+            valueFiles:
+            - $values/helm/grafana-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 10.4.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:35:49Z"
+    resources:
+    - kind: ConfigMap
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: grafana-dashboards-default
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: PersistentVolumeClaim
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: Secret
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: grafana
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: grafana-clusterrole
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: grafana-clusterrolebinding
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - docker.io/curlimages/curl:8.9.1
+      - docker.io/grafana/grafana:12.3.0
+      - docker.io/library/busybox:1.31.1
+    sync:
+      comparedTo:
+        destination:
+          namespace: monitoring
+          server: https://kubernetes.default.svc
+        ignoreDifferences:
+        - jsonPointers:
+          - /metadata/labels/app.kubernetes.io~1managed-by
+          kind: Secret
+          name: grafana
+          namespace: monitoring
+        source:
+          repoURL: ""
+        sources:
+        - chart: grafana
+          helm:
+            valueFiles:
+            - $values/helm/grafana-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 10.4.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 10.4.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: OutOfSync
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"k8-canepro-rocketchat","namespace":"argocd"},"spec":{"destination":{"name":"k8.canepro.me","namespace":"rocketchat"},"project":"canepro-spoke","sources":[{"chart":"rocketchat","helm":{"releaseName":"rocketchat","valueFiles":["$values/values.yaml"]},"repoURL":"https://rocketchat.github.io/helm-charts","targetRevision":"6.29.0"},{"ref":"values","repoURL":"https://github.com/Canepro/rocketchat-k8s.git","targetRevision":"master"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}
+    creationTimestamp: "2025-12-18T21:27:36Z"
+    generation: 28464
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: k8-canepro-rocketchat
+    namespace: argocd
+    resourceVersion: "21021124"
+    uid: 1cc2dca9-23c3-4e93-8fc0-a6b2644dd4c7
+  spec:
+    destination:
+      name: k8.canepro.me
+      namespace: rocketchat
+    project: canepro-spoke
+    sources:
+    - chart: rocketchat
+      helm:
+        releaseName: rocketchat
+        valueFiles:
+        - $values/values.yaml
+      repoURL: https://rocketchat.github.io/helm-charts
+      targetRevision: 6.29.0
+    - ref: values
+      repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: master
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+  status:
+    conditions:
+    - lastTransitionTime: "2026-01-16T12:15:45Z"
+      message: 'Failed to load live state: failed to get cluster info for "https://k8.canepro.me:6443":
+        error synchronizing cache state : Get "https://k8.canepro.me:6443/version?timeout=32s":
+        dial tcp 85.210.181.37:6443: i/o timeout'
+      type: ComparisonError
+    - lastTransitionTime: "2026-01-19T19:34:21Z"
+      message: 'Failed to load target state: failed to get cluster version for cluster
+        "https://k8.canepro.me:6443": failed to get cluster info for "https://k8.canepro.me:6443":
+        error synchronizing cache state : Get "https://k8.canepro.me:6443/version?timeout=32s":
+        dial tcp 85.210.181.37:6443: i/o timeout'
+      type: ComparisonError
+    - lastTransitionTime: "2026-01-19T19:34:21Z"
+      message: 'error synchronizing cache state : Get "https://k8.canepro.me:6443/version?timeout=32s":
+        dial tcp 85.210.181.37:6443: i/o timeout'
+      type: UnknownError
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-18T23:35:36Z"
+      deployedAt: "2025-12-18T23:36:07Z"
+      id: 3
+      revision: e9e94f51598cd0122bd336c35efed9395667b451
+      source:
+        path: .
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-19T00:00:37Z"
+      deployedAt: "2025-12-19T00:00:45Z"
+      id: 4
+      revision: 06397f876380e7de5a1fbe95ec8cd9a0bf77c90c
+      source:
+        path: .
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-19T00:01:37Z"
+      deployedAt: "2025-12-19T00:01:44Z"
+      id: 5
+      revision: 06397f876380e7de5a1fbe95ec8cd9a0bf77c90c
+      source:
+        path: .
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-21T23:17:41Z"
+      deployedAt: "2025-12-21T23:17:50Z"
+      id: 6
+      revisions:
+      - 6.27.1
+      - 7985fc1234f701a83f35c3a61572cd18a9dcb9fe
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-21T23:34:32Z"
+      deployedAt: "2025-12-21T23:34:38Z"
+      id: 7
+      revisions:
+      - 6.27.1
+      - d05a62b7074b83c8f1a6be3b777ee6b435cefb35
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-21T23:42:36Z"
+      deployedAt: "2025-12-21T23:42:42Z"
+      id: 8
+      revisions:
+      - 6.27.1
+      - 87dc7c00dc0f593e7775051be3ee994e44541fff
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-21T23:57:48Z"
+      deployedAt: "2025-12-21T23:57:53Z"
+      id: 9
+      revisions:
+      - 6.27.1
+      - d8ee9e9d2e93ea6e0ab78bff81383defd4b8840c
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-22T00:11:44Z"
+      deployedAt: "2025-12-22T00:11:48Z"
+      id: 10
+      revisions:
+      - 6.27.1
+      - fd660d2e53eb24ff01d57b5f4c4c30ab7c6034ec
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-22T15:06:05Z"
+      deployedAt: "2025-12-22T15:06:11Z"
+      id: 11
+      revisions:
+      - 6.27.1
+      - 4176d6869a5f865b04a92279bcc39c768cdf9722
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-22T19:54:29Z"
+      deployedAt: "2025-12-22T19:54:33Z"
+      id: 12
+      revisions:
+      - 6.27.1
+      - 62748232e627975197a7309fb56fb6731fc1ccb8
+      source:
+        repoURL: ""
+      sources:
+      - chart: rocketchat
+        helm:
+          releaseName: rocketchat
+          valueFiles:
+          - $values/values.yaml
+        repoURL: https://rocketchat.github.io/helm-charts
+        targetRevision: 6.27.1
+      - ref: values
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    operationState:
+      finishedAt: "2025-12-22T19:54:33Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          username: admin
+        retry: {}
+        sync:
+          revision: 6.27.1
+          syncOptions:
+          - CreateNamespace=true
+          syncStrategy:
+            hook:
+              force: true
+      phase: Succeeded
+      startedAt: "2025-12-22T19:54:29Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Secret
+          message: secret/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: PersistentVolumeClaim
+          message: persistentvolumeclaim/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-account unchanged
+          name: rocketchat-account
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-presence unchanged
+          name: rocketchat-presence
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-authorization unchanged
+          name: rocketchat-authorization
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-ddp-streamer unchanged
+          name: rocketchat-ddp-streamer
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-stream-hub unchanged
+          name: rocketchat-stream-hub
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/rocketchat-rocketchat-monolith-ms-metrics unchanged
+          name: rocketchat-rocketchat-monolith-ms-metrics
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-account configured
+          name: rocketchat-account
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-stream-hub configured
+          name: rocketchat-stream-hub
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-presence configured
+          name: rocketchat-presence
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-rocketchat configured
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-ddp-streamer configured
+          name: rocketchat-ddp-streamer
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/rocketchat-authorization configured
+          name: rocketchat-authorization
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/rocketchat-rocketchat unchanged
+          name: rocketchat-rocketchat
+          namespace: rocketchat
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 6.27.1
+        - 62748232e627975197a7309fb56fb6731fc1ccb8
+        source:
+          repoURL: ""
+        sources:
+        - chart: rocketchat
+          helm:
+            releaseName: rocketchat
+            valueFiles:
+            - $values/values.yaml
+          repoURL: https://rocketchat.github.io/helm-charts
+          targetRevision: 6.27.1
+        - ref: values
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: master
+    reconciledAt: "2026-01-19T19:34:21Z"
+    summary:
+      externalURLs:
+      - https://k8.canepro.me/
+      - https://k8.canepro.me/sockjs
+      - https://k8.canepro.me/websocket
+      images:
+      - registry.rocket.chat/rocketchat/rocket.chat:7.13.2
+      - rocketchat/account-service:7.13.2
+      - rocketchat/authorization-service:7.13.2
+      - rocketchat/ddp-streamer-service:7.13.2
+      - rocketchat/presence-service:7.13.2
+      - rocketchat/stream-hub-service:7.13.2
+    sync:
+      comparedTo:
+        destination:
+          name: k8.canepro.me
+          namespace: rocketchat
+        source:
+          repoURL: ""
+        sources:
+        - chart: rocketchat
+          helm:
+            releaseName: rocketchat
+            valueFiles:
+            - $values/values.yaml
+          repoURL: https://rocketchat.github.io/helm-charts
+          targetRevision: 6.29.0
+        - ref: values
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: master
+      status: Unknown
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"k8-canepro-rocketchat-ops","namespace":"argocd"},"spec":{"destination":{"name":"k8.canepro.me","namespace":"rocketchat"},"project":"canepro-spoke","source":{"path":"ops","repoURL":"https://github.com/Canepro/rocketchat-k8s.git","targetRevision":"master"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}
+    creationTimestamp: "2025-12-21T23:12:46Z"
+    generation: 25980
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: k8-canepro-rocketchat-ops
+    namespace: argocd
+    resourceVersion: "21019893"
+    uid: e94021a1-9944-475b-90b1-49ca7e37c964
+  spec:
+    destination:
+      name: k8.canepro.me
+      namespace: rocketchat
+    project: canepro-spoke
+    source:
+      path: ops
+      repoURL: https://github.com/Canepro/rocketchat-k8s.git
+      targetRevision: master
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+  status:
+    conditions:
+    - lastTransitionTime: "2026-01-16T12:15:45Z"
+      message: 'Failed to load live state: failed to get cluster info for "https://k8.canepro.me:6443":
+        error synchronizing cache state : Get "https://k8.canepro.me:6443/version?timeout=32s":
+        dial tcp 85.210.181.37:6443: i/o timeout'
+      type: ComparisonError
+    - lastTransitionTime: "2026-01-19T19:31:21Z"
+      message: 'Failed to load target state: failed to get cluster version for cluster
+        "https://k8.canepro.me:6443": failed to get cluster info for "https://k8.canepro.me:6443":
+        error synchronizing cache state : Get "https://k8.canepro.me:6443/version?timeout=32s":
+        dial tcp 85.210.181.37:6443: i/o timeout'
+      type: ComparisonError
+    - lastTransitionTime: "2026-01-19T19:31:21Z"
+      message: 'error synchronizing cache state : Get "https://k8.canepro.me:6443/version?timeout=32s":
+        dial tcp 85.210.181.37:6443: i/o timeout'
+      type: UnknownError
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-23T15:56:03Z"
+      deployedAt: "2025-12-23T15:56:10Z"
+      id: 25
+      revision: cd26389e8aac2d228bc58db5a996d7e1f7c22e83
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T20:33:58Z"
+      deployedAt: "2025-12-23T20:34:06Z"
+      id: 26
+      revision: 4b57b7728147775d4d902fd23f8a72bf36a02591
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T20:40:01Z"
+      deployedAt: "2025-12-23T20:40:09Z"
+      id: 27
+      revision: 4b57b7728147775d4d902fd23f8a72bf36a02591
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T21:10:04Z"
+      deployedAt: "2025-12-23T21:10:12Z"
+      id: 28
+      revision: 5192314bdfcf430962ffe08375f971c5b9213ec7
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T21:26:46Z"
+      deployedAt: "2025-12-23T21:26:53Z"
+      id: 29
+      revision: d93bc0bae51553b38470215d90e208ac6bd07a64
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T21:38:07Z"
+      deployedAt: "2025-12-23T21:38:15Z"
+      id: 30
+      revision: ee837708985ae8edc52b2d566ba86c18ff85fa56
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T21:38:16Z"
+      deployedAt: "2025-12-23T21:38:24Z"
+      id: 31
+      revision: d93bc0bae51553b38470215d90e208ac6bd07a64
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T21:38:25Z"
+      deployedAt: "2025-12-23T21:38:33Z"
+      id: 32
+      revision: ee837708985ae8edc52b2d566ba86c18ff85fa56
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-23T22:06:29Z"
+      deployedAt: "2025-12-23T22:06:37Z"
+      id: 33
+      revision: 4b2765c112c9ddc86c8afc4b25ed7eb27d7b4f3f
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    - deployStartedAt: "2025-12-24T14:39:38Z"
+      deployedAt: "2025-12-24T14:39:47Z"
+      id: 34
+      revision: 74e903ac8db0cbd89d46ad93be6015bfe3a49876
+      source:
+        path: ops
+        repoURL: https://github.com/Canepro/rocketchat-k8s.git
+        targetRevision: master
+    operationState:
+      finishedAt: "2026-01-14T09:23:41Z"
+      message: one or more synchronization tasks are not valid (retried 5 times).
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: batch
+            kind: Job
+            name: otel-tracegen-2025-12-23-10
+          revision: 74e903ac8db0cbd89d46ad93be6015bfe3a49876
+          syncOptions:
+          - CreateNamespace=true
+      phase: Failed
+      retryCount: 5
+      startedAt: "2026-01-14T09:18:27Z"
+      syncResult:
+        resources:
+        - group: ""
+          kind: Namespace
+          message: 'Get "https://k8.canepro.me:6443/api/v1?timeout=32s": dial tcp:
+            lookup k8.canepro.me on 10.96.5.5:53: no such host'
+          name: rocketchat
+          namespace: ""
+          status: SyncFailed
+          syncPhase: PreSync
+          version: v1
+        - group: batch
+          kind: Job
+          message: 'Get "https://k8.canepro.me:6443/apis/batch/v1?timeout=32s": dial
+            tcp: lookup k8.canepro.me on 10.96.5.5:53: no such host'
+          name: otel-tracegen-2025-12-23-10
+          namespace: monitoring
+          status: SyncFailed
+          syncPhase: Sync
+          version: v1
+        revision: 74e903ac8db0cbd89d46ad93be6015bfe3a49876
+        source:
+          path: ops
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: master
+    reconciledAt: "2026-01-19T19:31:21Z"
+    summary:
+      images:
+      - alpine:3.19
+      - docker.io/bitnamilegacy/mongodb-exporter:0.39.0-debian-11-r106
+      - docker.io/bitnamilegacy/mongodb:6.0.10-debian-11-r8
+      - docker.io/bitnamilegacy/os-shell:11-debian-11-r72
+      - nats:2.4-alpine
+      - natsio/nats-box:0.8.1
+      - natsio/nats-server-config-reloader:0.6.3
+      - natsio/prometheus-nats-exporter:0.9.1
+      - otel/opentelemetry-collector-contrib:0.88.0
+      - prom/prometheus:v2.45.0
+    sync:
+      comparedTo:
+        destination:
+          name: k8.canepro.me
+          namespace: rocketchat
+        source:
+          path: ops
+          repoURL: https://github.com/Canepro/rocketchat-k8s.git
+          targetRevision: master
+      status: Unknown
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"loki","namespace":"argocd"},"spec":{"destination":{"namespace":"monitoring","server":"https://kubernetes.default.svc"},"project":"default","sources":[{"chart":"loki","helm":{"valueFiles":["$values/helm/loki-values.yaml"]},"repoURL":"https://grafana.github.io/helm-charts","targetRevision":"6.46.0"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true","Replace=true","ServerSideApply=true"]}}}
+    creationTimestamp: "2025-12-17T18:42:04Z"
+    generation: 60777
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: loki
+    namespace: argocd
+    resourceVersion: "21022060"
+    uid: a29ee0cb-df6a-453b-877a-d4d3f14d0e9f
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    sources:
+    - chart: loki
+      helm:
+        valueFiles:
+        - $values/helm/loki-values.yaml
+      repoURL: https://grafana.github.io/helm-charts
+      targetRevision: 6.46.0
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - Replace=true
+      - ServerSideApply=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-18T00:19:26Z"
+      deployedAt: "2025-12-18T00:19:26Z"
+      id: 3
+      revisions:
+      - 6.6.2
+      - 9092c30eec20b5cdcb56d3b220f5677ad8dee67d
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.6.2
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T00:30:39Z"
+      deployedAt: "2025-12-18T00:30:40Z"
+      id: 4
+      revisions:
+      - 6.6.2
+      - 70003c35bf26addb42b20149cb5c8e2f26650ba4
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.6.2
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T00:40:52Z"
+      deployedAt: "2025-12-18T00:40:53Z"
+      id: 5
+      revisions:
+      - 6.6.2
+      - 6ce26f0cf21eb9dc633ab91a8646d0504c838c7d
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.6.2
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T03:44:34Z"
+      deployedAt: "2025-12-18T03:44:34Z"
+      id: 6
+      revisions:
+      - 6.46.0
+      - bd38fac6c13993cd2ca7de5460e796ded9a91135
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T03:49:09Z"
+      deployedAt: "2025-12-18T03:49:20Z"
+      id: 7
+      revisions:
+      - 6.46.0
+      - 81df63df6ebed2e05164b0e0b653b65b2ef468ac
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T03:52:36Z"
+      deployedAt: "2025-12-18T03:52:48Z"
+      id: 8
+      revisions:
+      - 6.46.0
+      - f610d57678ac9dda936b4330ca3cad4a832780aa
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T03:56:00Z"
+      deployedAt: "2025-12-18T03:56:01Z"
+      id: 9
+      revisions:
+      - 6.46.0
+      - f610d57678ac9dda936b4330ca3cad4a832780aa
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T22:15:51Z"
+      deployedAt: "2026-01-18T22:15:53Z"
+      id: 10
+      revisions:
+      - 6.46.0
+      - 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:16:34Z"
+      deployedAt: "2026-01-19T19:16:34Z"
+      id: 11
+      revisions:
+      - 6.46.0
+      - 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:33:59Z"
+      deployedAt: "2026-01-19T19:34:00Z"
+      id: 12
+      revisions:
+      - 6.46.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      source:
+        repoURL: ""
+      sources:
+      - chart: loki
+        helm:
+          valueFiles:
+          - $values/helm/loki-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.46.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:35:43Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apps
+            kind: StatefulSet
+            name: loki
+          - group: apps
+            kind: DaemonSet
+            name: loki-canary
+          revisions:
+          - 6.46.0
+          - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+          syncOptions:
+          - CreateNamespace=true
+          - Replace=true
+          - ServerSideApply=true
+      phase: Succeeded
+      startedAt: "2026-01-19T19:35:42Z"
+      syncResult:
+        resources:
+        - group: apps
+          hookPhase: Running
+          kind: DaemonSet
+          message: daemonset.apps/loki-canary replaced
+          name: loki-canary
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: StatefulSet
+          message: statefulset.apps/loki replaced
+          name: loki
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 6.46.0
+        - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          repoURL: ""
+        sources:
+        - chart: loki
+          helm:
+            valueFiles:
+            - $values/helm/loki-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 6.46.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:35:43Z"
+    resources:
+    - kind: ConfigMap
+      name: loki
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: loki-gateway
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: loki-runtime
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: loki
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: loki-canary
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: loki-gateway
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: loki-headless
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: loki-memberlist
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: loki
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: loki-canary
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: DaemonSet
+      name: loki-canary
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: loki-gateway
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        message: 'partitioned roll out complete: 1 new pods have been updated...'
+        status: Healthy
+      kind: StatefulSet
+      name: loki
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: loki-clusterrole
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: loki-clusterrolebinding
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - docker.io/grafana/loki-canary:3.5.7
+      - docker.io/grafana/loki:3.5.7
+      - docker.io/kiwigrid/k8s-sidecar:1.30.10
+      - docker.io/nginxinc/nginx-unprivileged:1.29-alpine
+    sync:
+      comparedTo:
+        destination:
+          namespace: monitoring
+          server: https://kubernetes.default.svc
+        source:
+          repoURL: ""
+        sources:
+        - chart: loki
+          helm:
+            valueFiles:
+            - $values/helm/loki-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 6.46.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 6.46.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: OutOfSync
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"metrics-server","namespace":"argocd"},"spec":{"destination":{"namespace":"kube-system","server":"https://kubernetes.default.svc"},"project":"default","sources":[{"chart":"metrics-server","helm":{"valueFiles":["$values/helm/metrics-server-values.yaml"]},"repoURL":"https://kubernetes-sigs.github.io/metrics-server/","targetRevision":"3.13.0"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true","ServerSideApply=true"]}}}
+    creationTimestamp: "2025-12-19T21:47:51Z"
+    generation: 15223
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: metrics-server
+    namespace: argocd
+    resourceVersion: "21022239"
+    uid: 788ded30-8cc4-4b16-ae46-f8502f97be43
+  spec:
+    destination:
+      namespace: kube-system
+      server: https://kubernetes.default.svc
+    project: default
+    sources:
+    - chart: metrics-server
+      helm:
+        valueFiles:
+        - $values/helm/metrics-server-values.yaml
+      repoURL: https://kubernetes-sigs.github.io/metrics-server/
+      targetRevision: 3.13.0
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-19T21:47:52Z"
+      deployedAt: "2025-12-19T21:47:53Z"
+      id: 0
+      revisions:
+      - 3.12.1
+      - f3fd78ca245d32c31eba0d5ab6e936d0821af868
+      source:
+        repoURL: ""
+      sources:
+      - chart: metrics-server
+        helm:
+          valueFiles:
+          - $values/helm/metrics-server-values.yaml
+        repoURL: https://kubernetes-sigs.github.io/metrics-server/
+        targetRevision: 3.12.1
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:28:06Z"
+      deployedAt: "2026-01-19T19:28:07Z"
+      id: 1
+      revisions:
+      - 3.13.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      source:
+        repoURL: ""
+      sources:
+      - chart: metrics-server
+        helm:
+          valueFiles:
+          - $values/helm/metrics-server-values.yaml
+        repoURL: https://kubernetes-sigs.github.io/metrics-server/
+        targetRevision: 3.13.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:36:04Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apiregistration.k8s.io
+            kind: APIService
+            name: v1beta1.metrics.k8s.io
+          revisions:
+          - 3.13.0
+          - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+          syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+      phase: Succeeded
+      startedAt: "2026-01-19T19:36:04Z"
+      syncResult:
+        resources:
+        - group: apiregistration.k8s.io
+          hookPhase: Running
+          kind: APIService
+          message: apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io serverside-applied
+          name: v1beta1.metrics.k8s.io
+          namespace: kube-system
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 3.13.0
+        - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          repoURL: ""
+        sources:
+        - chart: metrics-server
+          helm:
+            valueFiles:
+            - $values/helm/metrics-server-values.yaml
+          repoURL: https://kubernetes-sigs.github.io/metrics-server/
+          targetRevision: 3.13.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:36:04Z"
+    resources:
+    - health:
+        status: Healthy
+      kind: Service
+      name: metrics-server
+      namespace: kube-system
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: metrics-server
+      namespace: kube-system
+      status: Synced
+      version: v1
+    - group: apiregistration.k8s.io
+      health:
+        message: 'Passed: all checks passed'
+        status: Healthy
+      kind: APIService
+      name: v1beta1.metrics.k8s.io
+      status: OutOfSync
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: metrics-server
+      namespace: kube-system
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: system:metrics-server
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: system:metrics-server-aggregated-reader
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: metrics-server:system:auth-delegator
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: system:metrics-server
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: metrics-server-auth-reader
+      namespace: kube-system
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - registry.k8s.io/metrics-server/metrics-server:v0.8.0
+    sync:
+      comparedTo:
+        destination:
+          namespace: kube-system
+          server: https://kubernetes.default.svc
+        source:
+          repoURL: ""
+        sources:
+        - chart: metrics-server
+          helm:
+            valueFiles:
+            - $values/helm/metrics-server-values.yaml
+          repoURL: https://kubernetes-sigs.github.io/metrics-server/
+          targetRevision: 3.13.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 3.13.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: OutOfSync
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"nginx-ingress","namespace":"argocd"},"spec":{"destination":{"namespace":"ingress-nginx","server":"https://kubernetes.default.svc"},"project":"default","sources":[{"chart":"ingress-nginx","helm":{"valueFiles":["$values/helm/nginx-ingress-values.yaml"]},"repoURL":"https://kubernetes.github.io/ingress-nginx","targetRevision":"4.14.1"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}
+    creationTimestamp: "2025-12-17T18:42:04Z"
+    generation: 15859
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: nginx-ingress
+    namespace: argocd
+    resourceVersion: "21020790"
+    uid: c5a9dd31-5fcf-434b-9acd-177eb2374791
+  spec:
+    destination:
+      namespace: ingress-nginx
+      server: https://kubernetes.default.svc
+    project: default
+    sources:
+    - chart: ingress-nginx
+      helm:
+        valueFiles:
+        - $values/helm/nginx-ingress-values.yaml
+      repoURL: https://kubernetes.github.io/ingress-nginx
+      targetRevision: 4.14.1
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-17T18:42:10Z"
+      deployedAt: "2025-12-17T18:42:13Z"
+      id: 0
+      revisions:
+      - 4.9.0
+      - 77521864cb10ade1e1557e53169756386ced9ccb
+      source:
+        repoURL: ""
+      sources:
+      - chart: ingress-nginx
+        helm:
+          valueFiles:
+          - $values/helm/nginx-ingress-values.yaml
+        repoURL: https://kubernetes.github.io/ingress-nginx
+        targetRevision: 4.9.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-17T23:39:00Z"
+      deployedAt: "2025-12-17T23:39:00Z"
+      id: 1
+      revisions:
+      - 4.9.0
+      - f0e781e96795d01438c53d6dfac463f4d96a3bd4
+      source:
+        repoURL: ""
+      sources:
+      - chart: ingress-nginx
+        helm:
+          valueFiles:
+          - $values/helm/nginx-ingress-values.yaml
+        repoURL: https://kubernetes.github.io/ingress-nginx
+        targetRevision: 4.9.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:28:07Z"
+      deployedAt: "2026-01-19T19:28:09Z"
+      id: 2
+      revisions:
+      - 4.14.1
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      source:
+        repoURL: ""
+      sources:
+      - chart: ingress-nginx
+        helm:
+          valueFiles:
+          - $values/helm/nginx-ingress-values.yaml
+        repoURL: https://kubernetes.github.io/ingress-nginx
+        targetRevision: 4.14.1
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:28:09Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          revisions:
+          - 4.14.1
+          - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+          syncOptions:
+          - CreateNamespace=true
+      phase: Succeeded
+      startedAt: "2026-01-19T19:28:07Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/nginx-ingress-ingress-nginx configured
+          name: nginx-ingress-ingress-nginx
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/nginx-ingress-ingress-nginx-controller configured
+          name: nginx-ingress-ingress-nginx-controller
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx
+            reconciled. clusterrole.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx
+            configured
+          name: nginx-ingress-ingress-nginx
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx
+            reconciled. clusterrolebinding.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx
+            configured
+          name: nginx-ingress-ingress-nginx
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: Role
+          message: role.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx reconciled.
+            role.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx configured
+          name: nginx-ingress-ingress-nginx
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: RoleBinding
+          message: rolebinding.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx
+            reconciled. rolebinding.rbac.authorization.k8s.io/nginx-ingress-ingress-nginx
+            configured
+          name: nginx-ingress-ingress-nginx
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/nginx-ingress-ingress-nginx-controller configured
+          name: nginx-ingress-ingress-nginx-controller
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/nginx-ingress-ingress-nginx-controller configured
+          name: nginx-ingress-ingress-nginx-controller
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: IngressClass
+          message: ingressclass.networking.k8s.io/nginx configured
+          name: nginx
+          namespace: ingress-nginx
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 4.14.1
+        - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          repoURL: ""
+        sources:
+        - chart: ingress-nginx
+          helm:
+            valueFiles:
+            - $values/helm/nginx-ingress-values.yaml
+          repoURL: https://kubernetes.github.io/ingress-nginx
+          targetRevision: 4.14.1
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - kind: ConfigMap
+      name: nginx-ingress-ingress-nginx-controller
+      namespace: ingress-nginx
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: nginx-ingress-ingress-nginx-controller
+      namespace: ingress-nginx
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: nginx-ingress-ingress-nginx
+      namespace: ingress-nginx
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: nginx-ingress-ingress-nginx-controller
+      namespace: ingress-nginx
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: IngressClass
+      name: nginx
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: nginx-ingress-ingress-nginx
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: nginx-ingress-ingress-nginx
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: nginx-ingress-ingress-nginx
+      namespace: ingress-nginx
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: nginx-ingress-ingress-nginx
+      namespace: ingress-nginx
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - registry.k8s.io/ingress-nginx/controller:v1.14.1@sha256:f95a79b85fb93ac3de752c71a5c27d5ceae10a18b61904dec224c1c6a4581e47
+    sync:
+      comparedTo:
+        destination:
+          namespace: ingress-nginx
+          server: https://kubernetes.default.svc
+        source:
+          repoURL: ""
+        sources:
+        - chart: ingress-nginx
+          helm:
+            valueFiles:
+            - $values/helm/nginx-ingress-values.yaml
+          repoURL: https://kubernetes.github.io/ingress-nginx
+          targetRevision: 4.14.1
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 4.14.1
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"name":"oke-observability-stack","namespace":"argocd"},"spec":{"destination":{"namespace":"argocd","server":"https://kubernetes.default.svc"},"project":"default","source":{"directory":{"recurse":true},"path":"argocd/applications","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}
+    creationTimestamp: "2025-12-17T18:42:01Z"
+    generation: 63338
+    name: oke-observability-stack
+    namespace: argocd
+    resourceVersion: "21022131"
+    uid: 1bc8e5c5-79bd-423c-8284-029dfdd0f113
+  spec:
+    destination:
+      namespace: argocd
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      directory:
+        jsonnet: {}
+        recurse: true
+      path: argocd/applications
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-04T22:48:46Z"
+      deployedAt: "2026-01-04T22:48:47Z"
+      id: 34
+      revision: a0bfbd776b471fb65f01e1fe9d22b46384085d04
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-12T20:45:48Z"
+      deployedAt: "2026-01-12T20:45:49Z"
+      id: 35
+      revision: d03dc57ba502399532221c56b9f47c6b5bea6ce2
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-12T20:51:48Z"
+      deployedAt: "2026-01-12T20:51:49Z"
+      id: 36
+      revision: 1c5f740d7ed05af6abdf63a057c643174d70440e
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-12T21:57:48Z"
+      deployedAt: "2026-01-12T21:57:49Z"
+      id: 37
+      revision: 67e4672c98252dfa4eb3dc3e1ae86cb5946966bb
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T17:57:52Z"
+      deployedAt: "2026-01-18T17:57:53Z"
+      id: 38
+      revision: 719f4fce626f16a4579a3035e0385d1ef7c6127b
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T19:57:51Z"
+      deployedAt: "2026-01-18T19:57:52Z"
+      id: 39
+      revision: fbfe9cfa7e04105cfec6055a7d5e56880549bc92
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T20:35:13Z"
+      deployedAt: "2026-01-18T20:35:13Z"
+      id: 40
+      revision: e7b527ba04bb69a761de45f52fe280c01d6b6f37
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T20:43:30Z"
+      deployedAt: "2026-01-18T20:43:31Z"
+      id: 41
+      revision: 8c925149d35a9ac875b7950d1ac5201f8322ef19
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T21:03:51Z"
+      deployedAt: "2026-01-18T21:03:52Z"
+      id: 42
+      revision: 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:28:02Z"
+      deployedAt: "2026-01-19T19:28:03Z"
+      id: 43
+      revision: 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      source:
+        directory:
+          jsonnet: {}
+          recurse: true
+        path: argocd/applications
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:35:49Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: argoproj.io
+            kind: Application
+            name: grafana
+          revision: 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      phase: Succeeded
+      startedAt: "2026-01-19T19:35:48Z"
+      syncResult:
+        resources:
+        - group: argoproj.io
+          hookPhase: Running
+          kind: Application
+          message: application.argoproj.io/grafana configured
+          name: grafana
+          namespace: argocd
+          status: Synced
+          syncPhase: Sync
+          version: v1alpha1
+        revision: 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          directory:
+            jsonnet: {}
+            recurse: true
+          path: argocd/applications
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:35:49Z"
+    resources:
+    - group: argoproj.io
+      kind: AppProject
+      name: canepro-spoke
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: grafana
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: k8-canepro-rocketchat
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: k8-canepro-rocketchat-ops
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: loki
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: metrics-server
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: nginx-ingress
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: prometheus
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: promtail
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      kind: Application
+      name: tempo
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    sourceType: Directory
+    summary: {}
+    sync:
+      comparedTo:
+        destination:
+          namespace: argocd
+          server: https://kubernetes.default.svc
+        source:
+          directory:
+            jsonnet: {}
+            recurse: true
+          path: argocd/applications
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revision: 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"prometheus","namespace":"argocd"},"spec":{"destination":{"namespace":"monitoring","server":"https://kubernetes.default.svc"},"ignoreDifferences":[{"group":"apps","jsonPointers":["/spec/volumeClaimTemplates"],"kind":"StatefulSet","name":"prometheus-alertmanager"}],"project":"default","sources":[{"chart":"prometheus","helm":{"valueFiles":["$values/helm/prometheus-values.yaml"]},"repoURL":"https://prometheus-community.github.io/helm-charts","targetRevision":"25.8.0"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true","ServerSideApply=true"]}}}
+    creationTimestamp: "2025-12-17T18:42:04Z"
+    generation: 74754
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: prometheus
+    namespace: argocd
+    resourceVersion: "21022213"
+    uid: 5a571c45-1944-401f-a72a-11d39dd52eb8
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    ignoreDifferences:
+    - group: apps
+      jsonPointers:
+      - /spec/volumeClaimTemplates
+      kind: StatefulSet
+      name: prometheus-alertmanager
+    project: default
+    sources:
+    - chart: prometheus
+      helm:
+        valueFiles:
+        - $values/helm/prometheus-values.yaml
+      repoURL: https://prometheus-community.github.io/helm-charts
+      targetRevision: 25.8.0
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-01-04T22:36:43Z"
+      deployedAt: "2026-01-04T22:36:45Z"
+      id: 17
+      revisions:
+      - 25.8.0
+      - f22322f933ce97f5974723cab3b4c7775522c335
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-04T22:48:44Z"
+      deployedAt: "2026-01-04T22:48:46Z"
+      id: 18
+      revisions:
+      - 25.8.0
+      - a0bfbd776b471fb65f01e1fe9d22b46384085d04
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-12T19:36:15Z"
+      deployedAt: "2026-01-12T19:36:17Z"
+      id: 19
+      revisions:
+      - 25.8.0
+      - ef9f6500bdc46208b39eb617493181744de6a5fb
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T17:57:50Z"
+      deployedAt: "2026-01-18T17:57:54Z"
+      id: 20
+      revisions:
+      - 25.8.0
+      - 719f4fce626f16a4579a3035e0385d1ef7c6127b
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T19:33:49Z"
+      deployedAt: "2026-01-18T19:33:52Z"
+      id: 21
+      revisions:
+      - 25.8.0
+      - fbfe9cfa7e04105cfec6055a7d5e56880549bc92
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T20:35:20Z"
+      deployedAt: "2026-01-18T20:35:21Z"
+      id: 22
+      revisions:
+      - 25.8.0
+      - 8c925149d35a9ac875b7950d1ac5201f8322ef19
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T20:43:24Z"
+      deployedAt: "2026-01-18T20:43:26Z"
+      id: 23
+      revisions:
+      - 25.8.0
+      - 4140a2e70297bbb0197b294ca0d38e4f9659726a
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-18T22:15:51Z"
+      deployedAt: "2026-01-18T22:15:53Z"
+      id: 24
+      revisions:
+      - 25.8.0
+      - 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:16:36Z"
+      deployedAt: "2026-01-19T19:16:37Z"
+      id: 25
+      revisions:
+      - 25.8.0
+      - 31447848e994851f50fbadbf5b93d8e85b9710c6
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:33:55Z"
+      deployedAt: "2026-01-19T19:34:00Z"
+      id: 26
+      revisions:
+      - 25.8.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      source:
+        repoURL: ""
+      sources:
+      - chart: prometheus
+        helm:
+          valueFiles:
+          - $values/helm/prometheus-values.yaml
+        repoURL: https://prometheus-community.github.io/helm-charts
+        targetRevision: 25.8.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:36:00Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apps
+            kind: Deployment
+            name: prometheus-prometheus-pushgateway
+          - group: apps
+            kind: Deployment
+            name: prometheus-server
+          - group: apps
+            kind: Deployment
+            name: prometheus-kube-state-metrics
+          - group: apps
+            kind: DaemonSet
+            name: prometheus-prometheus-node-exporter
+          revisions:
+          - 25.8.0
+          - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+          syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+      phase: Succeeded
+      startedAt: "2026-01-19T19:36:00Z"
+      syncResult:
+        resources:
+        - group: apps
+          hookPhase: Running
+          kind: DaemonSet
+          message: daemonset.apps/prometheus-prometheus-node-exporter serverside-applied
+          name: prometheus-prometheus-node-exporter
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/prometheus-prometheus-pushgateway serverside-applied
+          name: prometheus-prometheus-pushgateway
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/prometheus-kube-state-metrics serverside-applied
+          name: prometheus-kube-state-metrics
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/prometheus-server serverside-applied
+          name: prometheus-server
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 25.8.0
+        - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          repoURL: ""
+        sources:
+        - chart: prometheus
+          helm:
+            valueFiles:
+            - $values/helm/prometheus-values.yaml
+          repoURL: https://prometheus-community.github.io/helm-charts
+          targetRevision: 25.8.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:36:00Z"
+    resources:
+    - kind: ConfigMap
+      name: prometheus-alertmanager
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: prometheus-server
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: PersistentVolumeClaim
+      name: prometheus-server
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus-alertmanager
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus-alertmanager-headless
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus-kube-state-metrics
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus-prometheus-node-exporter
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus-prometheus-pushgateway
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus-server
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus-alertmanager
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus-kube-state-metrics
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus-prometheus-node-exporter
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus-prometheus-pushgateway
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus-server
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: DaemonSet
+      name: prometheus-prometheus-node-exporter
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: prometheus-kube-state-metrics
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: prometheus-prometheus-pushgateway
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: prometheus-server
+      namespace: monitoring
+      status: OutOfSync
+      version: v1
+    - group: apps
+      health:
+        message: 'partitioned roll out complete: 1 new pods have been updated...'
+        status: Healthy
+      kind: StatefulSet
+      name: prometheus-alertmanager
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: prometheus-kube-state-metrics
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: prometheus-server
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: prometheus-kube-state-metrics
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: prometheus-server
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - quay.io/prometheus-operator/prometheus-config-reloader:v0.67.0
+      - quay.io/prometheus/alertmanager:v0.26.0
+      - quay.io/prometheus/node-exporter:v1.7.0
+      - quay.io/prometheus/prometheus:v2.48.0
+      - quay.io/prometheus/pushgateway:v1.6.2
+      - registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1
+    sync:
+      comparedTo:
+        destination:
+          namespace: monitoring
+          server: https://kubernetes.default.svc
+        ignoreDifferences:
+        - group: apps
+          jsonPointers:
+          - /spec/volumeClaimTemplates
+          kind: StatefulSet
+          name: prometheus-alertmanager
+        source:
+          repoURL: ""
+        sources:
+        - chart: prometheus
+          helm:
+            valueFiles:
+            - $values/helm/prometheus-values.yaml
+          repoURL: https://prometheus-community.github.io/helm-charts
+          targetRevision: 25.8.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 25.8.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: OutOfSync
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"promtail","namespace":"argocd"},"spec":{"destination":{"namespace":"monitoring","server":"https://kubernetes.default.svc"},"project":"default","sources":[{"chart":"promtail","helm":{"valueFiles":["$values/helm/promtail-values.yaml"]},"repoURL":"https://grafana.github.io/helm-charts","targetRevision":"6.17.1"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}}}
+    creationTimestamp: "2025-12-17T18:42:04Z"
+    generation: 15976
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: promtail
+    namespace: argocd
+    resourceVersion: "21020798"
+    uid: 50e0e5e1-94d9-4c19-b7a5-f83f43844df1
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    sources:
+    - chart: promtail
+      helm:
+        valueFiles:
+        - $values/helm/promtail-values.yaml
+      repoURL: https://grafana.github.io/helm-charts
+      targetRevision: 6.17.1
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-17T22:07:17Z"
+      deployedAt: "2025-12-17T22:07:18Z"
+      id: 0
+      revisions:
+      - 6.15.3
+      - 77ea9226bf13988060c453192eab4b692cf948b5
+      source:
+        repoURL: ""
+      sources:
+      - chart: promtail
+        helm:
+          valueFiles:
+          - $values/helm/promtail-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.15.3
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-17T22:10:19Z"
+      deployedAt: "2025-12-17T22:10:19Z"
+      id: 1
+      revisions:
+      - 6.15.3
+      - 77ea9226bf13988060c453192eab4b692cf948b5
+      source:
+        repoURL: ""
+      sources:
+      - chart: promtail
+        helm:
+          valueFiles:
+          - $values/helm/promtail-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.15.3
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2026-01-19T19:28:09Z"
+      deployedAt: "2026-01-19T19:28:10Z"
+      id: 2
+      revisions:
+      - 6.17.1
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      source:
+        repoURL: ""
+      sources:
+      - chart: promtail
+        helm:
+          valueFiles:
+          - $values/helm/promtail-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 6.17.1
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-01-19T19:28:11Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          revisions:
+          - 6.17.1
+          - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+          syncOptions:
+          - CreateNamespace=true
+      phase: Succeeded
+      startedAt: "2026-01-19T19:28:09Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/promtail configured
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Secret
+          message: secret/promtail configured
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/promtail reconciled. clusterrole.rbac.authorization.k8s.io/promtail
+            configured
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/promtail reconciled.
+            clusterrolebinding.rbac.authorization.k8s.io/promtail configured
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: DaemonSet
+          message: daemonset.apps/promtail configured
+          name: promtail
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 6.17.1
+        - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+        source:
+          repoURL: ""
+        sources:
+        - chart: promtail
+          helm:
+            valueFiles:
+            - $values/helm/promtail-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 6.17.1
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - kind: Secret
+      name: promtail
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: promtail
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: DaemonSet
+      name: promtail
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: promtail
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: promtail
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - docker.io/grafana/promtail:3.5.1
+    sync:
+      comparedTo:
+        destination:
+          namespace: monitoring
+          server: https://kubernetes.default.svc
+        source:
+          repoURL: ""
+        sources:
+        - chart: promtail
+          helm:
+            valueFiles:
+            - $values/helm/promtail-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 6.17.1
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 6.17.1
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"argocd.argoproj.io/instance":"oke-observability-stack"},"name":"tempo","namespace":"argocd"},"spec":{"destination":{"namespace":"monitoring","server":"https://kubernetes.default.svc"},"project":"default","sources":[{"chart":"tempo","helm":{"valueFiles":["$values/helm/tempo-values.yaml"]},"repoURL":"https://grafana.github.io/helm-charts","targetRevision":"1.24.0"},{"ref":"values","repoURL":"https://github.com/Canepro/central-observability-hub-stack.git","targetRevision":"main"}],"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true","Replace=true","ServerSideApply=true"]}}}
+    creationTimestamp: "2025-12-17T18:42:04Z"
+    generation: 16041
+    labels:
+      argocd.argoproj.io/instance: oke-observability-stack
+    name: tempo
+    namespace: argocd
+    resourceVersion: "21020788"
+    uid: 262a3592-9164-4e74-8beb-73983e37070e
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    sources:
+    - chart: tempo
+      helm:
+        valueFiles:
+        - $values/helm/tempo-values.yaml
+      repoURL: https://grafana.github.io/helm-charts
+      targetRevision: 1.24.0
+    - ref: values
+      repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - Replace=true
+      - ServerSideApply=true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2025-12-17T23:57:36Z"
+      deployedAt: "2025-12-17T23:57:37Z"
+      id: 0
+      revisions:
+      - 1.7.0
+      - 9092c30eec20b5cdcb56d3b220f5677ad8dee67d
+      source:
+        repoURL: ""
+      sources:
+      - chart: tempo
+        helm:
+          valueFiles:
+          - $values/helm/tempo-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 1.7.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T00:40:52Z"
+      deployedAt: "2025-12-18T00:40:53Z"
+      id: 1
+      revisions:
+      - 1.7.0
+      - 6ce26f0cf21eb9dc633ab91a8646d0504c838c7d
+      source:
+        repoURL: ""
+      sources:
+      - chart: tempo
+        helm:
+          valueFiles:
+          - $values/helm/tempo-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 1.7.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T01:42:36Z"
+      deployedAt: "2025-12-18T01:42:37Z"
+      id: 2
+      revisions:
+      - 1.7.0
+      - 8aa314270e98af0cda1d0494c7b3f43e291bb6f5
+      source:
+        repoURL: ""
+      sources:
+      - chart: tempo
+        helm:
+          valueFiles:
+          - $values/helm/tempo-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 1.7.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T01:54:36Z"
+      deployedAt: "2025-12-18T01:54:37Z"
+      id: 3
+      revisions:
+      - 1.7.0
+      - 7eed8e7171197ed38d338e37c693cc2951ec2665
+      source:
+        repoURL: ""
+      sources:
+      - chart: tempo
+        helm:
+          valueFiles:
+          - $values/helm/tempo-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 1.7.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T02:22:56Z"
+      deployedAt: "2025-12-18T02:22:56Z"
+      id: 4
+      revisions:
+      - 1.24.0
+      - 12f9092a7eb737df0d9973ca89d4b0dd4d0e505a
+      source:
+        repoURL: ""
+      sources:
+      - chart: tempo
+        helm:
+          valueFiles:
+          - $values/helm/tempo-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 1.24.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    - deployStartedAt: "2025-12-18T02:54:37Z"
+      deployedAt: "2025-12-18T02:54:38Z"
+      id: 5
+      revisions:
+      - 1.24.0
+      - 15d99114bb07888b01d4aabc595cc4a5de63b5bd
+      source:
+        repoURL: ""
+      sources:
+      - chart: tempo
+        helm:
+          valueFiles:
+          - $values/helm/tempo-values.yaml
+        repoURL: https://grafana.github.io/helm-charts
+        targetRevision: 1.24.0
+      - ref: values
+        repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2025-12-18T03:10:19Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          resources:
+          - group: apps
+            kind: StatefulSet
+            name: tempo
+          revisions:
+          - 1.24.0
+          - 534bb0200047c33bdf9cd3bec89b8621d107c498
+          syncOptions:
+          - CreateNamespace=true
+          - Replace=true
+      phase: Succeeded
+      startedAt: "2025-12-18T03:10:19Z"
+      syncResult:
+        resources:
+        - group: apps
+          hookPhase: Running
+          kind: StatefulSet
+          message: statefulset.apps/tempo replaced
+          name: tempo
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: ""
+        revisions:
+        - 1.24.0
+        - 32c1f3fd31e89b27db966449f6b288a22153a97e
+        source:
+          repoURL: ""
+        sources:
+        - chart: tempo
+          helm:
+            valueFiles:
+            - $values/helm/tempo-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 1.24.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+    reconciledAt: "2026-01-19T19:33:51Z"
+    resources:
+    - kind: ConfigMap
+      name: tempo
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: tempo
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: tempo
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        message: statefulset rolling update complete 1 pods at revision tempo-cf464dcc4...
+        status: Healthy
+      kind: StatefulSet
+      name: tempo
+      namespace: monitoring
+      status: Synced
+      version: v1
+    sourceTypes:
+    - Helm
+    - ""
+    summary:
+      images:
+      - grafana/tempo:2.9.0
+    sync:
+      comparedTo:
+        destination:
+          namespace: monitoring
+          server: https://kubernetes.default.svc
+        source:
+          repoURL: ""
+        sources:
+        - chart: tempo
+          helm:
+            valueFiles:
+            - $values/helm/tempo-values.yaml
+          repoURL: https://grafana.github.io/helm-charts
+          targetRevision: 1.24.0
+        - ref: values
+          repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+          targetRevision: main
+      revisions:
+      - 1.24.0
+      - 5bf4433c64017e0d156daf5b5a657a8c17616ffe
+      status: Synced
+kind: List
+metadata:
+  resourceVersion: ""
