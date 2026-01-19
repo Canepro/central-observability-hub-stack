@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Policy for log access (ArgoCD v3.x breaking change fix)
+  policy.csv: |
+    # Allow all authenticated users to view logs
+    p, role:readonly, logs, get, */*, allow
+    p, role:admin, logs, get, */*, allow
+    
+    # Allow admin full access
+    g, admin, role:admin
+  
+  # Default role for all users
+  policy.default: role:readonly
+  
+  # OIDC scopes
+  scopes: '[groups]'

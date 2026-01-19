@@ -2,21 +2,21 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-01-19
 
 ## Upgrade Status Legend
 
 - ✅ **Up to date**: Already at latest version (updated on date shown)
 - ⚠️ **Can upgrade**: Has newer version available, can be upgraded with testing
 - ⚠️ **Check latest**: Version not verified, check official source for latest
-- 🔄 **Just updated**: Version updated as part of 2026-01-18 upgrade
+- 🔄 **Just updated**: Version updated as part of 2026-01-19 upgrade
 - ⚠️ **Deprecated**: Component is deprecated, consider migration path
 - 🔍 **Needs investigation**: Version discrepancy or unclear status
 
 ## Quick Upgrade Reference
 
-**Just updated (2026-01-18)**:
-- ArgoCD 5.51.6 → 9.3.4 🔄
+**Just updated (2026-01-19)**:
+- ArgoCD 5.51.6 → 9.3.4 (app v2.9.3 → v3.2.5) 🔄
 - Promtail 6.15.3 → 6.17.1 🔄 (but deprecated, EOL March 2, 2026)
 - NGINX Ingress 4.9.0 → 4.14.1 🔄
 - Metrics Server 3.12.1 → 3.13.0 🔄
@@ -44,19 +44,22 @@ This document tracks all software versions used in the OKE Observability Hub dep
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **ArgoCD Helm Chart** | `9.3.4` | `9.3.4` | 🔄 **Just updated** (2026-01-18) | `terraform/argocd.tf` | [ArgoCD Helm Releases](https://github.com/argoproj/argo-helm/releases) |
-| **ArgoCD Application** | `v2.9.3` (pre-upgrade) | `v3.1.8+` | 🔄 **Will upgrade with chart** | Bundled with Helm chart | [ArgoCD Releases](https://github.com/argoproj/argo-cd/releases) |
+| **ArgoCD Helm Chart** | `9.3.4` | `9.3.4` | ✅ **Upgraded** (2026-01-19) | `terraform/argocd.tf` | [ArgoCD Helm Releases](https://github.com/argoproj/argo-helm/releases) |
+| **ArgoCD Application** | `v3.2.5` | `v3.2.5` | ✅ **Upgraded** (2026-01-19) | Bundled with Helm chart | [ArgoCD Releases](https://github.com/argoproj/argo-cd/releases) |
 
-**⚠️ Important Notes**: 
-- **Helm Chart**: Major version jump from 5.51.6 → 9.3.4
-- **Application**: Upgrading from v2.9.3 (Dec 2023) to v3.1.8+ (chart 9.x bundles ArgoCD v3.1.x)
-- **Breaking Changes**: ArgoCD v3.x has significant changes from v2.9.x:
+**✅ Upgrade Complete** (2026-01-19): 
+- **Helm Chart**: Upgraded 5.51.6 → 9.3.4
+- **Application**: Upgraded v2.9.3 (Dec 2023) → v3.2.5 (Jan 2026)
+- **Ingress**: Fixed for chart 9.3.4 (uses `global.domain` + `hostname` format)
+- **RBAC**: Created config file at `k8s/argocd-rbac-config.yaml` for log access
+- **Pending**: Apply RBAC config, verify app syncs
+- **Breaking Changes from v2.9.x**: ArgoCD v3.x has significant changes:
   - API endpoint deprecations (`/api/v1/applications/{name}/resource/actions` → `v2`)
   - Helm upgraded to v3.18.4, Kustomize to v5.7.0
   - Kubernetes 1.20+ required
   - OIDC auth flow changes (server-side PKCE)
   - Security improvements (symlink protection, sanitized API responses)
-- **Review Required**: [ArgoCD v3.0 upgrade guide](https://argo-cd.readthedocs.io/en/stable/operator-manual/upgrading/) and [v3.1.8 release notes](https://github.com/argoproj/argo-cd/releases)
+- **Review Required**: [ArgoCD v3.0 upgrade guide](https://argo-cd.readthedocs.io/en/stable/operator-manual/upgrading/) and [v3.2.5 release notes](https://github.com/argoproj/argo-cd/releases/tag/v3.2.5)
 
 ---
 
@@ -66,11 +69,11 @@ This document tracks all software versions used in the OKE Observability Hub dep
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **Grafana** | `10.4.0` | `10.1.5` | ✅ **Up to date** (current newer than latest found) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Loki** | `6.46.0` | `6.46.0` | ✅ **Up to date** (2025-11-05) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-18) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.0` | `1.24.0` | ✅ **Up to date** (single binary mode) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Prometheus** | `25.8.0` | `15.8.5` | 🔍 **Needs investigation** (version discrepancy) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 
-**⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026** (6 weeks away). Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
+**⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026** (42 days away from Jan 19, 2026). Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
 
 **🔍 Note on Prometheus**: The current version (25.8.0) is higher than the latest found (15.8.5). This may indicate:
 - Using `prometheus` chart (standard Prometheus server)
@@ -85,16 +88,16 @@ This document tracks all software versions used in the OKE Observability Hub dep
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **NGINX Ingress Controller** | `4.14.1` | `4.14.1` | 🔄 **Just updated** (2026-01-18) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
-| **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-18) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
+| **NGINX Ingress Controller** | `4.14.1` | `4.14.1` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
+| **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
 
 ---
 
-## External Spoke Cluster Applications (k8.canepro.me)
+## External Spoke Cluster Applications (AKS RocketChat Cluster)
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **RocketChat Helm Chart** | `6.29.0` | `6.29.0` | 🔄 **Just updated** (2026-01-18) | `argocd/applications/k8-canepro-rocketchat.yaml` | [RocketChat Helm Charts](https://github.com/RocketChat/helm-charts/releases) |
+| **RocketChat Helm Chart** | `6.29.0` | `6.29.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/aks-rocketchat-helm` (ArgoCD app) | [RocketChat Helm Charts](https://github.com/RocketChat/helm-charts/releases) |
 | **RocketChat App Version** | `Check values` | `8.0.0` | ⚠️ **Check latest** (Jan 12, 2026 release) | Controlled by chart values | [RocketChat Releases](https://github.com/RocketChat/Rocket.Chat/releases) |
 
 **Note**: RocketChat app version (image tag) is controlled separately from the Helm chart version. Chart v6.29.0 supports RocketChat v8.x images.
@@ -211,7 +214,7 @@ kubectl edit application grafana -n argocd
 ### 🚨 Urgent (Complete by March 2, 2026)
 **Promtail Migration**: Plan and execute migration from Promtail to Grafana Alloy or alternative before EOL date.
 
-### ✅ Recently Completed (2026-01-18)
+### ✅ Recently Completed (2026-01-19)
 - ArgoCD: 5.51.6 → 9.3.4 (major version upgrade)
 - Promtail: 6.15.3 → 6.17.1 (minor update, but plan migration)
 - NGINX Ingress: 4.9.0 → 4.14.1 (5 minor versions)
@@ -253,14 +256,14 @@ For security updates:
 
 ## Version Compatibility Notes
 
-### ArgoCD v9.3.4 (Helm Chart) / v3.1.8+ (Application)
-**Current Status**: Running v2.9.3 (December 2023) → Upgrading to v3.1.8+
+### ArgoCD v9.3.4 (Helm Chart) / v3.2.5 (Application)
+**Current Status**: ✅ Upgraded on 2026-01-19 from v2.9.3 → v3.2.5
 
 **Helm Chart Changes**:
 - Major version jump from chart 5.51.6 → 9.3.4
 - Configuration values may have changed - review your `values` section
 
-**ArgoCD Application Changes** (v2.9.3 → v3.1.8+):
+**ArgoCD Application Changes** (v2.9.3 → v3.2.5):
 - **Bundled Tools**: Helm 3.18.4, Kustomize 5.7.0, Redis 7.4.1, HAProxy 2.9.4
 - **API Breaking Changes**:
   - Old: `/api/v1/applications/{name}/resource/actions` (deprecated)
@@ -368,6 +371,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-01-18  
-**Next Scheduled Review**: 2026-02-18  
+**Document Last Updated**: 2026-01-19  
+**Next Scheduled Review**: 2026-02-19  
 **Maintained By**: Infrastructure Team
