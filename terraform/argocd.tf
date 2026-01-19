@@ -4,7 +4,7 @@ resource "helm_release" "argocd" {
   chart            = "argo-cd"
   namespace        = "argocd"
   create_namespace = true
-  version          = "5.51.6"
+  version          = "9.3.4"
 
   values = [
     <<EOF
