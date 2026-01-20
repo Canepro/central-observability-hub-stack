@@ -28,6 +28,7 @@ spec:
       # Use jsonPointers for broad ArgoCD compatibility (older versions may not support jqPathExpressions).
       jsonPointers:
         - /metadata/labels/app.kubernetes.io~1managed-by
+        - /data/admin-password  # Grafana regenerates this password, ignore drift
   syncPolicy:
     automated:
       prune: true
