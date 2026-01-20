@@ -29,6 +29,13 @@ spec:
       jsonPointers:
         - /metadata/labels/app.kubernetes.io~1managed-by
         - /data/admin-password  # Grafana regenerates this password, ignore drift
+    # Ignore the checksum annotation that changes when the secret changes
+    - group: apps
+      kind: Deployment
+      name: grafana
+      namespace: monitoring
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
   syncPolicy:
     automated:
       prune: true
