@@ -1,11 +1,6 @@
 <?xml version='1.1' encoding='UTF-8'?>
-<!--
-Jenkins Multibranch Pipeline Job Configuration for central-observability-hub-stack
-This XML can be imported via Jenkins CLI or REST API to create the job.
--->
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.27">
-  <actions/>
-  <description>CI validation pipeline for central-observability-hub-stack repository</description>
+  <description>CI validation pipeline for central-observability-hub-stack repository (GrafanaLocal)</description>
   <properties>
     <org.jenkinsci.plugins.pipeline.modeldefinition.config.FolderConfig plugin="pipeline-model-definition@2.2118">
       <dockerLabel></dockerLabel>
@@ -23,7 +18,7 @@ This XML can be imported via Jenkins CLI or REST API to create the job.
   <icon class="jenkins.branch.MetadataActionFolderIcon" plugin="branch-api@2.11.2">
     <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
   </icon>
-  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.815.v0b_3c1e18b_81">
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.815.vb_3c1e18b_81">
     <pruneDeadBranches>true</pruneDeadBranches>
     <daysToKeep>-1</daysToKeep>
     <numToKeep>-1</numToKeep>
