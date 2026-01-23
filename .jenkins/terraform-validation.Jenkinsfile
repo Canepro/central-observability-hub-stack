@@ -87,9 +87,12 @@ pipeline {
                 
                 // Install Azure CLI if not available (for terraform container)
                 sh '''
+                  # NOTE: Jenkins "terraform" container is hashicorp/terraform (Alpine, minimal).
+                  # It often lacks curl/bash, and using the Debian installer won't work anyway.
+                  # For CI we treat Azure download as best-effort and fall back if unavailable.
                   if ! command -v az &> /dev/null; then
-                    echo "Installing Azure CLI..."
-                    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+                    echo "Azure CLI not found (expected in minimal terraform image). Skipping Azure download step."
+                    exit 127
                   fi
                 '''
                 
