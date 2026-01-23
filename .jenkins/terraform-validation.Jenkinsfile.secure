@@ -1,6 +1,9 @@
-// Terraform Validation Pipeline for central-observability-hub-stack
+// Terraform Validation Pipeline for central-observability-hub-stack (SECURE VERSION)
 // This pipeline validates Terraform infrastructure code for the OKE Hub cluster.
 // Purpose: CI validation only - complements existing GitHub Actions for redundancy.
+// 
+// SECURITY: This version uses Jenkins credentials for sensitive values
+// Use this version if your repository is public or you want better security practices
 pipeline {
   // Use the 'terraform' Kubernetes agent (Hashicorp Terraform image)
   agent {
@@ -11,8 +14,7 @@ pipeline {
   }
   
   // Environment variables for Azure Storage and Key Vault access
-  // For better security, sensitive values (Client ID, Tenant ID) should use Jenkins credentials
-  // Resource names are non-sensitive but can be overridden in Jenkins UI if needed
+  // SECURE: Uses Jenkins credentials for sensitive values
   environment {
     // Azure Key Vault and Storage Account configuration (non-sensitive resource names)
     AZURE_KEY_VAULT_NAME = 'aks-canepro-kv-e8d280'
@@ -21,13 +23,12 @@ pipeline {
     AZURE_STORAGE_BLOB_PATH = 'terraform.tfvars'
     AZURE_STORAGE_KEY_SECRET_NAME = 'storage-account-key'
     
-    // Azure authentication (using ESO identity)
-    // SECURITY NOTE: For public repos, use Jenkins credentials instead:
-    //   AZURE_CLIENT_ID = credentials('azure-client-id')
-    //   AZURE_TENANT_ID = credentials('azure-tenant-id')
-    // For private repos, hardcoded values are acceptable but not best practice
-    AZURE_CLIENT_ID = 'fe3d3d95-fb61-4a42-8d82-ec0852486531'
-    AZURE_TENANT_ID = 'c3d431f1-3e02-4c62-a825-79cd8f9e2053'
+    // Azure authentication (using Jenkins credentials - more secure)
+    // These credentials must be created in Jenkins:
+    //   Manage Jenkins → Credentials → System → Global credentials
+    //   Add Secret text credentials with IDs: 'azure-client-id' and 'azure-tenant-id'
+    AZURE_CLIENT_ID = credentials('azure-client-id')
+    AZURE_TENANT_ID = credentials('azure-tenant-id')
     
     // Note: AZURE_CLIENT_SECRET is not needed if using Workload Identity
     // The Jenkinsfile will automatically detect and use Workload Identity if configured
@@ -69,12 +70,6 @@ pipeline {
           sh 'terraform init'
           
           // Download terraform.tfvars from Azure Storage Account using Key Vault credentials
-          // Configuration via Jenkins environment variables:
-          // - AZURE_KEY_VAULT_NAME: Name of Key Vault containing Storage Account key
-          // - AZURE_STORAGE_ACCOUNT_NAME: Storage Account name
-          // - AZURE_STORAGE_CONTAINER_NAME: Container name
-          // - AZURE_STORAGE_BLOB_PATH: (Optional) Blob path, defaults to 'terraform.tfvars'
-          // - AZURE_STORAGE_KEY_SECRET_NAME: (Optional) Key Vault secret name, defaults to 'storage-account-key'
           script {
             def tfvarsDownloaded = false
             
@@ -94,13 +89,7 @@ pipeline {
                 '''
                 
                 // Authenticate to Azure (supports multiple methods)
-                // Priority: Workload Identity > Service Principal > Managed Identity
                 sh '''
-                  # Try to authenticate using available method
-                  # Method 1: Workload Identity (if Jenkins service account is configured)
-                  # Method 2: Service Principal (if credentials are set)
-                  # Method 3: Managed Identity (if running on Azure VM)
-                  
                   if [ -n "$AZURE_CLIENT_ID" ] && [ -n "$AZURE_TENANT_ID" ] && [ -n "$AZURE_CLIENT_SECRET" ]; then
                     echo "Authenticating with Service Principal..."
                     az login --service-principal \
@@ -156,16 +145,13 @@ pipeline {
               }
             } else {
               echo "ℹ️ Azure Storage Account/Key Vault not configured, using environment variables or dummy values"
-              echo "   Required: AZURE_KEY_VAULT_NAME, AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_CONTAINER_NAME"
             }
             
             // If terraform.tfvars was downloaded, terraform will use it automatically
-            // Otherwise, provide variables via environment variables or dummy values
             if (!tfvarsDownloaded) {
               def compartmentId = env.TF_VAR_compartment_id ?: 'ocid1.compartment.oc1..dummy'
               def sshKey = env.TF_VAR_ssh_public_key ?: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7vbqajDhA... dummy-key-for-validation-only'
               
-              // Export as environment variables for terraform
               withEnv([
                 "TF_VAR_compartment_id=${compartmentId}",
                 "TF_VAR_ssh_public_key=${sshKey}"
@@ -173,7 +159,6 @@ pipeline {
                 sh 'terraform plan -detailed-exitcode -no-color'
               }
             } else {
-              // terraform.tfvars is present, terraform will use it automatically
               sh 'terraform plan -detailed-exitcode -no-color'
             }
           }
