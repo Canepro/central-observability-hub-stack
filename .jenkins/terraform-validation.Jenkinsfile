@@ -93,29 +93,32 @@ pipeline {
                   throw new RuntimeException("AZ_CLI_MISSING")
                 }
                 
-                // Authenticate to Azure (supports multiple methods)
-                // Priority: Workload Identity > Service Principal > Managed Identity
+                // Authenticate to Azure using Workload Identity (managed identity)
+                // The Jenkins service account is annotated with the ESO managed identity.
+                // Azure Workload Identity webhook injects AZURE_FEDERATED_TOKEN_FILE automatically.
                 sh '''
-                  # Try to authenticate using available method
-                  # Method 1: Workload Identity (if Jenkins service account is configured)
-                  # Method 2: Service Principal (if credentials are set)
-                  # Method 3: Managed Identity (if running on Azure VM)
+                  # Workload Identity authentication (preferred - no secrets needed)
+                  # The pod's service account annotation provides AZURE_CLIENT_ID and AZURE_TENANT_ID
+                  # The webhook injects AZURE_FEDERATED_TOKEN_FILE at /var/run/secrets/azure/tokens/azure-identity-token
                   
-                  if [ -n "$AZURE_CLIENT_ID" ] && [ -n "$AZURE_TENANT_ID" ] && [ -n "$AZURE_CLIENT_SECRET" ]; then
-                    echo "Authenticating with Service Principal..."
+                  if [ -n "$AZURE_CLIENT_ID" ] && [ -n "$AZURE_TENANT_ID" ] && [ -n "$AZURE_FEDERATED_TOKEN_FILE" ]; then
+                    echo "✅ Authenticating with Workload Identity (managed identity)..."
+                    az login --federated-token "$(cat $AZURE_FEDERATED_TOKEN_FILE)" \
+                      --service-principal \
+                      --username "$AZURE_CLIENT_ID" \
+                      --tenant "$AZURE_TENANT_ID" || {
+                        echo "⚠️ Workload Identity authentication failed, trying Managed Identity..."
+                        az login --identity || echo "❌ All authentication methods failed"
+                      }
+                  elif [ -n "$AZURE_CLIENT_ID" ] && [ -n "$AZURE_TENANT_ID" ] && [ -n "$AZURE_CLIENT_SECRET" ]; then
+                    echo "Authenticating with Service Principal (fallback)..."
                     az login --service-principal \
                       --username "$AZURE_CLIENT_ID" \
                       --password "$AZURE_CLIENT_SECRET" \
                       --tenant "$AZURE_TENANT_ID" || true
-                  elif [ -n "$AZURE_CLIENT_ID" ] && [ -n "$AZURE_TENANT_ID" ] && [ -n "$AZURE_FEDERATED_TOKEN_FILE" ]; then
-                    echo "Authenticating with Workload Identity..."
-                    az login --federated-token "$(cat $AZURE_FEDERATED_TOKEN_FILE)" \
-                      --service-principal \
-                      --username "$AZURE_CLIENT_ID" \
-                      --tenant "$AZURE_TENANT_ID" || true
                   else
-                    echo "Attempting Managed Identity authentication..."
-                    az login --identity || echo "Managed Identity authentication failed"
+                    echo "Attempting Managed Identity authentication (fallback)..."
+                    az login --identity || echo "❌ Managed Identity authentication failed"
                   fi
                 '''
                 
@@ -165,16 +168,17 @@ pipeline {
               def compartmentId = env.TF_VAR_compartment_id ?: 'ocid1.compartment.oc1..dummy'
               def sshKey = env.TF_VAR_ssh_public_key ?: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7vbqajDhA... dummy-key-for-validation-only'
               
-              // Export as environment variables for terraform
-              withEnv([
-                "TF_VAR_compartment_id=${compartmentId}",
-                "TF_VAR_ssh_public_key=${sshKey}"
-              ]) {
-                sh 'terraform plan -detailed-exitcode -no-color'
-              }
+              // Avoid interactive prompts in CI:
+              // -input=false makes Terraform fail instead of prompting
+              // Explicit -var flags are the most reliable way to pass required vars.
+              sh """
+                terraform plan -detailed-exitcode -no-color -input=false \\
+                  -var 'compartment_id=${compartmentId}' \\
+                  -var 'ssh_public_key=${sshKey}'
+              """
             } else {
               // terraform.tfvars is present, terraform will use it automatically
-              sh 'terraform plan -detailed-exitcode -no-color'
+              sh 'terraform plan -detailed-exitcode -no-color -input=false'
             }
           }
         }
