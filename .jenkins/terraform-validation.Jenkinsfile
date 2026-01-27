@@ -97,12 +97,11 @@ EOF
         ]) {
           dir('terraform') {
             sh '''
-              # Export credentials for S3 backend auth
-              export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY"
-              export AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY"
-              
               # Initialize with OCI Object Storage backend
-              terraform init
+              # Pass credentials via -backend-config to avoid shell escaping issues with special chars
+              terraform init \
+                -backend-config="access_key=${S3_ACCESS_KEY}" \
+                -backend-config="secret_key=${S3_SECRET_KEY}"
               
               terraform validate
             '''
@@ -122,9 +121,7 @@ EOF
         ]) {
           dir('terraform') {
             sh '''
-              # Export credentials for S3 backend and Terraform vars
-              export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY"
-              export AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY"
+              # Export Terraform vars (SSH key doesn't have S3 signature issues)
               export TF_VAR_ssh_public_key="$SSH_PUBLIC_KEY"
               
               # Ensure OCI key is in place
@@ -132,6 +129,7 @@ EOF
               chmod 600 ~/.oci/oci_api_key.pem
               
               # Run terraform plan
+              # Note: Backend already initialized in previous stage with credentials
               terraform plan \
                 -no-color \
                 -input=false \
