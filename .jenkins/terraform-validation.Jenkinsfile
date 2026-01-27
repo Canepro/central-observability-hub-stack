@@ -96,16 +96,16 @@ EOF
           string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
         ]) {
           dir('terraform') {
-            // Use environment variables for S3 backend auth (handles special chars better)
-            withEnv(["AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}", "AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}"]) {
-              sh '''
-                # Initialize with OCI Object Storage backend
-                # Credentials passed via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars
-                terraform init
-                
-                terraform validate
-              '''
-            }
+            sh '''
+              # Export credentials for S3 backend auth
+              export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY"
+              export AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY"
+              
+              # Initialize with OCI Object Storage backend
+              terraform init
+              
+              terraform validate
+            '''
           }
         }
       }
@@ -121,35 +121,33 @@ EOF
           string(credentialsId: 'oci-ssh-public-key', variable: 'SSH_PUBLIC_KEY')
         ]) {
           dir('terraform') {
-            // Use environment variables for auth (handles special chars better)
-            withEnv([
-              "AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}",
-              "AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}",
-              "TF_VAR_ssh_public_key=${SSH_PUBLIC_KEY}"
-            ]) {
-              sh '''
-                # Ensure OCI key is in place
-                cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
-                chmod 600 ~/.oci/oci_api_key.pem
-                
-                # Run terraform plan
-                terraform plan \
-                  -no-color \
-                  -input=false \
-                  -out=tfplan \
-                  -detailed-exitcode || PLAN_EXIT=$?
-                
-                # Exit codes: 0 = no changes, 1 = error, 2 = changes present
-                if [ "${PLAN_EXIT:-0}" = "1" ]; then
-                  echo "Terraform plan failed"
-                  exit 1
-                elif [ "${PLAN_EXIT:-0}" = "2" ]; then
-                  echo "Changes detected in plan"
-                else
-                  echo "No changes detected"
-                fi
-              '''
-            }
+            sh '''
+              # Export credentials for S3 backend and Terraform vars
+              export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY"
+              export AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY"
+              export TF_VAR_ssh_public_key="$SSH_PUBLIC_KEY"
+              
+              # Ensure OCI key is in place
+              cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
+              chmod 600 ~/.oci/oci_api_key.pem
+              
+              # Run terraform plan
+              terraform plan \
+                -no-color \
+                -input=false \
+                -out=tfplan \
+                -detailed-exitcode || PLAN_EXIT=$?
+              
+              # Exit codes: 0 = no changes, 1 = error, 2 = changes present
+              if [ "${PLAN_EXIT:-0}" = "1" ]; then
+                echo "Terraform plan failed"
+                exit 1
+              elif [ "${PLAN_EXIT:-0}" = "2" ]; then
+                echo "Changes detected in plan"
+              else
+                echo "No changes detected"
+              fi
+            '''
           }
         }
       }
