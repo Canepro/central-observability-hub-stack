@@ -92,18 +92,20 @@ EOF
     stage('Terraform Validate') {
       steps {
         withCredentials([
-          string(credentialsId: 'oci-s3-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'oci-s3-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+          string(credentialsId: 'oci-s3-access-key', variable: 'S3_ACCESS_KEY'),
+          string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
         ]) {
           dir('terraform') {
-            sh '''
-              # Initialize with OCI Object Storage backend
-              terraform init \
-                -backend-config="access_key=${AWS_ACCESS_KEY_ID}" \
-                -backend-config="secret_key=${AWS_SECRET_ACCESS_KEY}"
-              
-              terraform validate
-            '''
+            // Use environment variables for S3 backend auth (handles special chars better)
+            withEnv(["AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}", "AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}"]) {
+              sh '''
+                # Initialize with OCI Object Storage backend
+                # Credentials passed via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars
+                terraform init
+                
+                terraform validate
+              '''
+            }
           }
         }
       }
@@ -114,33 +116,40 @@ EOF
       steps {
         withCredentials([
           file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE'),
-          string(credentialsId: 'oci-s3-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'oci-s3-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-          string(credentialsId: 'oci-ssh-public-key', variable: 'TF_VAR_ssh_public_key')
+          string(credentialsId: 'oci-s3-access-key', variable: 'S3_ACCESS_KEY'),
+          string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY'),
+          string(credentialsId: 'oci-ssh-public-key', variable: 'SSH_PUBLIC_KEY')
         ]) {
           dir('terraform') {
-            sh '''
-              # Ensure OCI key is in place
-              cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
-              chmod 600 ~/.oci/oci_api_key.pem
-              
-              # Run terraform plan
-              terraform plan \
-                -no-color \
-                -input=false \
-                -out=tfplan \
-                -detailed-exitcode || PLAN_EXIT=$?
-              
-              # Exit codes: 0 = no changes, 1 = error, 2 = changes present
-              if [ "${PLAN_EXIT:-0}" = "1" ]; then
-                echo "Terraform plan failed"
-                exit 1
-              elif [ "${PLAN_EXIT:-0}" = "2" ]; then
-                echo "Changes detected in plan"
-              else
-                echo "No changes detected"
-              fi
-            '''
+            // Use environment variables for auth (handles special chars better)
+            withEnv([
+              "AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}",
+              "AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}",
+              "TF_VAR_ssh_public_key=${SSH_PUBLIC_KEY}"
+            ]) {
+              sh '''
+                # Ensure OCI key is in place
+                cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
+                chmod 600 ~/.oci/oci_api_key.pem
+                
+                # Run terraform plan
+                terraform plan \
+                  -no-color \
+                  -input=false \
+                  -out=tfplan \
+                  -detailed-exitcode || PLAN_EXIT=$?
+                
+                # Exit codes: 0 = no changes, 1 = error, 2 = changes present
+                if [ "${PLAN_EXIT:-0}" = "1" ]; then
+                  echo "Terraform plan failed"
+                  exit 1
+                elif [ "${PLAN_EXIT:-0}" = "2" ]; then
+                  echo "Changes detected in plan"
+                else
+                  echo "No changes detected"
+                fi
+              '''
+            }
           }
         }
       }
