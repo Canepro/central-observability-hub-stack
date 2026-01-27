@@ -34,6 +34,7 @@ SECURITY-REMEDIATION-REVIEW.md
 
 # Terraform local variables (DO NOT COMMIT)
 terraform/terraform.tfvars
+terraform/backend.hcl
 terraform/*.auto.tfvars
 terraform/override.tf
 terraform/override.tf.json
