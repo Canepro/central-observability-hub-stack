@@ -1,110 +1,128 @@
 # OKE Observability Hub
 
-A centralized, production-ready observability platform deployed on Oracle Kubernetes Engine (OKE), designed to aggregate telemetry data (metrics, logs, traces) across multi-cluster and multi-cloud environments.
+A centralized observability platform deployed on Oracle Kubernetes Engine (OKE), designed to aggregate metrics, logs, and traces across multi-cluster environments. Optimized for the OCI Always Free Tier.
 
-## 🎯 Overview
-This stack serves as the **Central Brain** for your infrastructure. It is optimized for the **OCI Always Free Tier**, providing a high-performance "Single Pane of Glass" visualization layer with zero licensing costs.
+## Overview
 
-- **Centralized Logs**: Loki (S3-backed)
-- **Centralized Metrics**: Prometheus (Remote Write Receiver)
-- **Centralized Traces**: Tempo (S3-backed)
-- **Unified Visualization**: Grafana
-- **GitOps Management**: ArgoCD (App-of-Apps)
+This repository serves as the GitOps source of truth for a production-ready observability stack:
 
-## 🗺️ Documentation Roadmap
+| Component | Purpose | Storage |
+|-----------|---------|---------|
+| **Grafana** | Unified visualization and dashboards | Block Volume (50Gi) |
+| **Prometheus** | Metrics collection and alerting | Block Volume (50Gi) |
+| **Loki** | Log aggregation | OCI Object Storage (S3) |
+| **Tempo** | Distributed tracing | OCI Object Storage (S3) |
+| **ArgoCD** | GitOps continuous delivery | - |
 
-| Document | Purpose |
-|----------|---------|
-| **[hub-docs/README.md](hub-docs/README.md)** | **The Hub Map**: Component versions, roles, and architecture overview. |
-| **[GITOPS-HANDOVER.md](GITOPS-HANDOVER.md)** | **Key to the Kingdom**: Operational guide for managing Hub and Spokes. |
-| **[hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md)** | **Admin Guide**: Retention policies, OCI storage, and maintenance. |
-| **[hub-docs/ARCHITECTURE.md](hub-docs/ARCHITECTURE.md)** | **System Design**: Deep dive into components and storage hybrid model. |
-| **[hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md)** | **ArgoCD Ops**: Syncing, patching, and managing Hub apps. |
-| **[docs/QUICKSTART.md](docs/QUICKSTART.md)** | **5-Minute Guide**: Accessing Grafana and importing dashboards. |
-| **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** | **Integration Guide**: Connecting external clusters and applications. |
-| **[docs/MULTI-CLUSTER-SETUP-COMPLETE.md](docs/MULTI-CLUSTER-SETUP-COMPLETE.md)** | **Multi-Cluster Guide**: Complete setup and verification for hub-and-spoke architecture. |
-| **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** | **Solutions**: Common issues and fixes. |
+## Architecture
 
-## 🏗️ Infrastructure at a Glance
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        OKE Hub Cluster                          │
+│  ┌─────────┐  ┌────────────┐  ┌──────┐  ┌───────┐  ┌─────────┐ │
+│  │ Grafana │  │ Prometheus │  │ Loki │  │ Tempo │  │ ArgoCD  │ │
+│  └─────────┘  └────────────┘  └──────┘  └───────┘  └─────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+        ▲               ▲              ▲           ▲
+        │               │              │           │
+   ┌────┴────┐    ┌─────┴─────┐   ┌────┴────┐  ┌───┴───┐
+   │ Spoke 1 │    │  Spoke 2  │   │ Spoke N │  │ Agents│
+   │  (AKS)  │    │   (K3s)   │   │   ...   │  │       │
+   └─────────┘    └───────────┘   └─────────┘  └───────┘
+```
 
-### Hub Cluster (OKE)
-- **Region**: Oracle Cloud (Ashburn)
-- **Compute**: 2x ARM64 Worker Nodes (Always Free)
-- **Storage**: Hybrid Model (50GB Block Volumes + Infinite S3 Object Storage)
-- **Ingress**: NGINX Ingress Controller with Let's Encrypt SSL/TLS
-- **Cluster Label**: `oke-hub`
-- **Domains**:
-  - `grafana.canepro.me` (Visualization)
-  - `observability.canepro.me` (Secure Data Ingestion)
-  - `argocd.canepro.me` (GitOps Control Plane)
+### Endpoints
 
-### Spoke Clusters
-- **AKS (Azure UK South)**: Rocket.Chat production deployment (`aks-canepro`)
-  - Remote-writes metrics to hub
-  - Sends logs via Promtail
-  - Sends traces via OpenTelemetry Collector
-- **Additional spokes**: See [docs/MULTI-CLUSTER-SETUP-COMPLETE.md](docs/MULTI-CLUSTER-SETUP-COMPLETE.md)
+| Service | URL |
+|---------|-----|
+| Grafana | https://grafana.canepro.me |
+| ArgoCD | https://argocd.canepro.me |
+| Data Ingestion | https://observability.canepro.me |
 
-## 🚀 Management (GitOps First)
-This entire stack is managed declaratively via ArgoCD.
+## Quick Start
 
-### How to apply changes:
-1. **Modify**: Edit the values in `helm/` or application manifests in `argocd/applications/`.
-2. **Commit & Push**: Push changes to the `main` branch.
-3. **Sync**: ArgoCD automatically detects and applies changes using **Server-Side Apply**.
+### Access Grafana
 
-### Upgrades (Grafana / PVC-backed components)
-For PVC-backed components (especially **Grafana** and **Prometheus**), take an OCI Block Volume snapshot/backup first and follow the runbook:
-- **Grafana upgrade runbook**: `hub-docs/OPERATIONS-HUB.md` → “Grafana upgrade runbook (Helm chart + Grafana OSS)”
-
-### ⚠️ Important: This repo is public and ArgoCD watches `main`
-This repository is **public** (portfolio use) but also functions as a **live GitOps source**.
-If ArgoCD is configured to track `main`, then **every push** can trigger reconciliation.
-
-**Safe workflow tips**
-- Keep “portfolio-only” edits limited to docs when possible.
-- Before pushing a risky change (anything under `argocd/` or `helm/`), run `./scripts/validate-deployment.sh` after ArgoCD syncs.
-- If you want a safety net, use git tags (see `cluster-information.md` → **Reverting to a Stable State**).
-
-### Why `helm list` is empty
-This repo uses **ArgoCD + Helm charts**, but the workloads are rendered and applied as **native Kubernetes manifests** by ArgoCD.
-That means you should **not** expect Helm release metadata in-cluster:
-- `helm list -n monitoring` may be empty even when everything is running.
-- Operational checks should use `kubectl` (pods/services) and ArgoCD Application health.
-
-### Initial Access:
-Retrieve the Grafana admin password from your cluster:
 ```bash
-kubectl get secret grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+# Retrieve admin password
+kubectl get secret grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d; echo
 ```
 
-**Forgot Password?** Reset it via CLI:
+### Validate Deployment
+
 ```bash
-POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
-kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
+./scripts/validate-deployment.sh
 ```
 
-## 🤖 Automation & CI/CD
-This repository includes a **DevOps Quality Gate** via GitHub Actions (`.github/workflows/devops-quality-gate.yml`):
-- **YAML Linting**: Ensures all manifests follow standard formatting.
-- **Security Scanning**: Uses `kube-linter` to check for K8s security best practices.
-- **OCI Storage Audit**: Runs weekly to ensure the "Always Free" 200GB limit is not exceeded.
-- **ArgoCD Validation**: Validates application manifests before they reach the cluster.
+## Repository Structure
 
-## 📁 Directory Structure
-```text
-├── argocd/               # ArgoCD Application manifests (The Control Plane)
-├── hub-docs/             # Central Hub specific documentation
-├── docs/                 # General integration and troubleshooting guides
-├── helm/                 # Component-specific Helm values
-├── k8s/                  # Raw Kubernetes manifests (Ingress, SSL, etc.)
-├── scripts/              # Useful maintenance scripts
-└── GITOPS-HANDOVER.md    # Multi-cluster operational roadmap
+```
+├── argocd/              # ArgoCD application manifests
+│   ├── applications/    # Individual component definitions
+│   └── bootstrap-oke.yaml
+├── helm/                # Helm values for each component
+├── k8s/                 # Raw Kubernetes manifests
+├── terraform/           # OKE infrastructure as code
+├── scripts/             # Operational scripts
+├── docs/                # Integration and troubleshooting guides
+└── hub-docs/            # Hub-specific documentation
 ```
 
-## 🧪 Validation & Day-2 Ops
-- **Validation script**: `scripts/validate-deployment.sh` (checks pods, services, PVCs, ArgoCD app health, and resource usage)
-- **Resource usage**: requires **metrics-server** (deployed via ArgoCD into `kube-system`) for `kubectl top ...`
+## GitOps Workflow
 
----
-**Status**: ✅ Platform Fully Operational & Managed via GitOps
+This stack is managed declaratively via ArgoCD. All changes flow through Git:
+
+1. **Modify** - Edit manifests in `argocd/applications/` or values in `helm/`
+2. **Commit** - Push changes to `main` branch
+3. **Sync** - ArgoCD automatically detects and applies changes
+
+### Important Notes
+
+- ArgoCD watches the `main` branch - every push triggers reconciliation
+- For PVC-backed components (Grafana, Prometheus), take snapshots before upgrades
+- Run `./scripts/validate-deployment.sh` after changes to verify health
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [hub-docs/README.md](hub-docs/README.md) | Component versions and architecture overview |
+| [hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md) | Retention policies, storage management |
+| [hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md) | ArgoCD operations and troubleshooting |
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Getting started guide |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Integration guide for external clusters |
+| [docs/MULTI-CLUSTER-SETUP-COMPLETE.md](docs/MULTI-CLUSTER-SETUP-COMPLETE.md) | Hub-and-spoke setup guide |
+| [GITOPS-HANDOVER.md](GITOPS-HANDOVER.md) | Operational handover document |
+| [VERSION-TRACKING.md](VERSION-TRACKING.md) | Software version tracking |
+
+## CI/CD
+
+### GitHub Actions
+
+The repository includes automated quality gates (`.github/workflows/devops-quality-gate.yml`):
+- YAML linting
+- Kubernetes manifest security scanning (kube-linter)
+- ArgoCD application validation
+
+### Jenkins
+
+Jenkins pipelines for infrastructure validation (`.jenkins/`):
+- Terraform format, validate, and plan
+- Kubernetes manifest validation
+- Security scanning
+
+See [.jenkins/README.md](.jenkins/README.md) for setup instructions.
+
+## Infrastructure
+
+| Resource | Specification |
+|----------|---------------|
+| Cluster | OKE Basic (Always Free) |
+| Region | us-ashburn-1 |
+| Nodes | 2x VM.Standard.A1.Flex (ARM64) |
+| Compute | 2 OCPU / 12GB RAM per node |
+| Storage | Block Volumes + Object Storage |
+
+## License
+
+This project is maintained for educational and portfolio purposes.

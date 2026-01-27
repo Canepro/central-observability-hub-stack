@@ -1,43 +1,53 @@
-# OKE Observability Hub - The Map
+# OKE Observability Hub
 
-Welcome to the Central Observability Hub. This cluster serves as the "Brain" of the ecosystem, providing centralized storage, analysis, and visualization for all multi-cluster telemetry.
+Central observability hub providing storage, analysis, and visualization for multi-cluster telemetry.
 
-## 🎯 Role of the OKE Hub
-The OKE Hub is designed to be a high-performance, cost-effective "Single Pane of Glass" for the entire infrastructure. It ingests metrics, logs, and traces from various spoke clusters and external applications.
+## Role
 
-### Key Responsibilities:
-- **🌳 Unified World Tree Dashboard**: Multi-cluster health visualization with cluster filtering
-- **Centralized Storage**: Long-term persistence of telemetry data using OCI Object Storage
-- **Unified Visualization**: A single Grafana instance for querying data across all environments
-- **Declarative Management**: The entire stack is managed via GitOps (ArgoCD), ensuring consistency and easy recovery
-- **Cluster Labeling**: All metrics are labeled with `cluster` for multi-cluster filtering
-  - Hub: `cluster="oke-hub"`
-  - Spokes: `cluster="aks-canepro"`, etc.
+The OKE Hub serves as the centralized monitoring platform, ingesting metrics, logs, and traces from spoke clusters and external applications.
 
-## 🛠️ The Backend Stack (Always Free Tier)
-This stack is optimized to run within the Oracle Cloud "Always Free" tier constraints while maintaining production-grade capabilities.
+### Capabilities
 
-| Component | Version | Role | Storage Type |
-|-----------|---------|------|--------------|
-| **Grafana** | 12.3.0 | Visualization & Dashboards | OCI Block Volume (50Gi) |
-| **Loki** | 3.5.7 | Log Aggregation | OCI Object Storage (S3 API) |
-| **Prometheus** | 25.8.0 | Metrics & Alerting | OCI Block Volume (50Gi) |
-| **Tempo** | 1.24.0 | Distributed Tracing | OCI Object Storage (S3 API) |
+- **Unified Dashboard**: Multi-cluster health visualization with cluster-based filtering
+- **Centralized Storage**: Long-term telemetry persistence using OCI Object Storage
+- **Single Pane of Glass**: One Grafana instance for querying all environments
+- **GitOps Management**: Declarative configuration via ArgoCD
 
-## 🚀 ArgoCD Management
-The OKE Hub manages its own observability stack using the "App-of-Apps" pattern. The bootstrap manifest `argocd/bootstrap-oke.yaml` points to the `argocd/applications/` directory, which contains individual Application manifests for each component.
+### Cluster Labels
 
-### Key ArgoCD Settings:
-- **Server-Side Apply (SSA)**: Enabled for all applications to handle large CRDs and objects that exceed standard annotation limits.
-- **Self-Healing**: Automated pruning and self-healing are enabled to maintain the desired state defined in Git.
+All metrics include a `cluster` label for filtering:
+- Hub: `cluster="oke-hub"`
+- Spokes: `cluster="aks-canepro"`, etc.
 
-## 📚 Related Documentation
-- [DIAGRAM.md](DIAGRAM.md) - Data Flow and Architecture Visualization
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Deep Dive into System Design and Storage
-- [OPERATIONS-HUB.md](OPERATIONS-HUB.md) - Admin Guide for Retention, Storage, and Maintenance
-- [ARGOCD-RUNBOOK.md](ARGOCD-RUNBOOK.md) - ArgoCD Operations and Troubleshooting for this Repo
-- [INGRESS-SETUP.md](INGRESS-SETUP.md) - NGINX Ingress and SSL/TLS Configuration
-- [SECURITY-RECOMMENDATIONS.md](SECURITY-RECOMMENDATIONS.md) - Best Practices for Secure Ingestion
-- [GITOPS-HANDOVER.md](../GITOPS-HANDOVER.md) - Multi-Cluster Operational Map
-- [../docs/MULTI-CLUSTER-SETUP-COMPLETE.md](../docs/MULTI-CLUSTER-SETUP-COMPLETE.md) - Multi-Cluster Setup Complete Guide
+## Stack Components
+
+Optimized for OCI Always Free Tier:
+
+| Component | Version | Role | Storage |
+|-----------|---------|------|---------|
+| Grafana | 12.3.0 | Visualization | Block Volume (50Gi) |
+| Prometheus | 25.8.0 | Metrics & Alerting | Block Volume (50Gi) |
+| Loki | 3.5.7 | Log Aggregation | Object Storage (S3) |
+| Tempo | 1.24.0 | Distributed Tracing | Object Storage (S3) |
+
+## ArgoCD Configuration
+
+The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstrap-oke.yaml`) references individual application manifests in `argocd/applications/`.
+
+### Settings
+
+- **Server-Side Apply**: Enabled for large CRDs and manifests
+- **Self-Healing**: Automated pruning and drift correction
+
+## Related Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System design and storage architecture
+- [CLUSTER-INFO.md](CLUSTER-INFO.md) - OKE cluster details and access commands
+- [OPERATIONS-HUB.md](OPERATIONS-HUB.md) - Retention policies and maintenance
+- [ARGOCD-RUNBOOK.md](ARGOCD-RUNBOOK.md) - ArgoCD operations and troubleshooting
+- [INGRESS-SETUP.md](INGRESS-SETUP.md) - NGINX Ingress and SSL/TLS configuration
+- [SECURITY-RECOMMENDATIONS.md](SECURITY-RECOMMENDATIONS.md) - Security best practices
+- [DIAGRAM.md](DIAGRAM.md) - Data flow visualization
+- [../GITOPS-HANDOVER.md](../GITOPS-HANDOVER.md) - Multi-cluster operational handover
+- [../docs/MULTI-CLUSTER-SETUP-COMPLETE.md](../docs/MULTI-CLUSTER-SETUP-COMPLETE.md) - Hub-and-spoke setup guide
 

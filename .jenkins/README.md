@@ -42,6 +42,24 @@ Create the bucket if it doesn't exist:
 oci os bucket create --name terraform-state --compartment-id $COMPARTMENT_ID
 ```
 
+### OCI S3 Authentication Notes
+
+OCI Customer Secret Keys often contain special characters (`/`, `+`, `=`) that cause `SignatureDoesNotMatch` errors when passed via environment variables.
+
+**Solution**: The Jenkinsfile passes credentials directly via `-backend-config` flags:
+```bash
+terraform init \
+  -backend-config="access_key=${S3_ACCESS_KEY}" \
+  -backend-config="secret_key=${S3_SECRET_KEY}"
+```
+
+**Local development**: Use a `backend.hcl` file (gitignored):
+```hcl
+access_key = "your_access_key"
+secret_key = "your_secret_key"
+```
+Then run: `terraform init -backend-config=backend.hcl`
+
 ## Setup in Jenkins
 
 ### Option 1: CLI Setup (Recommended)
