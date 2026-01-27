@@ -8,6 +8,23 @@ terraform {
       version = ">= 2.0.0"
     }
   }
+
+  # OCI Object Storage backend (S3-compatible)
+  # Bucket must be created first: oci os bucket create --name terraform-state --compartment-id <compartment_id>
+  # Configure via backend.hcl or environment variables (TF_VAR_*)
+  backend "s3" {
+    bucket                      = "terraform-state"
+    key                         = "oke-hub/terraform.tfstate"
+    region                      = "us-ashburn-1"
+    endpoint                    = "https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com"
+    skip_region_validation      = true
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_requesting_account_id  = true
+    use_path_style              = true
+    # Credentials via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars
+    # or via backend.hcl: access_key = "..." and secret_key = "..."
+  }
 }
 
 provider "oci" {

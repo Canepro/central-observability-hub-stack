@@ -1,0 +1,8 @@
+# OCI Object Storage Backend Configuration (S3-compatible)
+# Copy this to backend.hcl and fill in your credentials
+# backend.hcl is gitignored - never commit credentials
+
+# OCI Object Storage S3 compatibility credentials
+# Get these from OCI Console: Identity > Users > Your User > Customer Secret Keys
+access_key = "YOUR_ACCESS_KEY_ID"
+secret_key = "YOUR_SECRET_ACCESS_KEY"
