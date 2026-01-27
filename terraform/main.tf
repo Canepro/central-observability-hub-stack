@@ -16,12 +16,15 @@ terraform {
     bucket                      = "terraform-state"
     key                         = "oke-hub/terraform.tfstate"
     region                      = "us-ashburn-1"
-    endpoint                    = "https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com"
+    endpoints = {
+      s3 = "https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com"
+    }
     skip_region_validation      = true
     skip_credentials_validation = true
     skip_metadata_api_check     = true
     skip_requesting_account_id  = true
     use_path_style              = true
+    skip_s3_checksum            = true  # OCI doesn't support AWS chunked encoding
     # Credentials via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars
     # or via backend.hcl: access_key = "..." and secret_key = "..."
   }
