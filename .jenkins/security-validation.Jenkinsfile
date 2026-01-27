@@ -1,4 +1,4 @@
-// Security Validation Pipeline for rocketchat-k8s
+// Security Validation Pipeline for central-observability-hub-stack
 // This pipeline performs security scanning and risk assessment, then creates PRs/issues based on findings.
 // Purpose: Automated security checks with risk-based remediation workflows.
 pipeline {
@@ -34,7 +34,7 @@ spec:
     MEDIUM_THRESHOLD = '50'    // Number of medium findings to create issue
     
     // GitHub configuration (from Jenkins credentials)
-    GITHUB_REPO = 'Canepro/rocketchat-k8s'
+    GITHUB_REPO = 'Canepro/central-observability-hub-stack'
     GITHUB_TOKEN_CREDENTIALS = 'github-token'
     
     // Output files for findings
