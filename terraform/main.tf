@@ -13,9 +13,9 @@ terraform {
   # Bucket must be created first: oci os bucket create --name terraform-state --compartment-id <compartment_id>
   # Configure via backend.hcl or environment variables (TF_VAR_*)
   backend "s3" {
-    bucket                      = "terraform-state"
-    key                         = "oke-hub/terraform.tfstate"
-    region                      = "us-ashburn-1"
+    bucket = "terraform-state"
+    key    = "oke-hub/terraform.tfstate"
+    region = "us-ashburn-1"
     endpoints = {
       s3 = "https://iducrocaj9h2.compat.objectstorage.us-ashburn-1.oraclecloud.com"
     }
@@ -24,7 +24,7 @@ terraform {
     skip_metadata_api_check     = true
     skip_requesting_account_id  = true
     use_path_style              = true
-    skip_s3_checksum            = true  # OCI doesn't support AWS chunked encoding
+    skip_s3_checksum            = true # OCI doesn't support AWS chunked encoding
     # Credentials via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars
     # or via backend.hcl: access_key = "..." and secret_key = "..."
   }
