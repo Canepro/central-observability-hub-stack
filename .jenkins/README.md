@@ -13,28 +13,39 @@ This directory contains Jenkinsfiles for CI validation of the `GrafanaLocal` rep
 
 The Terraform validation pipeline runs **format + validate** on every build (including PRs). When OCI parameters and credentials are **not** set (e.g. PR or branch validation), **Setup** and **Terraform Plan** are skipped so the job can pass without injecting secrets. To run a full **terraform plan**, set the parameters and credentials below in the Jenkins job.
 
-### Required Jenkins Job Parameters / Environment (for full plan only)
+### OCI Parameters: Build with Parameters vs Credentials
 
-When you want to run **terraform plan**, configure these OCI **identifiers** (not secrets) in the Jenkins job (parameters or environment variables). They are **environment-specific** and should not be hardcoded in git:
+When you want to run **terraform plan**, the pipeline needs OCI **identifiers** (tenancy, user, fingerprint, region, compartment). You can supply them in either of two ways:
 
-- `OCI_TENANCY_OCID`
-- `OCI_USER_OCID`
-- `OCI_FINGERPRINT`
-- `OCI_REGION` (default: `us-ashburn-1`)
-- `TF_VAR_compartment_id`
+1. **Build with Parameters** – each run, open the branch job (e.g. **main**), click **Build with Parameters**, and fill in the five parameters. No setup beyond the job.
+2. **Jenkins credentials (Secret text)** – create five Secret text credentials under the **GrafanaLocal** folder (or the folder that contains the multibranch job). The pipeline reads them when parameters are empty, so you don’t have to type values each time.
 
-If these are empty, the pipeline runs only **Terraform Format** and **Terraform Validate** (with `terraform init -backend=false`), so PR and branch builds pass without OCI credentials.
+If both parameters and credentials are empty, the pipeline runs only **Terraform Format** and **Terraform Validate** (with `terraform init -backend=false`), so PR and branch builds pass without OCI credentials.
+
+**Credential IDs** (create as **Secret text** under the GrafanaLocal folder). Use the **Description** field in Jenkins so you know what each one is later:
+
+| Credential ID           | Description | Secret text value |
+|-------------------------|-------------|-------------------|
+| `oci-tenancy-ocid`      | OCI Tenancy OCID – root compartment ID; from `grep tenancy ~/.oci/config` or OCI Console > Tenancy Details | Tenancy OCID |
+| `oci-user-ocid`         | OCI User OCID – the user that owns the API key; from `grep user ~/.oci/config` or OCI Console > Identity > Users | User OCID |
+| `oci-fingerprint`       | OCI API key fingerprint – from `grep fingerprint ~/.oci/config` or OCI Console > User > API Keys; matches the PEM in `oci-api-key` | Fingerprint |
+| `oci-region`            | OCI region – e.g. `us-ashburn-1`; from `grep region ~/.oci/config` or OCI Console | Region |
+| `tf-var-compartment-id` | Terraform compartment – OCID where OKE/OKE Hub resources live; often same as tenancy (root) or a child compartment | Compartment OCID |
+
+**How to create:** Jenkins → your folder (e.g. GrafanaLocal) → **Credentials** → **Add** → **Jenkins** → Kind: **Secret text**, ID: (exact ID from table), **Description**: (copy from table), Secret: the value → **Create**. Repeat for the five IDs above.
+
+**Priority:** If you fill in **Build with Parameters**, those values are used. If all five parameters are empty, the pipeline uses the credentials above (and fails if any credential is missing).
 
 ### Required Jenkins Credentials
 
-Create these credentials in Jenkins (Manage Jenkins > Credentials):
+Create these credentials in Jenkins (Manage Jenkins > Credentials). Use the **Description** field so you know what each one is later:
 
 | Credential ID | Type | Description |
 |---------------|------|-------------|
-| `oci-api-key` | Secret file | OCI API private key (PEM file) |
-| `oci-s3-access-key` | Secret text | OCI Object Storage S3 access key |
-| `oci-s3-secret-key` | Secret text | OCI Object Storage S3 secret key |
-| `oci-ssh-public-key` | Secret text | SSH public key for OKE nodes |
+| `oci-api-key` | Secret file | OCI API private key (PEM file). From OCI Console > Identity > Users > Your User > API Keys. Used by Terraform/OCI CLI. |
+| `oci-s3-access-key` | Secret text | OCI Customer Secret Key **access key** (S3-compatible). From OCI Console > Users > Customer Secret Keys. Used for Terraform state backend. |
+| `oci-s3-secret-key` | Secret text | OCI Customer Secret Key **secret** (shown once when you create the key). Used with oci-s3-access-key for state backend. |
+| `oci-ssh-public-key` | Secret text | SSH **public** key (e.g. `ssh-rsa AAAA...`). Injected as TF_VAR_ssh_public_key for OKE node access. |
 
 ### How to Get OCI Credentials
 
