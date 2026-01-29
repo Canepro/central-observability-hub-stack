@@ -160,7 +160,7 @@ EOF
   post {
     always {
       dir('terraform') {
-        # NOTE: Do not archive tfplan output by default; plan output can contain sensitive resource attributes.
+        // NOTE: Do not archive tfplan output by default; plan output can contain sensitive resource attributes.
       }
       cleanWs()
     }
