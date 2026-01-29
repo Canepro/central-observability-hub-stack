@@ -174,36 +174,138 @@ spec:
           
           // Create PR or Issue based on findings
           withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
+            if (!env.GITHUB_TOKEN?.trim()) {
+              echo "⚠️ GitHub token is empty; skipping issue/PR creation."
+              return
+            }
             if (highRiskUpdates.size() > 0) {
               // Create GitHub Issue for high-risk (major version) updates
               echo "⚠️ Creating GitHub issue for HIGH risk version updates..."
               
-              def updateList = highRiskUpdates.collect { "- **${it.component}**: ${it.current} → ${it.latest}" }.join('\\n')
+              // Use REAL newlines so GitHub markdown renders bullet lists correctly
+              def updateList = highRiskUpdates.collect { "- **${it.component}**: ${it.current} → ${it.latest}" }.join('\n')
               
-              sh """
-                cat > issue-body.json << 'ISSUE_EOF'
-{
-  "title": "⚠️ Helm Chart: Major version updates available",
-  "body": "## Version Update Alert\\n\\n**Risk Level:** HIGH (Major Version Updates)\\n\\n**Updates Available:**\\n${updateList}\\n\\n## Action Required\\n\\nMajor version updates detected. These may include breaking changes and require careful testing.\\n\\n## Next Steps\\n\\n1. Review release notes for each component\\n2. Check for breaking changes and migration guides\\n3. Test in staging environment if available\\n4. Update VERSION-TRACKING.md after upgrade\\n\\n---\\n*This issue was automatically created by Jenkins version check pipeline.*",
-  "labels": ["dependencies", "helm", "automated", "upgrade"]
-}
-ISSUE_EOF
-                
-                curl -X POST \\
-                  -H "Authorization: token \${GITHUB_TOKEN}" \\
-                  -H "Accept: application/vnd.github.v3+json" \\
-                  "https://api.github.com/repos/${env.GITHUB_REPO}/issues" \\
-                  -d @issue-body.json || true
-              """
+              withEnv(["UPDATE_LIST=${updateList}"]) {
+                sh '''
+                  set +e
+                  ISSUE_TITLE="⚠️ Helm Chart: Major version updates available"
+                  
+                  ensure_label() {
+                    LABEL_NAME="$1"
+                    LABEL_COLOR="$2"
+                    LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
+                    curl -fsSL \
+                      -H "Authorization: token ${GITHUB_TOKEN}" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
+                    curl -fsSL -X POST \
+                      -H "Authorization: token ${GITHUB_TOKEN}" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${GITHUB_REPO}/labels" \
+                      -d "$LABEL_JSON" >/dev/null 2>&1 || true
+                  }
+                  
+                  ensure_label "dependencies" "0366d6"
+                  ensure_label "helm" "0e8a16"
+                  ensure_label "automated" "0e8a16"
+                  ensure_label "upgrade" "fbca04"
+                  
+                  # De-duplicate: if an open issue with same title exists, comment on it instead
+                  ISSUE_LIST_JSON=$(curl -fsSL \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/issues?state=open&labels=dependencies,helm,automated,upgrade&per_page=100" \
+                    || echo '[]')
+                  
+                  EXISTING_ISSUE_NUMBER=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].number // empty' 2>/dev/null || true)
+                  EXISTING_ISSUE_URL=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].html_url // empty' 2>/dev/null || true)
+                  
+                  if [ -n "${EXISTING_ISSUE_NUMBER}" ]; then
+                    echo "Existing open issue #${EXISTING_ISSUE_NUMBER} found; adding comment instead of creating duplicate."
+                    printf "%s" "${UPDATE_LIST}" > update-list.md
+                    TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+                    COMMENT_JSON=$(jq -n --rawfile updates update-list.md --arg ts "$TS" --arg build "${BUILD_URL:-}" \
+                      '{body:("## New version updates detected\n\nTime: " + $ts + ( ($build|length)>0 ? ("\nBuild: " + $build) : "" ) + "\n\n**Updates Available:**\n" + $updates)}')
+                    curl -X POST \
+                      -H "Authorization: token ${GITHUB_TOKEN}" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${GITHUB_REPO}/issues/${EXISTING_ISSUE_NUMBER}/comments" \
+                      -d "$COMMENT_JSON" >/dev/null 2>&1 || true
+                    echo "Updated existing issue: ${EXISTING_ISSUE_URL}"
+                    exit 0
+                  fi
+                  
+                  # Build JSON with jq so newlines are escaped correctly
+                  printf "%s" "${UPDATE_LIST}" > update-list.md
+                  ISSUE_BODY_JSON=$(jq -n \
+                    --arg title "${ISSUE_TITLE}" \
+                    --rawfile updates update-list.md \
+                    '{title:$title, body:("## Version Update Alert\n\n**Risk Level:** HIGH (Major Version Updates)\n\n**Updates Available:**\n" + $updates + "\n\n## Action Required\n\nMajor version updates detected. These may include breaking changes and require careful testing.\n\n## Next Steps\n\n1. Review release notes for each component\n2. Check for breaking changes and migration guides\n3. Test in staging environment if available\n4. Update VERSION-TRACKING.md after upgrade\n\n---\n*This issue was automatically created by Jenkins version check pipeline.*"), labels:["dependencies","helm","automated","upgrade"]}')
+                  echo "$ISSUE_BODY_JSON" > issue-body.json
+                  
+                  curl -X POST \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/issues" \
+                    -d @issue-body.json || true
+                '''
+              }
             } else if (mediumRiskUpdates.size() >= 3) {
               // Create PR for multiple medium-risk updates
               echo "📝 Creating PR for version updates..."
               
               sh '''
-                BRANCH_NAME="chore/helm-version-updates-$(date +%Y%m%d)"
+                set +e
+                PR_TITLE="⬆️ Helm Chart Updates Available"
+                
+                ensure_label() {
+                  LABEL_NAME="$1"
+                  LABEL_COLOR="$2"
+                  LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
+                  curl -fsSL \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
+                  curl -fsSL -X POST \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/labels" \
+                    -d "$LABEL_JSON" >/dev/null 2>&1 || true
+                }
+                
+                ensure_label "dependencies" "0366d6"
+                ensure_label "helm" "0e8a16"
+                ensure_label "automated" "0e8a16"
+                ensure_label "upgrade" "fbca04"
+                
+                # De-duplicate: re-use an existing open PR if present
+                PR_LIST_JSON=$(curl -fsSL \
+                  -H "Authorization: token ${GITHUB_TOKEN}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${GITHUB_REPO}/issues?state=open&labels=dependencies,helm,automated,upgrade&per_page=100" \
+                  || echo '[]')
+                EXISTING_PR_NUMBER=$(echo "$PR_LIST_JSON" | jq -r '[.[] | select(.pull_request != null) | select(.title | startswith("⬆️ Helm Chart Updates"))][0].number // empty' 2>/dev/null || true)
+                if [ -n "${EXISTING_PR_NUMBER}" ]; then
+                  PR_JSON=$(curl -fsSL \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/pulls/${EXISTING_PR_NUMBER}" \
+                    || echo '{}')
+                  BRANCH_NAME=$(echo "$PR_JSON" | jq -r '.head.ref // empty' 2>/dev/null || true)
+                  echo "Found existing version update PR #${EXISTING_PR_NUMBER} on branch ${BRANCH_NAME}; will update it."
+                fi
+                BRANCH_NAME="${BRANCH_NAME:-chore/helm-version-updates-$(date +%Y%m%d)}"
+                
                 git config user.name "Jenkins Version Bot"
                 git config user.email "jenkins@canepro.me"
-                git checkout -b ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
+                
+                # Check out existing remote branch if it exists
+                git fetch origin "${BRANCH_NAME}" 2>/dev/null || true
+                if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH_NAME}"; then
+                  git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
+                else
+                  git checkout -b "${BRANCH_NAME}"
+                fi
                 
                 # Read updates and apply them
                 jq -r '.[] | "\\(.component)|\\(.current)|\\(.latest)|\\(.location)"' chart-updates.json 2>/dev/null | while IFS='|' read -r component current latest location; do
@@ -225,6 +327,9 @@ ISSUE_EOF
                 # Check if there are changes to commit
                 if git diff --cached --quiet; then
                   echo "No changes to commit"
+                  if [ -n "${EXISTING_PR_NUMBER}" ]; then
+                    echo "No new changes; existing PR #${EXISTING_PR_NUMBER} is up to date."
+                  fi
                   exit 0
                 fi
                 
@@ -235,26 +340,50 @@ ISSUE_EOF
 - Review VERSION-TRACKING.md for details
 - Generated by Jenkins version check pipeline"
                 
-                # Push
+                # Ensure authenticated remote for push
+                set +x
                 git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" 2>/dev/null || true
-                git push -u origin ${BRANCH_NAME} || true
+                set -x
                 
-                # Create PR
+                git push origin ${BRANCH_NAME}
+                
+                # Create PR if it doesn't exist, or add comment if it does
                 UPDATES_SUMMARY=$(jq -r '.[] | "- \\(.component): \\(.current) → \\(.latest)"' chart-updates.json | tr '\\n' ' ')
-                cat > pr-body.json << EOF
+                if [ -n "${EXISTING_PR_NUMBER}" ]; then
+                  TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+                  COMMENT_JSON=$(jq -n --arg ts "$TS" --arg build "${BUILD_URL:-}" --arg summary "$UPDATES_SUMMARY" \
+                    '{body:("## PR updated by Jenkins\n\nTime: " + $ts + ( ($build|length)>0 ? ("\nBuild: " + $build) : "" ) + "\n\nUpdates:\n" + $summary)}')
+                  curl -fsSL -X POST \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/issues/${EXISTING_PR_NUMBER}/comments" \
+                    -d "$COMMENT_JSON" >/dev/null 2>&1 || true
+                  echo "Updated existing PR #${EXISTING_PR_NUMBER} with new changes"
+                else
+                  cat > pr-body.json << EOF
 {
-  "title": "⬆️ Helm Chart Updates Available",
+  "title": "${PR_TITLE}",
   "head": "${BRANCH_NAME}",
   "base": "main",
   "body": "## Automated Helm Chart Updates\\n\\nThis PR includes version updates detected by automated checks.\\n\\n### Updates\\n${UPDATES_SUMMARY}\\n\\n### Review Checklist\\n\\n- [ ] Review release notes for each updated component\\n- [ ] Verify no breaking changes\\n- [ ] Test ArgoCD sync after merge\\n- [ ] Update VERSION-TRACKING.md if needed\\n\\n---\\n*This PR was automatically created by Jenkins version check pipeline.*"
 }
 EOF
-                
-                curl -X POST \
-                  -H "Authorization: token ${GITHUB_TOKEN}" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  "https://api.github.com/repos/${GITHUB_REPO}/pulls" \
-                  -d @pr-body.json || true
+                  
+                  PR_CREATE_JSON=$(curl -sS -X POST \
+                    -H "Authorization: token ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/pulls" \
+                    -d @pr-body.json || echo '{}')
+                  
+                  PR_CREATED_NUMBER=$(echo "$PR_CREATE_JSON" | jq -r '.number // empty' 2>/dev/null || true)
+                  if [ -n "${PR_CREATED_NUMBER}" ]; then
+                    curl -sS -X POST \
+                      -H "Authorization: token ${GITHUB_TOKEN}" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${GITHUB_REPO}/issues/${PR_CREATED_NUMBER}/labels" \
+                      -d '{"labels":["dependencies","helm","automated","upgrade"]}' >/dev/null 2>&1 || true
+                  fi
+                fi
               '''
             } else {
               echo "✅ Only minor updates available (${mediumRiskUpdates.size()}). No action needed."
@@ -274,6 +403,76 @@ EOF
     }
     failure {
       echo '❌ Version check failed'
+      script {
+        withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
+          if (!env.GITHUB_TOKEN?.trim()) {
+            echo "⚠️ GitHub token is empty; skipping failure notification."
+            return
+          }
+          sh '''
+            set +e
+            ISSUE_TITLE="CI Failure: ${JOB_NAME}"
+            
+            ensure_label() {
+              LABEL_NAME="$1"
+              LABEL_COLOR="$2"
+              LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
+              curl -fsSL \
+                -H "Authorization: token ${GITHUB_TOKEN}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
+              curl -fsSL -X POST \
+                -H "Authorization: token ${GITHUB_TOKEN}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/${GITHUB_REPO}/labels" \
+                -d "$LABEL_JSON" >/dev/null 2>&1 || true
+            }
+            
+            ensure_label "ci" "6a737d"
+            ensure_label "jenkins" "5319e7"
+            ensure_label "failure" "b60205"
+            ensure_label "automated" "0e8a16"
+            
+            ISSUE_LIST_JSON=$(curl -fsSL \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${GITHUB_REPO}/issues?state=open&labels=ci,jenkins,failure,automated&per_page=100" \
+              || echo '[]')
+            
+            ISSUE_NUMBER=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].number // empty' 2>/dev/null || true)
+            ISSUE_URL=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].html_url // empty' 2>/dev/null || true)
+            
+            if [ -n "${ISSUE_NUMBER}" ]; then
+              cat > issue-comment.json << EOF
+            {
+              "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\n(Automated update on existing issue.)"
+            }
+EOF
+              curl -X POST \
+                -H "Authorization: token ${GITHUB_TOKEN}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/${GITHUB_REPO}/issues/${ISSUE_NUMBER}/comments" \
+                -d @issue-comment.json >/dev/null 2>&1 || true
+              echo "Updated existing failure issue: ${ISSUE_URL}"
+              exit 0
+            fi
+            
+            cat > issue-body.json << EOF
+            {
+              "title": "${ISSUE_TITLE}",
+              "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\nPlease check Jenkins logs for details.\\n\\n---\\n*This issue was automatically created by Jenkins.*",
+              "labels": ["ci", "jenkins", "failure", "automated"]
+            }
+EOF
+            
+            curl -X POST \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${GITHUB_REPO}/issues" \
+              -d @issue-body.json >/dev/null 2>&1 || true
+          '''
+        }
+      }
     }
   }
 }

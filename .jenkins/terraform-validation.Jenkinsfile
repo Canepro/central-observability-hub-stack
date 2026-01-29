@@ -2,6 +2,16 @@
 // This pipeline validates Terraform infrastructure code for the OKE Hub cluster.
 // Uses OCI API Key authentication for terraform plan.
 pipeline {
+  parameters {
+    // NOTE: Keep these identifiers OUT of git. Configure them in the Jenkins job (or via shared library).
+    // These are identifiers (not secrets), but are still environment-specific and shouldn’t be hardcoded in a public repo.
+    string(name: 'OCI_TENANCY_OCID', defaultValue: '', description: 'OCI Tenancy OCID')
+    string(name: 'OCI_USER_OCID', defaultValue: '', description: 'OCI User OCID (matches the API key owner)')
+    string(name: 'OCI_FINGERPRINT', defaultValue: '', description: 'OCI API key fingerprint')
+    string(name: 'OCI_REGION', defaultValue: 'us-ashburn-1', description: 'OCI region')
+    string(name: 'TF_VAR_compartment_id', defaultValue: '', description: 'OCI Compartment OCID for Terraform (TF_VAR_compartment_id)')
+  }
+
   agent {
     kubernetes {
       label 'terraform-oci'
@@ -28,32 +38,27 @@ spec:
     }
   }
 
-  environment {
-    // OCI Configuration
-    OCI_TENANCY_OCID = 'ocid1.tenancy.oc1..aaaaaaaadeivc3duoyx3pffmgzkcv2zo2gyuq2ftxybicrpianpnmeccgeba'
-    OCI_USER_OCID = 'ocid1.user.oc1..aaaaaaaazvirssisy5xeic6gr64i37ffnk54bhsq7q424wpj4pqy2hzedxzq'
-    OCI_FINGERPRINT = '09:a3:e2:dc:12:56:ff:a2:20:4f:55:f8:77:18:9c:f4'
-    OCI_REGION = 'us-ashburn-1'
-    
-    // OCI Object Storage (S3-compatible) for Terraform state backend
-    OCI_NAMESPACE = 'iducrocaj9h2'
-    
-    // Terraform variables (non-sensitive)
-    TF_VAR_compartment_id = 'ocid1.tenancy.oc1..aaaaaaaadeivc3duoyx3pffmgzkcv2zo2gyuq2ftxybicrpianpnmeccgeba'
-  }
-
   stages {
     // Stage 1: Setup OCI Authentication
     stage('Setup') {
       steps {
         // OCI API Key from Jenkins credentials
         withCredentials([
-          file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE'),
-          string(credentialsId: 'oci-s3-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'oci-s3-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-          string(credentialsId: 'oci-ssh-public-key', variable: 'TF_VAR_ssh_public_key')
+          file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE')
         ]) {
           sh '''
+            # Fail fast if required identifiers are missing (configured via Jenkins parameters/env).
+            if [ -z "${OCI_TENANCY_OCID:-}" ] || [ -z "${OCI_USER_OCID:-}" ] || [ -z "${OCI_FINGERPRINT:-}" ] || [ -z "${OCI_REGION:-}" ]; then
+              echo "ERROR: Missing required OCI identifiers."
+              echo "Set OCI_TENANCY_OCID, OCI_USER_OCID, OCI_FINGERPRINT, OCI_REGION in the Jenkins job parameters/environment."
+              exit 1
+            fi
+            if [ -z "${TF_VAR_compartment_id:-}" ]; then
+              echo "ERROR: Missing TF_VAR_compartment_id."
+              echo "Set TF_VAR_compartment_id in the Jenkins job parameters/environment."
+              exit 1
+            fi
+
             # Create OCI config directory
             mkdir -p ~/.oci
             
@@ -155,8 +160,7 @@ EOF
   post {
     always {
       dir('terraform') {
-        sh 'terraform show -no-color tfplan > tfplan.txt 2>/dev/null || true'
-        archiveArtifacts artifacts: 'tfplan.txt', allowEmptyArchive: true
+        # NOTE: Do not archive tfplan output by default; plan output can contain sensitive resource attributes.
       }
       cleanWs()
     }

@@ -13,6 +13,16 @@ This directory contains Jenkinsfiles for CI validation of the `GrafanaLocal` rep
 
 The Terraform validation pipeline requires OCI credentials to run `terraform plan`.
 
+### Required Jenkins Job Parameters / Environment
+
+The Terraform pipeline also requires OCI **identifiers** (not secrets) and Terraform variables to be configured in Jenkins (job parameters or environment variables). These are **environment-specific** and should not be hardcoded in git:
+
+- `OCI_TENANCY_OCID`
+- `OCI_USER_OCID`
+- `OCI_FINGERPRINT`
+- `OCI_REGION` (default: `us-ashburn-1`)
+- `TF_VAR_compartment_id`
+
 ### Required Jenkins Credentials
 
 Create these credentials in Jenkins (Manage Jenkins > Credentials):
@@ -59,6 +69,10 @@ access_key = "your_access_key"
 secret_key = "your_secret_key"
 ```
 Then run: `terraform init -backend-config=backend.hcl`
+
+### Terraform plan artifacts
+
+For safety, the pipeline does **not** archive `terraform show` output by default, because plan output can contain sensitive resource attributes. If you need artifacts, restrict access/retention and avoid publishing sensitive values.
 
 ## Setup in Jenkins
 
