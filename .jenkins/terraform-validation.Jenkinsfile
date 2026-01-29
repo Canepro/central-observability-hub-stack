@@ -120,6 +120,8 @@ EOF
                   terraform init \
                     -backend-config="access_key=${S3_ACCESS_KEY}" \
                     -backend-config="secret_key=${S3_SECRET_KEY}"
+                  echo "--- Backend state list (verify Jenkins sees same state as local) ---"
+                  terraform state list || true
                   terraform validate
                 '''
               }
