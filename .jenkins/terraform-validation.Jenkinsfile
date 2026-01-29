@@ -39,34 +39,17 @@ spec:
   }
 
   stages {
-    // Stage 1: Setup OCI Authentication
+    // Stage 1: Setup OCI Authentication (skipped when OCI params not set, e.g. PR validation)
     stage('Setup') {
+      when { expression { return params.OCI_TENANCY_OCID?.trim() && params.OCI_USER_OCID?.trim() && params.OCI_FINGERPRINT?.trim() && params.TF_VAR_compartment_id?.trim() } }
       steps {
-        // OCI API Key from Jenkins credentials
         withCredentials([
           file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE')
         ]) {
           sh '''
-            # Fail fast if required identifiers are missing (configured via Jenkins parameters/env).
-            if [ -z "${OCI_TENANCY_OCID:-}" ] || [ -z "${OCI_USER_OCID:-}" ] || [ -z "${OCI_FINGERPRINT:-}" ] || [ -z "${OCI_REGION:-}" ]; then
-              echo "ERROR: Missing required OCI identifiers."
-              echo "Set OCI_TENANCY_OCID, OCI_USER_OCID, OCI_FINGERPRINT, OCI_REGION in the Jenkins job parameters/environment."
-              exit 1
-            fi
-            if [ -z "${TF_VAR_compartment_id:-}" ]; then
-              echo "ERROR: Missing TF_VAR_compartment_id."
-              echo "Set TF_VAR_compartment_id in the Jenkins job parameters/environment."
-              exit 1
-            fi
-
-            # Create OCI config directory
             mkdir -p ~/.oci
-            
-            # Copy the API key
             cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
             chmod 600 ~/.oci/oci_api_key.pem
-            
-            # Create OCI config file
             cat > ~/.oci/config << EOF
 [DEFAULT]
 user=${OCI_USER_OCID}
@@ -76,7 +59,6 @@ region=${OCI_REGION}
 key_file=~/.oci/oci_api_key.pem
 EOF
             chmod 600 ~/.oci/config
-            
             echo "OCI configuration created"
             terraform version
           '''
@@ -93,30 +75,41 @@ EOF
       }
     }
 
-    // Stage 3: Initialize and Validate
+    // Stage 3: Initialize and Validate (no backend when OCI params unset, so PR builds pass without creds)
     stage('Terraform Validate') {
       steps {
-        withCredentials([
-          string(credentialsId: 'oci-s3-access-key', variable: 'S3_ACCESS_KEY'),
-          string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
-        ]) {
-          dir('terraform') {
-            sh '''
-              # Initialize with OCI Object Storage backend
-              # Pass credentials via -backend-config to avoid shell escaping issues with special chars
-              terraform init \
-                -backend-config="access_key=${S3_ACCESS_KEY}" \
-                -backend-config="secret_key=${S3_SECRET_KEY}"
-              
-              terraform validate
-            '''
+        script {
+          def ociParamsSet = params.OCI_TENANCY_OCID?.trim() && params.TF_VAR_compartment_id?.trim()
+          if (ociParamsSet) {
+            withCredentials([
+              string(credentialsId: 'oci-s3-access-key', variable: 'S3_ACCESS_KEY'),
+              string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
+            ]) {
+              dir('terraform') {
+                sh '''
+                  terraform init \
+                    -backend-config="access_key=${S3_ACCESS_KEY}" \
+                    -backend-config="secret_key=${S3_SECRET_KEY}"
+                  terraform validate
+                '''
+              }
+            }
+          } else {
+            dir('terraform') {
+              sh '''
+                echo "OCI parameters not set; running init -backend=false and validate (no plan)."
+                terraform init -backend=false
+                terraform validate
+              '''
+            }
           }
         }
       }
     }
 
-    // Stage 4: Terraform Plan
+    // Stage 4: Terraform Plan (skipped when OCI params not set)
     stage('Terraform Plan') {
+      when { expression { return params.OCI_TENANCY_OCID?.trim() && params.TF_VAR_compartment_id?.trim() } }
       steps {
         withCredentials([
           file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE'),
