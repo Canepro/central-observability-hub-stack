@@ -107,11 +107,11 @@ The repository includes automated quality gates (`.github/workflows/devops-quali
 ### Jenkins
 
 Jenkins pipelines for infrastructure validation (`.jenkins/`):
-- Terraform format, validate, and plan
+- Terraform format, validate, and (when OCI parameters are set) plan
 - Kubernetes manifest validation
 - Security scanning
 
-See [.jenkins/README.md](.jenkins/README.md) for setup instructions.
+PR and branch builds run Terraform format and validate only unless OCI job parameters are configured. See [.jenkins/README.md](.jenkins/README.md) for OCI credentials and parameters.
 
 ## Infrastructure
 
