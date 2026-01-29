@@ -345,6 +345,8 @@ spec:
                 git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" 2>/dev/null || true
                 set -x
                 
+                # Re-enable fail-fast so git push failures surface
+                set -e
                 git push origin ${BRANCH_NAME}
                 
                 # Create PR if it doesn't exist, or add comment if it does
