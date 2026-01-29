@@ -37,9 +37,9 @@ spec:
     stage('Install Tools') {
       steps {
         sh '''
-          # Alpine-based agent: install tools via apk
-          apk add --no-cache curl jq git bash yq github-cli || \
-            apk add --no-cache curl jq git bash yq
+          # Alpine-based agent: install tools via apk (openssl required for Helm install script checksum)
+          apk add --no-cache curl jq git bash yq openssl github-cli || \
+            apk add --no-cache curl jq git bash yq openssl
 
           # GitHub CLI is optional; log if missing
           command -v gh >/dev/null 2>&1 && gh --version || echo "gh not installed (ok)"
@@ -50,7 +50,7 @@ spec:
             chmod +x /usr/local/bin/yq || true
           fi
           
-          # Install helm for repo searches
+          # Install helm for repo searches (openssl above enables checksum verification)
           curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash || true
         '''
       }
