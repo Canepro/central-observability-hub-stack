@@ -39,9 +39,39 @@ spec:
   }
 
   stages {
-    // Stage 1: Setup OCI Authentication (skipped when OCI params not set, e.g. PR validation)
+    // Resolve OCI config: use Build Parameters if set, else use Jenkins credentials (Secret text) under this folder
+    stage('Resolve OCI config') {
+      steps {
+        script {
+          if (params.OCI_TENANCY_OCID?.trim()) {
+            env.OCI_TENANCY_OCID = params.OCI_TENANCY_OCID.trim()
+            env.OCI_USER_OCID = params.OCI_USER_OCID?.trim() ?: ''
+            env.OCI_FINGERPRINT = params.OCI_FINGERPRINT?.trim() ?: ''
+            env.OCI_REGION = params.OCI_REGION?.trim() ?: 'us-ashburn-1'
+            env.TF_VAR_compartment_id = params.TF_VAR_compartment_id?.trim() ?: ''
+          } else {
+            // Secret text creds under GrafanaLocal folder: tenancy OCID, user OCID, API key fingerprint, region, compartment OCID
+            withCredentials([
+              string(credentialsId: 'oci-tenancy-ocid', variable: 'OCI_TENANCY_OCID'),       // root tenancy OCID
+              string(credentialsId: 'oci-user-ocid', variable: 'OCI_USER_OCID'),               // user that owns API key
+              string(credentialsId: 'oci-fingerprint', variable: 'OCI_FINGERPRINT'),            // matches oci-api-key PEM
+              string(credentialsId: 'oci-region', variable: 'OCI_REGION'),                    // e.g. us-ashburn-1
+              string(credentialsId: 'tf-var-compartment-id', variable: 'TF_VAR_compartment_id') // compartment for OKE
+            ]) {
+              env.OCI_TENANCY_OCID = (env.OCI_TENANCY_OCID ?: '').trim()
+              env.OCI_USER_OCID = (env.OCI_USER_OCID ?: '').trim()
+              env.OCI_FINGERPRINT = (env.OCI_FINGERPRINT ?: '').trim()
+              env.OCI_REGION = (env.OCI_REGION?.trim()) ? env.OCI_REGION.trim() : 'us-ashburn-1'
+              env.TF_VAR_compartment_id = (env.TF_VAR_compartment_id ?: '').trim()
+            }
+          }
+        }
+      }
+    }
+
+    // Stage 2: Setup OCI Authentication (skipped when OCI not resolved, e.g. PR validation)
     stage('Setup') {
-      when { expression { return params.OCI_TENANCY_OCID?.trim() && params.OCI_USER_OCID?.trim() && params.OCI_FINGERPRINT?.trim() && params.TF_VAR_compartment_id?.trim() } }
+      when { expression { return env.OCI_TENANCY_OCID?.trim() && env.OCI_USER_OCID?.trim() && env.OCI_FINGERPRINT?.trim() && env.TF_VAR_compartment_id?.trim() } }
       steps {
         withCredentials([
           file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE')
@@ -66,7 +96,7 @@ EOF
       }
     }
 
-    // Stage 2: Format Check
+    // Stage 3: Format Check
     stage('Terraform Format') {
       steps {
         dir('terraform') {
@@ -75,11 +105,11 @@ EOF
       }
     }
 
-    // Stage 3: Initialize and Validate (no backend when OCI params unset, so PR builds pass without creds)
+    // Stage 4: Initialize and Validate (no backend when OCI not resolved, so PR builds pass without creds)
     stage('Terraform Validate') {
       steps {
         script {
-          def ociParamsSet = params.OCI_TENANCY_OCID?.trim() && params.TF_VAR_compartment_id?.trim()
+          def ociParamsSet = env.OCI_TENANCY_OCID?.trim() && env.TF_VAR_compartment_id?.trim()
           if (ociParamsSet) {
             withCredentials([
               string(credentialsId: 'oci-s3-access-key', variable: 'S3_ACCESS_KEY'),
@@ -107,9 +137,9 @@ EOF
       }
     }
 
-    // Stage 4: Terraform Plan (skipped when OCI params not set)
+    // Stage 5: Terraform Plan (skipped when OCI not resolved)
     stage('Terraform Plan') {
-      when { expression { return params.OCI_TENANCY_OCID?.trim() && params.TF_VAR_compartment_id?.trim() } }
+      when { expression { return env.OCI_TENANCY_OCID?.trim() && env.TF_VAR_compartment_id?.trim() } }
       steps {
         withCredentials([
           file(credentialsId: 'oci-api-key', variable: 'OCI_KEY_FILE'),
