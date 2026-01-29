@@ -347,7 +347,7 @@ spec:
                 
                 # Re-enable fail-fast so git push failures surface
                 set -e
-                git push origin ${BRANCH_NAME}
+                git push origin "${BRANCH_NAME}"
                 
                 # Create PR if it doesn't exist, or add comment if it does
                 UPDATES_SUMMARY=$(jq -r '.[] | "- \\(.component): \\(.current) → \\(.latest)"' chart-updates.json | tr '\\n' ' ')
