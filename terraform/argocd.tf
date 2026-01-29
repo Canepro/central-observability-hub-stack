@@ -7,7 +7,7 @@ resource "helm_release" "argocd" {
   version          = "9.3.4"
 
   values = [
-    <<EOF
+    trimspace(<<-EOF
 global:
   domain: argocd.canepro.me
 
@@ -60,5 +60,6 @@ applicationSet:
 redis-ha:
   enabled: false
 EOF
+    )
   ]
 }
