@@ -90,6 +90,23 @@ key_file=~/.oci/oci_api_key.pem
 EOF
             chmod 600 ~/.oci/config
             echo "OCI configuration created"
+
+            # Helm provider uses exec auth via `oci ce cluster generate-token`.
+            # The terraform container may not ship with the OCI CLI, so install it if missing.
+            if ! command -v oci >/dev/null 2>&1; then
+              echo "Installing OCI CLI (required for Helm provider auth)..."
+              apk add --no-cache bash curl ca-certificates python3 py3-pip >/dev/null 2>&1 || true
+              update-ca-certificates >/dev/null 2>&1 || true
+              python3 -m venv /tmp/oci-cli-venv >/dev/null 2>&1 || true
+              if [ -f /tmp/oci-cli-venv/bin/activate ]; then
+                . /tmp/oci-cli-venv/bin/activate
+                pip install --no-cache-dir oci-cli
+                deactivate || true
+                ln -sf /tmp/oci-cli-venv/bin/oci /usr/local/bin/oci || true
+              fi
+            fi
+            command -v oci >/dev/null 2>&1 && oci --version || echo "WARN: OCI CLI not available; Helm provider may treat releases as missing."
+
             terraform version
           '''
         }
