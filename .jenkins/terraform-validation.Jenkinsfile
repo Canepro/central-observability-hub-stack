@@ -1,6 +1,7 @@
 // Terraform Validation Pipeline for central-observability-hub-stack
 // This pipeline validates Terraform infrastructure code for the OKE Hub cluster.
 // Uses OCI API Key authentication for terraform plan.
+// Agent routing (Phase 3): OCI-only — runs on OKE (label terraform-oci). For Azure Terraform use label 'aks-agent'.
 pipeline {
   parameters {
     // NOTE: Keep these identifiers OUT of git. Configure them in the Jenkins job (or via shared library).

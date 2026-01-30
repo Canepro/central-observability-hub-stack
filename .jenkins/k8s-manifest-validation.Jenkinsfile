@@ -1,6 +1,7 @@
 // Kubernetes Manifest Validation Pipeline for central-observability-hub-stack
 // This pipeline validates ArgoCD apps, Helm charts, and raw K8s manifests.
 // Purpose: CI validation only - ensures all manifests are valid before GitOps sync.
+// Agent routing (Phase 3): OKE-only — runs on OKE (label helm). For Azure jobs use label 'aks-agent'.
 pipeline {
   // Use the 'helm' Kubernetes agent (has Helm, kubectl, kubeconform)
   agent {

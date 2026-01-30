@@ -235,6 +235,36 @@ kubectl get endpoints -n monitoring <service-name>
 kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
 ```
 
+### Certificate / ACME challenge stuck (no such host)
+
+**Symptoms**: `kubectl get certificate -n <ns>` shows `Ready: False`; `kubectl describe challenge -n <ns>` shows:
+
+`Waiting for HTTP-01 challenge propagation: ... lookup <hostname> on 10.96.5.5:53: no such host`
+
+**Root cause**: cert-manager runs a self-check from inside the cluster. It resolves the hostname using **cluster DNS** (CoreDNS). If the hostname (e.g. `jenkins-oke.canepro.me`) is not resolvable from cluster DNS—e.g. nodes use an internal resolver that doesn’t have public DNS, or the name isn’t in public DNS yet—the self-check fails and the challenge stays pending.
+
+**Fix**:
+
+1. **Public DNS**: Ensure the hostname has an **A record** pointing to your ingress LB IP (e.g. `jenkins-oke.canepro.me` → `141.148.16.227`). Check from outside the cluster:
+   ```bash
+   nslookup jenkins-oke.canepro.me 8.8.8.8
+   ```
+
+2. **Resolve from inside the cluster**: If nodes’ `/etc/resolv.conf` doesn’t use a resolver that has public DNS, make the hostname resolvable from CoreDNS by forwarding the zone to a public resolver. Edit the CoreDNS ConfigMap in `kube-system` and add a block **before** the fallback `.:53` block (replace `canepro.me` with your domain if different):
+   ```yaml
+   canepro.me:53 {
+     errors
+     cache 30
+     forward . 8.8.8.8 1.1.1.1
+   }
+   ```
+   Then reload CoreDNS (or restart the CoreDNS pods). After that, cert-manager’s self-check can resolve the hostname and the HTTP-01 challenge can complete.
+
+3. **Retry**: Delete the stuck challenge so cert-manager creates a new one (optional):
+   ```bash
+   kubectl delete challenge -n <namespace> <challenge-name>
+   ```
+
 ### kubectl: TLS handshake timeout (OKE specific)
 
 **Symptoms**: The first `kubectl` command fails with `Unable to connect to the server: net/http: TLS handshake timeout`, but the second try works perfectly.
