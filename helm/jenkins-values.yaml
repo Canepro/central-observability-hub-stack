@@ -121,6 +121,7 @@ controller:
                   inbound: {}
                 retentionStrategy: "always"
       # Kubernetes cloud for dynamic agents on OKE (required for agent { kubernetes { ... } } DSL in Jenkinsfiles)
+      # Note: OKE uses CRI-O which enforces fully qualified image names (docker.io/...)
       oke-kubernetes-cloud: |
         jenkins:
           clouds:
@@ -136,6 +137,20 @@ controller:
                 maxRequestsPerHostStr: "32"
                 retentionTimeout: "5"
                 waitForPodSec: "600"
+                templates:
+                  - name: "default"
+                    label: ""
+                    nodeUsageMode: "NORMAL"
+                    containers:
+                      - name: "jnlp"
+                        image: "docker.io/jenkins/inbound-agent:3302.v1cfe4e081049-1-jdk21"
+                        alwaysPullImage: false
+                        workingDir: "/home/jenkins/agent"
+                        ttyEnabled: true
+                        resourceRequestCpu: "100m"
+                        resourceRequestMemory: "256Mi"
+                        resourceLimitCpu: "500m"
+                        resourceLimitMemory: "512Mi"
 
   # Sidecar: reload JCasC on config change
   sidecars:
