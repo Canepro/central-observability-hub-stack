@@ -1,6 +1,7 @@
 // Version Check Pipeline for central-observability-hub-stack
 // This pipeline checks for latest versions of all Helm charts and creates PRs/issues for updates.
 // Purpose: Automated dependency management for OKE Observability Hub components.
+// Agent routing (Phase 3): OKE-only — runs on OKE (label version-checker). For Azure/Key Vault use label 'aks-agent'.
 pipeline {
   agent {
     kubernetes {

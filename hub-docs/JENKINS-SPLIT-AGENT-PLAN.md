@@ -74,12 +74,12 @@ Alertmanager already uses **emptyDir** (no PVC) to stay under 200GB. There is **
 |-------|------|--------|---------|
 | **0. E1 — Free 50GB for Jenkins** | Grafana → emptyDir; dashboards from git; remove Grafana PVC. | This repo (GrafanaLocal): `helm/grafana-values.yaml`, `dashboards/`, provisioning. | One 50GB Block Volume freed; Jenkins can use it on OKE. |
 | **1. OKE — Jenkins Controller** | Deploy Jenkins on OKE (HTTPS 443, temporary hostname); use freed 50GB PVC; JCasC, static node `aks-agent`, secrets on OKE. | OKE (outside this repo). | Controller 24/7 on OKE; webhooks can point to temp URL. |
-| **2. AKS — Static Agent** | Add static agent manifest + RBAC + secret; connect to OKE via WebSocket; remove/repurpose `aks-jenkins` app. | Ops repo (e.g. rocketchat-k8s): `ops/manifests/`, ArgoCD. | Agent runs on AKS when cluster is up; label `aks-agent`. |
-| **3. Job routing** | Update Jenkinsfiles to use label `aks-agent` for Azure jobs; OKE jobs use `built-in` or OKE agent. | This repo: `.jenkins/*.Jenkinsfile`; Jenkins UI. | Jobs route to correct agent. |
+| **2. AKS — Static Agent** | Add static agent manifest + RBAC + secret; connect to OKE via WebSocket; remove/repurpose `aks-jenkins` app. | Ops repo (e.g. rocketchat-k8s): `ops/manifests/`, ArgoCD. | Agent runs on AKS when cluster is up; label `aks-agent`. **Done.** |
+| **3. Job routing** | Update Jenkinsfiles to use label `aks-agent` for Azure jobs; OKE jobs use `built-in` or OKE agent. | This repo: `.jenkins/*.Jenkinsfile`; Jenkins UI. | Jobs route to correct agent. **Next.** |
 | **4. Graceful disconnect** | Before AKS stop: check running builds → put `aks-agent` offline → wait → run AKS stop. | Ops repo: `terraform/automation.tf` (runbook); or CronJob/API. | No failed builds; no stuck Terraform lock. |
 | **5. Migration / domain cutover** | Point `jenkins.canepro.me` from AKS LB to OKE LB; set Jenkins URL; update agent to `jenkins.canepro.me`; retire AKS controller. | DNS; Jenkins config; ops repo. | Production URL on OKE; AKS agent only. |
 
-**Ready to start?** Yes. Phase 0 (E1) can start in **this repo** (Grafana Helm + dashboards). Phase 1 (Jenkins on OKE) is outside this repo; Phases 2–4 are in the ops repo plus Jenkins UI. See below for detailed steps per phase.
+**Ready to start?** Phase 0 (E1) and Phase 1 (OKE controller) and Phase 2 (AKS static agent) are complete. **Phase 3 (job routing)** is next: update Jenkinsfiles and Jenkins UI so Azure jobs use `aks-agent`, OKE jobs use `built-in` or OKE agent. Phases 4–5 remain (graceful disconnect, domain cutover). See below for detailed steps per phase.
 
 ---
 
@@ -235,6 +235,15 @@ After Jenkins is up, you need the **agent connection secret** for the **aks-agen
 - **Ingress:** `kubectl get ingress -n jenkins` — ADDRESS should be set.  
 - **TLS:** cert-manager will issue a certificate for `jenkins-oke.canepro.me` once DNS points to the cluster and the Ingress exists.
 
+### 4.2.1 Phase 1 complete (current state)
+
+- **Controller:** Running at **https://jenkins-oke.canepro.me** (OKE, namespace `jenkins`).
+- **TLS:** Certificate `jenkins-oke-tls` is **Ready**; HTTPS works.
+- **Login:** Admin password from secret:  
+  `kubectl get secret -n jenkins jenkins -o jsonpath='{.data.jenkins-admin-password}' | base64 -d; echo`
+- **aks-agent node:** Defined in JCasC (inbound launcher). Agent secret for Phase 2: **Manage Jenkins → Nodes → aks-agent → Connect** (or `/computer/aks-agent/`).
+- **Next:** Phase 2 — connect the AKS static agent with `-webSocket` to `https://jenkins-oke.canepro.me`.
+
 ### 4.3 Remainder of Phase 1 (reference)
 
 - Derive controller config from `jenkins-values.yaml`: JCasC welcome message and `aks-agent` node; no dynamic K8s agents for AKS.
@@ -249,6 +258,8 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 ---
 
 ## 5. Phase 2: AKS – Static Agent (ops repo)
+
+**During Phase 2** use **JENKINS_URL=https://jenkins-oke.canepro.me** in the AKS agent manifest. After domain cutover (jenkins.canepro.me → OKE), switch to **https://jenkins.canepro.me** and redeploy.
 
 ### 5.1 Agent manifest on AKS
 
@@ -270,6 +281,12 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 
 - **Connectivity:** From AKS, ensure you can reach OKE Jenkins URL over HTTPS (and port 50000 only if using JNLP).
 
+### 5.4 Phase 2 complete (current state)
+
+- **AKS static agent:** Deployed in the ops repo (e.g. `ops/manifests/jenkins-static-agent.yaml`); connects to OKE Controller via WebSocket at `https://jenkins-oke.canepro.me` (or `https://jenkins.canepro.me` after cutover).
+- **Node:** Appears in Jenkins as **aks-agent** with label `aks-agent`; uses agent secret from **Manage Jenkins → Nodes → aks-agent**.
+- **Next:** Phase 3 — update Jenkinsfiles and Jenkins UI so jobs that need Azure use label `aks-agent`; OKE-only jobs use `built-in` or OKE agent labels.
+
 ---
 
 ## 6. Phase 3: Job routing (this repo + Jenkins)
@@ -289,7 +306,18 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 - `.jenkins/security-validation.Jenkinsfile` — use `aks-agent` if the job needs Azure/Key Vault.
 - `.jenkins/k8s-manifest-validation.Jenkinsfile` — use `aks-agent` or `built-in` per where the job should run.
 
-### 6.2 No jobs on AKS agent during shutdown
+**GrafanaLocal (this repo):** All pipelines are OKE/Hub-only (OCI Terraform, version-check, security scan, k8s validation); none require Azure Workload Identity. They use labels `terraform-oci`, `version-checker`, `security`, `helm` and run on OKE (Kubernetes cloud or static OKE agent with those labels). No changes to use `aks-agent` in this repo unless a job is added that touches Azure state or Key Vault.
+
+### 6.2 Jenkins UI
+
+- For each Pipeline or Freestyle job in Jenkins: **Configure → Restrict where this project can be run** → set to `aks-agent` for Azure jobs, or to `built-in` / OKE agent label for OKE-only jobs.
+
+### 6.3 Phase 3 complete (current state)
+
+- **Jenkinsfiles:** Documented and using OKE-side labels (`terraform-oci`, `version-checker`, `security`, `helm`) for GrafanaLocal; no Azure jobs in this repo. Any new job that needs Azure (e.g. Terraform with Azure backend, Key Vault) should use `agent { label 'aks-agent' }` (or "Restrict where this project can be run" = `aks-agent` in UI).
+- **Next:** Phase 4 — graceful disconnect (put `aks-agent` offline before AKS stop).
+
+### 6.4 No jobs on AKS agent during shutdown
 
 - Document that jobs requiring `aks-agent` should not be scheduled to run across the 11 PM window, or accept that they will be disconnected (see graceful disconnect below).
 
@@ -337,6 +365,57 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
   4. Point webhooks to OKE URL; test a few jobs on `aks-agent` and `built-in`.
   5. Retire old Jenkins on AKS after cutover.
 
+See **§8.1** below for how to handle jobs, pipelines, multibranch, and credentials/secrets created in AKS Jenkins.
+
+### 8.1 Jobs, pipelines, multibranch, and credentials (from AKS Jenkins)
+
+You had jobs, pipelines, and multibranch pipelines created in AKS Jenkins, plus credentials and secrets (admin, GitHub token from Azure Key Vault via ESO). Here are practical options.
+
+#### 8.1.1 Jobs and pipelines
+
+| Option | When to use | How |
+|--------|-------------|-----|
+| **A. Recreate from git (recommended)** | Pipelines are Pipeline-from-SCM or Multibranch from a repo; job config is in repo (e.g. `.jenkins/job-config.xml`). | Create the same job(s) on OKE Jenkins: use **create-job.sh** with `JENKINS_URL=https://jenkins-oke.canepro.me` (or `https://jenkins.canepro.me` after cutover), same `JOB_NAME` and `CONFIG_FILE`. Or in UI: **New Item** → **Multibranch Pipeline** → same name, add same branch source (GitHub/GitLab), same **Script Path** (e.g. `.jenkins/terraform-validation.Jenkinsfile`). No build history migration; pipelines will run from same repo. |
+| **B. Export from AKS, import to OKE** | You want to keep exact job config (e.g. custom parameters, triggers) without re-entering. | From AKS Jenkins: get job config XML: `GET /job/<name>/config.xml` (with auth). On OKE: create job with same name (or empty config), then `POST /job/<name>/config.xml` with the XML. Repeat for each job and for each branch in a multibranch. Credentials inside the XML are stored by ID; you must recreate those credentials on OKE with the **same IDs** (see §8.1.3). |
+| **C. Backup/restore JENKINS_HOME** | You need full state: all jobs, credentials, plugins, history. | Copy `jobs/`, `credentials.xml`, and credential store from AKS Jenkins PVC to OKE Jenkins PVC. Plugin versions should match; restore while Jenkins is stopped. Complex and error-prone; prefer A or B plus recreating credentials. |
+
+**Multibranch:** Recreate on OKE: **New Item** → **Multibranch Pipeline** → name (e.g. `GrafanaLocal`) → **Branch Sources** → GitHub (or Git) → same repo, same credential ID (`github-token` — create on OKE first), same **Script Path** (e.g. `.jenkins/terraform-validation.Jenkinsfile`). You can use **create-job.sh** against OKE URL with the same `.jenkins/job-config.xml`; ensure `github-token` exists on OKE (see below).
+
+#### 8.1.2 Credentials and secrets (what was on AKS)
+
+- **Admin password:** On AKS often from Azure Key Vault via ESO (e.g. `externalsecret-jenkins`). On OKE you can use chart `controller.admin.existingSecret` (e.g. from OCI Vault + ESO) or set manually after first login; see Phase 1 §4.2.
+- **GitHub token:** Used by multibranch (branch source) and by pipelines that create PRs/issues. On AKS this was typically from Key Vault via ESO, then stored in Jenkins credentials with ID **`github-token`**. Jobs and `job-config.xml` reference this ID.
+- **Other credentials (e.g. GrafanaLocal):** OCI API key, S3 keys, SSH key, Secret text for OCI params — see `.jenkins/README.md`. These were stored in Jenkins (folder or global) on AKS.
+
+#### 8.1.3 Recreating credentials on OKE
+
+- **Same credential IDs:** Jobs and multibranch config refer to IDs (e.g. `github-token`, `oci-api-key`). Create credentials on OKE with the **exact same IDs** so existing job config and Jenkinsfiles keep working.
+- **Options:**
+  1. **Manual (Jenkins UI):** **Manage Jenkins** → **Credentials** → (System or folder) → **Add** → create each credential with the same **ID** and type (Secret text, Username and password, Secret file) as on AKS. Get values from your secrets store (Key Vault, OCI Vault, or secure notes).
+  2. **OCI Vault + ESO on OKE:** Store GitHub token (and optionally admin password) in OCI Vault. Create an **ExternalSecret** in namespace `jenkins` that syncs to a Kubernetes Secret. For **admin**, use `controller.admin.existingSecret` in Helm. For **GitHub token**, you can either (a) mount that K8s secret and use a small init script or JCasC to create the Jenkins credential from it, or (b) create the credential once in the UI and keep it in Jenkins (simplest).
+  3. **JCasC (optional):** If you use Jenkins Configuration as Code, you can define credentials in YAML; secrets themselves must come from environment or files (e.g. from ESO-mounted secrets). Requires JCasC credential binding plugin and careful handling of secret values.
+
+**Checklist — credential IDs to recreate on OKE:**
+
+| Credential ID | Type | Used by |
+|---------------|------|--------|
+| `github-token` | Secret text or Username with password (token as password) | Multibranch branch source, version-check/security pipelines (GitHub API) |
+| (Jenkins admin) | K8s secret for chart | Login; set via `controller.admin.existingSecret` or first-login change |
+| `oci-api-key` | Secret file | Terraform validation (OCI provider) |
+| `oci-s3-access-key`, `oci-s3-secret-key` | Secret text | Terraform backend (OCI Object Storage) |
+| `oci-ssh-public-key` | Secret text | Terraform (TF_VAR_ssh_public_key) |
+| `oci-tenancy-ocid`, `oci-user-ocid`, `oci-fingerprint`, `oci-region`, `tf-var-compartment-id` | Secret text | Terraform validation (when not using Build with Parameters) |
+
+Create these under the **same scope** as on AKS (e.g. folder **GrafanaLocal** for OCI credentials if your jobs live in that folder).
+
+#### 8.1.4 Order of work
+
+1. **Before or right after OKE Jenkins is up:** Create **github-token** (and admin if not using existingSecret) so multibranch can scan repos.
+2. **Recreate multibranch/jobs** on OKE (create-job.sh with OKE URL, or UI).
+3. **Create folder/OCI credentials** on OKE with same IDs as in `.jenkins/README.md`.
+4. **Point webhooks** to OKE URL; run a test build.
+5. **After cutover:** Retire AKS Jenkins; keep Key Vault (or OCI Vault) as source of truth for secret values; Jenkins on OKE only holds copies of credentials.
+
 ---
 
 ## 9. Risks & mitigations
@@ -369,6 +448,7 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 |------|-----------------------------|-------------------------------------|
 | Agent manifest | — | New: `ops/manifests/jenkins-static-agent.yaml`; edit `ops/kustomization.yaml` to include it. |
 | ArgoCD | — | Remove or repurpose `argocd/applications/aks-jenkins.yaml` (controller no longer on AKS). |
+| Jobs / credentials migration | `.jenkins/create-job.sh`, `.jenkins/job-config.xml`, `.jenkins/README.md`. Use JENKINS_URL = OKE URL to recreate multibranch; recreate credentials with same IDs (see §8.1). | AKS: backup job configs if exporting; ESO/Key Vault for secret values. |
 | Job labels | `.jenkins/terraform-validation.Jenkinsfile`, `.jenkins/version-check.Jenkinsfile`, `.jenkins/security-validation.Jenkinsfile` (and any other Azure jobs) → use label `aks-agent`. | — |
 | Graceful shutdown | — | `terraform/automation.tf` (stop runbook): add “check running builds” and “put agent offline” before Stop-AKS. |
 | Docs | This plan; runbook below. | `JENKINS_DEPLOYMENT.md`, `.jenkins/README.md`, `.jenkins/WORKLOAD_IDENTITY_SETUP.md`, `OPERATIONS.md` (state lock handling). |

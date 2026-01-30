@@ -1,6 +1,7 @@
 // Security Validation Pipeline for central-observability-hub-stack
 // This pipeline performs security scanning and risk assessment, then creates PRs/issues based on findings.
 // Purpose: Automated security checks with risk-based remediation workflows.
+// Agent routing (Phase 3): OKE-only — runs on OKE (label security). For Azure/Key Vault use label 'aks-agent'.
 pipeline {
   // Use a Kubernetes agent with security scanning tools
   agent {

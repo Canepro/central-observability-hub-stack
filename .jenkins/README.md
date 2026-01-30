@@ -91,26 +91,34 @@ For safety, the pipeline does **not** archive `terraform show` output by default
 
 ### Option 1: CLI Setup (Recommended)
 
+Use **JENKINS_URL** for the Jenkins controller you are targeting (OKE after migration, or AKS before):
+
 ```bash
 cd GrafanaLocal
-export JENKINS_URL="https://jenkins.canepro.me"
+# After migration to OKE (or when testing OKE):
+export JENKINS_URL="https://jenkins-oke.canepro.me"
+# Or production URL after cutover:
+# export JENKINS_URL="https://jenkins.canepro.me"
 export JOB_NAME="GrafanaLocal"
 export CONFIG_FILE=".jenkins/job-config.xml"
 bash .jenkins/create-job.sh
 ```
 
+**Note:** Create the **github-token** credential on that Jenkins first (Manage Jenkins → Credentials), or the multibranch scan will fail. See `hub-docs/JENKINS-SPLIT-AGENT-PLAN.md` §8.1 (Jobs, pipelines, multibranch, and credentials). (Jobs, pipelines, multibranch, and credentials) for migrating from AKS Jenkins.
+
 ### Option 2: UI Setup
 
-1. Go to Jenkins UI: https://jenkins.canepro.me
+1. Go to Jenkins UI (e.g. https://jenkins-oke.canepro.me or https://jenkins.canepro.me)
 2. Click "New Item"
 3. Enter job name: `GrafanaLocal`
 4. Select "Multibranch Pipeline"
-5. Configure GitHub branch source
+5. Configure GitHub branch source (credential ID: **github-token**)
 6. Set Script Path: `.jenkins/terraform-validation.Jenkinsfile`
 
 ## GitHub Webhook
 
-Configure webhook in repository settings:
-- **URL**: `https://jenkins.canepro.me/github-webhook/`
+Configure webhook in repository settings to point at the **active** Jenkins URL (OKE after migration):
+
+- **URL**: `https://jenkins-oke.canepro.me/github-webhook/` (or `https://jenkins.canepro.me/github-webhook/` after domain cutover)
 - **Events**: Pull requests, Pushes
 - **Content type**: `application/json`

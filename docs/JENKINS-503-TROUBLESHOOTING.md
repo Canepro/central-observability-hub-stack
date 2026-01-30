@@ -1,0 +1,72 @@
+# Jenkins 503 After Plugin Update / Restart
+
+After updating plugins and restarting Jenkins, nginx returns **503 Service Temporarily Unavailable** because the Jenkins pod is not ready yet (or failed to start).
+
+## 1. Check pod and logs (run these first)
+
+```bash
+# Is the pod running, or CrashLoopBackOff?
+kubectl get pods -n jenkins -l app.kubernetes.io/component=jenkins-controller
+
+# Recent events (OOMKilled? Failed probe?)
+kubectl describe pod -n jenkins -l app.kubernetes.io/component=jenkins-controller
+
+# Is Jenkins still starting? (look for "Jenkins is fully up and running" or errors)
+kubectl logs -n jenkins -l app.kubernetes.io/component=jenkins-controller --tail=100 -f
+```
+
+**If you see "Jenkins is fully up and running"** in the logs but the pod is not Ready, the readiness probe may be failing (e.g. login filter). Give it another minute or check probe path.
+
+**If the pod is Restarting / CrashLoopBackOff**, check logs for:
+- `OutOfMemoryError` → increase memory/limits and/or `controller.javaOpts` (e.g. `-Xmx3072m` → `-Xmx3584m`).
+- Plugin/startup exception → note the plugin name; you may need to disable it (see §3).
+
+**If the pod is Running but not Ready**, Jenkins is likely still loading (plugin updates can take 10–20 minutes). Either wait, or increase the startup probe (see §2).
+
+---
+
+## 2. Allow longer startup (after plugin updates)
+
+Plugin updates can make the first startup much slower. Your current startup probe allows **10 minutes** (60 × 10s). If Jenkins needs more time, increase it in `helm/jenkins-values.yaml`:
+
+```yaml
+  probes:
+    startupProbe:
+      failureThreshold: 120   # 120 × 10s = 20 min
+      periodSeconds: 10
+      timeoutSeconds: 5
+```
+
+Then upgrade/reload:
+
+```bash
+helm upgrade jenkins jenkins/jenkins -n jenkins -f helm/jenkins-values.yaml
+# Or if you use ArgoCD: sync the jenkins application.
+```
+
+Then wait (or restart the pod once) and recheck:
+
+```bash
+kubectl get pods -n jenkins -l app.kubernetes.io/component=jenkins-controller -w
+```
+
+---
+
+## 3. If Jenkins failed to start (bad plugin / OOM)
+
+- **OOM:** Increase `controller.resources.limits.memory` and `controller.javaOpts` (e.g. `-Xmx3584m`) in `helm/jenkins-values.yaml`, then redeploy.
+- **Plugin error:** If logs show a specific plugin failing:
+  1. Temporarily remove that plugin from `controller.installPlugins` in `helm/jenkins-values.yaml`, or
+  2. Disable it at runtime: exec into the pod and remove its directory under `$JENKINS_HOME/plugins`, then restart (only if you are comfortable with that).
+
+- **`No hudson.slaves.Cloud implementation found for kubernetes`:** JCasC is applying a kubernetes cloud from the chart default, but the plugin isn’t ready at init. Fix: set `jenkins.clouds: []` in JCasC so no dynamic cloud is configured (you only use the static aks-agent). Add a configScript in `controller.JCasC.configScripts` (e.g. `no-kubernetes-cloud`) with `jenkins: clouds: []`, then redeploy.
+
+---
+
+## 4. Quick reference
+
+| Symptom | Action |
+|--------|--------|
+| Pod Running, not Ready; logs show "starting" / "loading" | Wait 5–15 min or increase startup probe (§2). |
+| Pod Restarting / CrashLoopBackOff | Check logs for OOM or exception; increase memory or disable problematic plugin (§3). |
+| Logs say "Jenkins is fully up and running" but 503 | Check readiness probe; ensure service targets correct port (8080). |

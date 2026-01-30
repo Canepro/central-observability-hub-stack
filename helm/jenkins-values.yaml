@@ -36,11 +36,11 @@ controller:
       memory: "4Gi"
   javaOpts: "-Xms1024m -Xmx3072m"
 
-  # Probes: match AKS-style; 5 min initial delay so Jenkins can finish loading plugins before probes run
+  # Probes: allow long startup after plugin updates (Jenkins can take 10–20 min to unpack/load)
   healthProbes: true
   probes:
     startupProbe:
-      failureThreshold: 60   # 60 * 10s = 10 min
+      failureThreshold: 120  # 120 * 10s = 20 min (plugin updates need more time)
       periodSeconds: 10
       timeoutSeconds: 5
     livenessProbe:
@@ -98,11 +98,15 @@ controller:
   installLatestPlugins: false
   overwritePluginsFromImage: true
 
-  # JCasC: welcome message + static node for AKS agent. Use JNLP/inbound launcher (agent still connects with -webSocket).
+  # JCasC: welcome message + static node for AKS agent. No dynamic K8s cloud (avoids "No Cloud implementation found for kubernetes" at init).
   JCasC:
     defaultConfig: true
     overwriteConfiguration: false
     configScripts:
+      # Override chart default: no kubernetes cloud (we use static aks-agent only). Prevents ConfigurationAsCodeBootFailure.
+      no-kubernetes-cloud: |
+        jenkins:
+          clouds: []
       welcome-message: |
         jenkins:
           systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. Connect with -webSocket over 443."
