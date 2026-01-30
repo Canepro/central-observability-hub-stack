@@ -97,6 +97,7 @@ controller:
     - pipeline-stage-view:latest
     - github-branch-source:latest
     - job-dsl:latest
+    - ws-cleanup:latest
   installLatestPlugins: true
   overwritePluginsFromImage: true
 

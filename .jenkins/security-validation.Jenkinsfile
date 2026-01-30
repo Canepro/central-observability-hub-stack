@@ -14,7 +14,7 @@ kind: Pod
 spec:
   containers:
   - name: security-scanner
-    image: alpine:3.19
+    image: docker.io/alpine:3.19
     command: ['sleep', '3600']
     resources:
       requests:

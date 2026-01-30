@@ -13,7 +13,7 @@ kind: Pod
 spec:
   containers:
   - name: version-checker
-    image: alpine:3.20
+    image: docker.io/alpine:3.20
     command: ['sleep', '3600']
     resources:
       requests:
