@@ -86,16 +86,18 @@ controller:
     - JNLP-connect
     - JNLP2-connect
 
-  # Plugins: align with AKS Jenkins for parity. kubernetes plugin required for agent { kubernetes { ... } } DSL.
-  # eddsa-api required by trilead-api (git-client dependency)
+  # Plugins: use latest versions for all plugins (security + features)
   installPlugins:
     - configuration-as-code:latest
     - credentials-binding:latest
-    - eddsa-api:latest
-    - git:5.2.2
-    - workflow-aggregator:596.v8c21c963d92d
+    - git:latest
+    - workflow-aggregator:latest
     - kubernetes:latest
-  installLatestPlugins: false
+    - pipeline-model-definition:latest
+    - pipeline-stage-view:latest
+    - github-branch-source:latest
+    - job-dsl:latest
+  installLatestPlugins: true
   overwritePluginsFromImage: true
 
   # JCasC: welcome message + static node for AKS agent. defaultConfig: false so chart does not inject kubernetes cloud (avoids ConfigurationAsCodeBootFailure).
