@@ -12,14 +12,15 @@ To stay within the **200Gi Total Storage limit** (Boot Volumes + Block Volumes) 
 | **Prometheus** | 15 days | Block Volume | 50Gi |
 | **Grafana** | Ephemeral (E1) | emptyDir | N/A — dashboards provisioned from git |
 | **Alertmanager** | Ephemeral | emptyDir | N/A |
+| **Jenkins (Phase 1)** | Persistent | Block Volume | 50Gi (oci-bv) — uses freed E1 slot |
 
 ### The 200Gi Storage Calculation
-OCI Always Free Tier provides 200GB of total storage. Our current usage (after **E1 — Grafana on emptyDir**):
+OCI Always Free Tier provides 200GB of total storage. Our current usage:
 - **Worker Node Boot Volumes**: 2 x 47GB = 94GB
-- **Observability Hub PVCs**: 1 x 50GB = **50GB** (Prometheus only; Grafana uses emptyDir per E1)
-- **Total**: **144GB** (Buffer: 56GB — freed 50GB slot reserved for Jenkins on OKE)
+- **Hub PVCs**: **100GB** (Prometheus 50Gi + Jenkins 50Gi after Phase 1; Grafana uses emptyDir per E1)
+- **Total**: **194GB** (Buffer: 6GB)
 
-*Before E1:* 2 x 50GB = 100GB (Prometheus + Grafana); total 194GB.
+*After E1, before Phase 1:* 1 x 50GB = 50GB (Prometheus only); total 144GB. The freed 50GB is used by Jenkins (Phase 1).
 
 ### OCI Block Volumes: minimum size and quota
 OCI Block Volumes have a **minimum size of 50GB**. Even if we request 10GB in Helm, OCI provisions 50GB.
@@ -35,6 +36,21 @@ Once Grafana is deployed with **persistence disabled** (E1), the **old Grafana P
 1. Ensure the new Grafana pod (with emptyDir) is running and healthy.
 2. Delete the old Grafana PVC: `kubectl -n monitoring delete pvc grafana` (or the exact PVC name from `kubectl -n monitoring get pvc`).
 3. The 50GB Block Volume is released; total Block usage drops to ~144GB (Prometheus only). The freed 50GB is then available for a new Jenkins PVC on OKE (Phase 1).
+
+### Grafana E1 — ArgoCD sync failures (volume / storage)
+
+If ArgoCD sync fails with errors like **"volumeMounts[1].name: Not found: 'storage'"** or **"may not specify more than 1 volume type"**, the live Deployment may still reference the old PVC. The Helm chart with `persistence.enabled: false` is correct and renders a single `storage` volume as `emptyDir: {}`.
+
+1. **Verify the manifest locally** (from repo root):
+   ```bash
+   helm repo add grafana https://grafana.github.io/helm-charts
+   helm template grafana grafana/grafana --version 10.4.0 -f helm/grafana-values.yaml -n monitoring | grep -A 5 "name: storage"
+   ```
+   You should see `volumes` and `volumeMounts` with `name: storage` and `emptyDir: {}`.
+
+2. **Sync with Replace** so the Deployment is recreated with the new spec: in ArgoCD UI, open the Grafana app → Sync → check **Replace** → Sync. (One-time; after that normal sync is fine.)
+
+3. Once the new Grafana pod is Running, delete the old PVC if it is still `Terminating` or present: `kubectl -n monitoring delete pvc grafana`.
 
 ### Why Alertmanager is Ephemeral?
 To fit within the 200GB limit, Alertmanager's persistent volume (previously 50Gi) was sacrificed for `emptyDir`. This means alert silences and notification history are lost on pod restart, but metrics and long-term dashboards remain safe.
@@ -85,9 +101,11 @@ Grafana is deployed by ArgoCD as a Helm chart:
 - Chart pin: `argocd/applications/grafana.yaml` → `spec.sources[0].targetRevision`
 - Grafana image pin: `helm/grafana-values.yaml` → `image.tag`
 
-Because Grafana uses a **50Gi RWO PVC** (`/var/lib/grafana`), always take a snapshot/backup before major upgrades.
+**E1 (current):** Grafana uses **emptyDir** (`persistence.enabled: false`). There is no PVC; dashboards are provisioned from git. Skip PVC/PV and snapshot steps below. If you re-enable persistence later, use the full runbook.
 
-#### 0) Pre-flight: identify the Grafana PVC + PV
+**When persistence is enabled:** Grafana uses a 50Gi RWO PVC (`/var/lib/grafana`). Take a snapshot/backup before major upgrades.
+
+#### 0) Pre-flight: identify the Grafana PVC + PV (skip when on E1 / emptyDir)
 
 ```bash
 kubectl -n monitoring get pvc grafana

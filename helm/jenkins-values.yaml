@@ -1,0 +1,121 @@
+# Jenkins Controller on OKE (Phase 1 – Split-Agent Hybrid)
+# Chart: jenkins/jenkins (https://charts.jenkins.io)
+# Purpose: 24/7 controller on OKE; uses freed 50GB PVC (E1). AKS static agent connects via WebSocket (Phase 2).
+
+# Release / naming
+fullnameOverride: jenkins
+
+# Controller
+controller:
+  componentName: jenkins-controller
+  image:
+    repository: jenkins/jenkins
+    tag: "2.449.3-jdk17"
+    pullPolicy: IfNotPresent
+
+  numExecutors: 0
+  executorMode: NORMAL
+
+  # Admin: chart creates secret; change password after first login or set existingSecret
+  admin:
+    createSecret: true
+    username: admin
+    # password: set via existingSecret in production or change in UI after first login
+    existingSecret: ""
+
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+
+  serviceType: ClusterIP
+  servicePort: 8080
+
+  # Jenkins URL (required for agents and webhooks)
+  jenkinsUrlProtocol: https
+  jenkinsUrl: "https://jenkins-oke.canepro.me"
+
+  # Ingress: expose on existing NGINX Ingress (jenkins-oke.canepro.me)
+  ingress:
+    enabled: true
+    apiVersion: "networking.k8s.io/v1"
+    ingressClassName: nginx
+    hostName: jenkins-oke.canepro.me
+    path: /
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    tls:
+      - secretName: jenkins-oke-tls
+        hosts:
+          - jenkins-oke.canepro.me
+
+  # Agent listener: WebSocket only (no JNLP 50000). AKS agent connects via -webSocket to HTTPS.
+  agentListenerEnabled: true
+  agentListenerPort: 50000
+  agentListenerServiceType: ClusterIP
+  disabledAgentProtocols:
+    - JNLP-connect
+    - JNLP2-connect
+
+  # Plugins: minimal for controller + JCasC + git + pipeline; no Kubernetes cloud for AKS (agent is static)
+  installPlugins:
+    - configuration-as-code:1692.vc6e6a_2f4a_74
+    - git:5.2.2
+    - workflow-aggregator:596.v8c21c963d92d
+    - credentials-binding:712.vc6a_4c1b_ceb_2
+  installLatestPlugins: false
+  overwritePluginsFromImage: true
+
+  # JCasC: welcome message + static node for AKS agent (aks-agent); no dynamic K8s cloud for AKS
+  JCasC:
+    defaultConfig: true
+    overwriteConfiguration: false
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. WebSocket over 443."
+      aks-agent-node: |
+        jenkins:
+          nodes:
+            - permanent:
+                name: "aks-agent"
+                numExecutors: 1
+                remoteFS: "/home/jenkins/agent"
+                labelString: "aks-agent"
+                launcher:
+                  websocket: true
+                retentionStrategy: "always"
+
+  # Sidecar: reload JCasC on config change
+  sidecars:
+    configAutoReload:
+      enabled: true
+
+  # Tests: disable to avoid extra resources
+  testEnabled: false
+
+# In-cluster K8s agent: disabled (we use built-in + static aks-agent only)
+agent:
+  enabled: false
+
+# Persistence: use freed 50GB slot (E1); OCI Block Volume
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: oci-bv
+  accessMode: ReadWriteOnce
+  existingClaim: ""
+
+# RBAC
+rbac:
+  create: true
+  readSecrets: false
+
+serviceAccount:
+  create: true
