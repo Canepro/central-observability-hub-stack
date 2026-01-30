@@ -10,14 +10,31 @@ To stay within the **200Gi Total Storage limit** (Boot Volumes + Block Volumes) 
 | **Loki** | 168h (7 days) | Object Storage | N/A |
 | **Tempo** | 168h (7 days) | Object Storage | N/A |
 | **Prometheus** | 15 days | Block Volume | 50Gi |
-| **Grafana** | Indefinite | Block Volume | 50Gi |
+| **Grafana** | Ephemeral (E1) | emptyDir | N/A — dashboards provisioned from git |
 | **Alertmanager** | Ephemeral | emptyDir | N/A |
 
 ### The 200Gi Storage Calculation
-OCI Always Free Tier provides 200GB of total storage. Our current usage:
+OCI Always Free Tier provides 200GB of total storage. Our current usage (after **E1 — Grafana on emptyDir**):
 - **Worker Node Boot Volumes**: 2 x 47GB = 94GB
-- **Observability Hub PVCs**: 2 x 50GB = 100GB
-- **Total**: **194GB** (Buffer: 6GB)
+- **Observability Hub PVCs**: 1 x 50GB = **50GB** (Prometheus only; Grafana uses emptyDir per E1)
+- **Total**: **144GB** (Buffer: 56GB — freed 50GB slot reserved for Jenkins on OKE)
+
+*Before E1:* 2 x 50GB = 100GB (Prometheus + Grafana); total 194GB.
+
+### OCI Block Volumes: minimum size and quota
+OCI Block Volumes have a **minimum size of 50GB**. Even if we request 10GB in Helm, OCI provisions 50GB.
+
+Because our Hub uses 194GB (nodes + Prometheus + Grafana), we have **exhausted our 200GB Always Free quota**.
+
+Any new volume (e.g. Jenkins) will be a **paid resource** on our PAYG plan, costing approximately **$0.025 per GB** for the portion over 200GB.
+
+### Phase 0 (E1) — After Grafana is on emptyDir: free the 50GB slot
+
+Once Grafana is deployed with **persistence disabled** (E1), the **old Grafana PVC** (50Gi) may still exist and hold the 50GB. To free that slot for Jenkins on OKE:
+
+1. Ensure the new Grafana pod (with emptyDir) is running and healthy.
+2. Delete the old Grafana PVC: `kubectl -n monitoring delete pvc grafana` (or the exact PVC name from `kubectl -n monitoring get pvc`).
+3. The 50GB Block Volume is released; total Block usage drops to ~144GB (Prometheus only). The freed 50GB is then available for a new Jenkins PVC on OKE (Phase 1).
 
 ### Why Alertmanager is Ephemeral?
 To fit within the 200GB limit, Alertmanager's persistent volume (previously 50Gi) was sacrificed for `emptyDir`. This means alert silences and notification history are lost on pod restart, but metrics and long-term dashboards remain safe.
