@@ -98,15 +98,11 @@ controller:
   installLatestPlugins: false
   overwritePluginsFromImage: true
 
-  # JCasC: welcome message + static node for AKS agent. No dynamic K8s cloud (avoids "No Cloud implementation found for kubernetes" at init).
+  # JCasC: welcome message + static node for AKS agent. defaultConfig: false so chart does not inject kubernetes cloud (avoids ConfigurationAsCodeBootFailure).
   JCasC:
-    defaultConfig: true
+    defaultConfig: false
     overwriteConfiguration: false
     configScripts:
-      # Override chart default: no kubernetes cloud (we use static aks-agent only). Prevents ConfigurationAsCodeBootFailure.
-      no-kubernetes-cloud: |
-        jenkins:
-          clouds: []
       welcome-message: |
         jenkins:
           systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. Connect with -webSocket over 443."
@@ -121,6 +117,10 @@ controller:
                 launcher:
                   inbound: {}
                 retentionStrategy: "always"
+      # Load last (alphabetically) so it overrides chart default kubernetes cloud. Prevents ConfigurationAsCodeBootFailure.
+      z-no-kubernetes-cloud: |
+        jenkins:
+          clouds: []
 
   # Sidecar: reload JCasC on config change
   sidecars:
