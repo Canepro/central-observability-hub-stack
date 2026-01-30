@@ -26,13 +26,33 @@ controller:
     # password: set via existingSecret in production or change in UI after first login
     existingSecret: ""
 
+  # Align with AKS: enough memory and -Xmx so startup does not OOM
   resources:
     requests:
-      cpu: "200m"
-      memory: "512Mi"
+      cpu: "500m"
+      memory: "1Gi"
     limits:
       cpu: "2000m"
-      memory: "2Gi"
+      memory: "4Gi"
+  javaOpts: "-Xms1024m -Xmx3072m"
+
+  # Probes: match AKS-style; 5 min initial delay so Jenkins can finish loading plugins before probes run
+  healthProbes: true
+  probes:
+    startupProbe:
+      failureThreshold: 60   # 60 * 10s = 10 min
+      periodSeconds: 10
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 300   # 5 min before first liveness check
+      failureThreshold: 5
+      periodSeconds: 10
+      timeoutSeconds: 5
+    readinessProbe:
+      initialDelaySeconds: 300   # 5 min before first readiness check
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 5
 
   serviceType: ClusterIP
   servicePort: 8080
