@@ -86,7 +86,7 @@ controller:
     - JNLP-connect
     - JNLP2-connect
 
-  # Plugins: align with AKS Jenkins (use :latest for configuration-as-code and credentials-binding so manager resolves 1850+)
+  # Plugins: minimal set for OKE controller (no kubernetes plugin - we use static aks-agent only)
   # eddsa-api required by trilead-api (git-client dependency)
   installPlugins:
     - configuration-as-code:latest
@@ -94,7 +94,6 @@ controller:
     - eddsa-api:latest
     - git:5.2.2
     - workflow-aggregator:596.v8c21c963d92d
-    - kubernetes:4246.v5a_12b_1fe120e
   installLatestPlugins: false
   overwritePluginsFromImage: true
 
