@@ -178,16 +178,71 @@ Starting on AKS first (e.g. only adding the agent) doesn’t help until OKE Jenk
 
 ---
 
-## 4. Phase 1: OKE – Jenkins Controller (outside this repo)
+## 4. Phase 1: OKE – Jenkins Controller
 
-- Deploy Jenkins on OKE (Helm or manifests; likely in an OKE-specific repo or manual).
-- Derive controller config from `jenkins-values.yaml`: reuse JCasC (RBAC, GitHub, welcome message), remove the `agent.podTemplates` block (dynamic AKS agents). Do not configure Kubernetes cloud for AKS from OKE.
-- Add a static agent definition in JCasC for the AKS agent: name/label `aks-agent`, launch method **"Launch agent by connecting it to the controller"** (WebSocket preferred so only 443 is needed).
-- Provision controller secrets on OKE: Jenkins admin + GitHub token (replicate from Key Vault to OCI Vault, or create K8s secrets on OKE). No Azure credentials on OKE.
-- Expose controller: **HTTPS (443)** for UI and WebSocket agent connection. Ensure firewall allows inbound 443 from AKS egress IPs (or VPN).
-- Point `jenkins.canepro.me` (or an OKE-specific host) to the OKE Jenkins ingress.
+**Implemented in this repo:** ArgoCD Application `argocd/applications/jenkins.yaml` and Helm values `helm/jenkins-values.yaml` deploy Jenkins on OKE using the freed 50GB PVC (E1), expose it at **jenkins-oke.canepro.me**, and define the static node `aks-agent` (WebSocket) in JCasC.
 
-### 4.1 Optional: Expose JNLP Port 50000
+### 4.0 Domain (jenkins-oke.canepro.me)
+
+- **You have registered** `jenkins-oke.canepro.me`. Before or right after the first sync:
+  1. Get the OKE NGINX Ingress Load Balancer IP: `kubectl -n ingress-nginx get svc -o wide` (or from OCI Console).
+  2. Create a DNS **A** record: `jenkins-oke.canepro.me` → that LB IP (or **CNAME** to the LB hostname if your provider supports it).
+- cert-manager will issue TLS for `jenkins-oke.canepro.me` once DNS points to the cluster and the Ingress is created.
+
+### 4.1 Deploy steps
+
+- Sync the **jenkins** application in ArgoCD (or push to `main` and let auto-sync run). Ensure the **jenkins** Helm repo is available to ArgoCD: `https://charts.jenkins.io`.
+- After sync: Jenkins is in namespace `jenkins`; UI at `https://jenkins-oke.canepro.me`. Change admin password on first login (or set `controller.admin.existingSecret`).
+- JCasC defines the static node **aks-agent** (label `aks-agent`, WebSocket launcher). The AKS static agent (Phase 2) will connect to `https://jenkins-oke.canepro.me` with that name and secret from Jenkins.
+
+### 4.2 Phase 1 pre-flight and verification (verified)
+
+**1. LB / Ingress “handshake”**  
+The **ingress-nginx** controller (by default) **watches all namespaces** (`controller.scope.enabled: false`). You do **not** need to “explicitly set it to watch all namespaces”; the Jenkins Ingress in namespace `jenkins` will be picked up.  
+- **Check:** After sync, confirm the Ingress gets an ADDRESS: `kubectl get ingress -n jenkins` (ADDRESS should show the same LB IP as other ingresses once the LB is healthy).
+
+**2. PVC provisioning (oci-bv)**  
+OCI Block Volumes (`oci-bv`) can take **2–3 minutes** to move from `Provisioning` to `Bound`. If the Jenkins pod is **Pending** with a volume-related message, wait a few minutes, then:  
+- `kubectl get pvc -n jenkins`  
+- `kubectl describe pvc -n jenkins` (ensure it is communicating with the OCI Block Storage API; no need to panic if it’s still provisioning).
+
+**3. First-login security (admin secret)**  
+As soon as **jenkins-oke.canepro.me** is reachable, the UI is exposed. Prefer a strong admin password from day one:
+
+- **Option A (manual):** After first sync, log in at `https://jenkins-oke.canepro.me`, go to **Manage Jenkins → Security → Users**, and change the admin password immediately.
+- **Option B (ESO / OCI Vault):** If you use **External Secrets Operator** and **OCI Vault** on OKE:
+  1. Store a strong password (and optionally username) in OCI Vault.
+  2. Create an **ExternalSecret** in namespace `jenkins` that syncs to a Kubernetes secret (e.g. `jenkins-admin-credentials`) with keys that match what the chart expects.
+  3. In `helm/jenkins-values.yaml` set:
+     ```yaml
+     controller:
+       admin:
+         createSecret: false
+         existingSecret: "jenkins-admin-credentials"
+         userKey: "admin-user"    # or the key name you use in the K8s secret
+         passwordKey: "admin-password"
+     ```
+     The Jenkins chart default key names are **`admin-user`** and **`admin-password`**; if your ExternalSecret uses different key names (e.g. `user` / `password`), set `userKey` and `passwordKey` to those names. Then sync so the controller uses that secret and never exposes a default password.
+
+**4. Agent secret for Phase 2 (AKS static agent)**  
+After Jenkins is up, you need the **agent connection secret** for the **aks-agent** node (used by the AKS static agent in Phase 2):
+
+- **URL:** `https://jenkins-oke.canepro.me/computer/aks-agent/`
+- On that page, use **“Connect”** or the connection command/secret shown for the **aks-agent** node (WebSocket). The AKS agent pod will need that secret when connecting to the controller.
+
+**5. Post-sync checks**  
+- **DNS:** `nslookup jenkins-oke.canepro.me` (or `dig jenkins-oke.canepro.me`) should resolve to your OKE NGINX Ingress Load Balancer IP.  
+- **Ingress:** `kubectl get ingress -n jenkins` — ADDRESS should be set.  
+- **TLS:** cert-manager will issue a certificate for `jenkins-oke.canepro.me` once DNS points to the cluster and the Ingress exists.
+
+### 4.3 Remainder of Phase 1 (reference)
+
+- Derive controller config from `jenkins-values.yaml`: JCasC welcome message and `aks-agent` node; no dynamic K8s agents for AKS.
+- Provision controller secrets on OKE: Jenkins admin (chart default or existingSecret) + GitHub token if needed (add via Jenkins UI or JCasC later). No Azure credentials on OKE.
+- Expose controller: **HTTPS (443)** via chart Ingress; WebSocket over 443. Ensure firewall allows inbound 443 from AKS egress IPs (or VPN) for later agent connection.
+- For cutover: Point `jenkins.canepro.me` to OKE later (Phase 5); until then use `jenkins-oke.canepro.me` for testing.
+
+### 4.4 Optional: Expose JNLP Port 50000
 
 Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE load balancer / ingress so the AKS agent can connect. Options: OCI Load Balancer listener for TCP 50000, or NGINX TCP config. Restrict source IPs to AKS egress if possible.
 
