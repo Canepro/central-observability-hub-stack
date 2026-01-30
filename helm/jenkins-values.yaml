@@ -1,6 +1,9 @@
 # Jenkins Controller on OKE (Phase 1 – Split-Agent Hybrid)
 # Chart: jenkins/jenkins (https://charts.jenkins.io)
 # Purpose: 24/7 controller on OKE; uses freed 50GB PVC (E1). AKS static agent connects via WebSocket (Phase 2).
+#
+# Version/plugins: Align with AKS Jenkins (ops repo jenkins-values.yaml). Image tag must exist on Docker Hub
+# (e.g. 2.541.1-jdk17, lts-jdk17). Copy controller.installPlugins from AKS for exact parity.
 
 # Release / naming
 fullnameOverride: jenkins
@@ -10,7 +13,7 @@ controller:
   componentName: jenkins-controller
   image:
     repository: jenkins/jenkins
-    tag: "2.449.3-jdk17"
+    tag: "2.541.1-jdk17"
     pullPolicy: IfNotPresent
 
   numExecutors: 0
@@ -63,12 +66,13 @@ controller:
     - JNLP-connect
     - JNLP2-connect
 
-  # Plugins: minimal for controller + JCasC + git + pipeline; no Kubernetes cloud for AKS (agent is static)
+  # Plugins: align with AKS Jenkins (copy from ops repo jenkins-values.yaml controller.installPlugins if needed)
   installPlugins:
-    - configuration-as-code:1692.vc6e6a_2f4a_74
+    - configuration-as-code:1810.v9b_c30a_249a_4c
     - git:5.2.2
     - workflow-aggregator:596.v8c21c963d92d
     - credentials-binding:712.vc6a_4c1b_ceb_2
+    - kubernetes:4246.v5a_12b_1fe120e
   installLatestPlugins: false
   overwritePluginsFromImage: true
 
