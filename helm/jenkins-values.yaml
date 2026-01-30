@@ -87,23 +87,25 @@ controller:
     - JNLP2-connect
 
   # Plugins: align with AKS Jenkins (use :latest for configuration-as-code and credentials-binding so manager resolves 1850+)
+  # eddsa-api required by trilead-api (git-client dependency)
   installPlugins:
     - configuration-as-code:latest
     - credentials-binding:latest
+    - eddsa-api:latest
     - git:5.2.2
     - workflow-aggregator:596.v8c21c963d92d
     - kubernetes:4246.v5a_12b_1fe120e
   installLatestPlugins: false
   overwritePluginsFromImage: true
 
-  # JCasC: welcome message + static node for AKS agent (aks-agent); no dynamic K8s cloud for AKS
+  # JCasC: welcome message + static node for AKS agent. Use JNLP/inbound launcher (agent still connects with -webSocket).
   JCasC:
     defaultConfig: true
     overwriteConfiguration: false
     configScripts:
       welcome-message: |
         jenkins:
-          systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. WebSocket over 443."
+          systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. Connect with -webSocket over 443."
       aks-agent-node: |
         jenkins:
           nodes:
@@ -113,7 +115,7 @@ controller:
                 remoteFS: "/home/jenkins/agent"
                 labelString: "aks-agent"
                 launcher:
-                  websocket: true
+                  inbound: {}
                 retentionStrategy: "always"
 
   # Sidecar: reload JCasC on config change
