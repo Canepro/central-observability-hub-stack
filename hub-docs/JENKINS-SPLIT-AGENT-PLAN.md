@@ -76,10 +76,10 @@ Alertmanager already uses **emptyDir** (no PVC) to stay under 200GB. There is **
 | **1. OKE — Jenkins Controller** | Deploy Jenkins on OKE (HTTPS 443, temporary hostname); use freed 50GB PVC; JCasC, static node `aks-agent`, secrets on OKE. | OKE (outside this repo). | Controller 24/7 on OKE; webhooks can point to temp URL. |
 | **2. AKS — Static Agent** | Add static agent manifest + RBAC + secret; connect to OKE via WebSocket; remove/repurpose `aks-jenkins` app. | Ops repo (e.g. rocketchat-k8s): `ops/manifests/`, ArgoCD. | Agent runs on AKS when cluster is up; label `aks-agent`. **Done.** |
 | **3. Job routing** | Update Jenkinsfiles to use label `aks-agent` for Azure jobs; OKE jobs use `built-in` or OKE agent. | This repo: `.jenkins/*.Jenkinsfile`; Jenkins UI. | Jobs route to correct agent. **Done (this repo).** Ops repo: Azure jobs need `aks-agent`. |
-| **4. Graceful disconnect** | Before AKS stop: check running builds → put `aks-agent` offline → wait → run AKS stop. | Ops repo: `terraform/automation.tf` (runbook); or CronJob/API. | No failed builds; no stuck Terraform lock. |
+| **4. Graceful disconnect** | Before AKS stop: check running builds → put `aks-agent` offline → wait → run AKS stop. | Ops repo: `terraform/automation.tf` (runbook); or CronJob/API. | No failed builds; no stuck Terraform lock. **Done (ops repo).** |
 | **5. Migration / domain cutover** | Point `jenkins.canepro.me` from AKS LB to OKE LB; set Jenkins URL; update agent to `jenkins.canepro.me`; retire AKS controller. | DNS; Jenkins config; ops repo. | Production URL on OKE; AKS agent only. |
 
-**Ready to start?** Phases 0–3 are complete for this repo. OKE Jenkins controller is running with kubernetes cloud for dynamic pods. **Phase 4 (graceful disconnect)** and **Phase 5 (domain cutover)** remain. For ops repo: Azure Jenkinsfiles need to change to `agent { label 'aks-agent' }` so they run on the static AKS agent.
+**Ready to start?** Phases 0–4 are complete. OKE Jenkins controller is running with kubernetes cloud for dynamic pods. Graceful disconnect is implemented in ops repo (runbook disables `aks-agent` before AKS stop). **Phase 5 (domain cutover)** is next: point `jenkins.canepro.me` to OKE, retire AKS controller.
 
 ---
 
@@ -316,7 +316,8 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 
 - **This repo (GrafanaLocal):** OKE kubernetes cloud configured; Jenkinsfiles use `agent { kubernetes { label '...' } }` with labels `terraform-oci`, `version-checker`, `security`, `helm`. Dynamic pods spin up on OKE. No changes needed.
 - **Ops repo (Azure jobs):** Jenkinsfiles using `agent { kubernetes { label 'terraform-azure' ... } }` need to change to `agent { label 'aks-agent' }` so they run on the static AKS agent (Workload Identity). Do this in the ops repo.
-- **Next:** Phase 4 — graceful disconnect (put `aks-agent` offline before AKS stop); Phase 5 — domain cutover.
+- **Phase 4 done:** Graceful disconnect implemented in ops repo (runbook disables `aks-agent`, waits 60s, then stops AKS). Set `JenkinsAksAgentDisconnectToken` in Azure Automation and `jenkins_graceful_disconnect_url`/`user` in Terraform to enable.
+- **Next:** Phase 5 — domain cutover (point `jenkins.canepro.me` to OKE, retire AKS controller).
 
 ### 6.4 No jobs on AKS agent during shutdown
 
