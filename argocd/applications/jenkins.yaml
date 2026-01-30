@@ -18,6 +18,14 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: jenkins
+  ignoreDifferences:
+    # Live admin password must not be overwritten by chart-generated desired secret
+    - group: ""
+      kind: Secret
+      name: jenkins
+      namespace: jenkins
+      jqPathExpressions:
+        - .data
   syncPolicy:
     automated:
       prune: true
