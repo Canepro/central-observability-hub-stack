@@ -26,7 +26,7 @@ metadata:
 spec:
   containers:
   - name: terraform
-    image: hashicorp/terraform:latest
+    image: docker.io/hashicorp/terraform:latest
     command: ['sleep', '3600']
     resources:
       requests:
