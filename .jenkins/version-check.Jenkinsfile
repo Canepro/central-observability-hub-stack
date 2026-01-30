@@ -12,6 +12,15 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
+  - name: jnlp
+    image: docker.io/jenkins/inbound-agent:3302.v1cfe4e081049-1-jdk21
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
   - name: version-checker
     image: docker.io/alpine:3.20
     command: ['sleep', '3600']

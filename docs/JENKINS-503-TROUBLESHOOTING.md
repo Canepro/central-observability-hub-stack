@@ -63,10 +63,45 @@ kubectl get pods -n jenkins -l app.kubernetes.io/component=jenkins-controller -w
 
 ---
 
-## 4. Quick reference
+## 4. After a restart: clean stale agents first
+
+Pending or stuck agent pods and queued builds can block the Jenkins controller from deploying or running properly (same PVC, launcher state). **Clean stale agents and abort stuck queue items before expecting the new Jenkins pod to come up.**
+
+1. **If Jenkins is reachable:** Run the cleanup script (skips `aks-agent` and Built-In Node):
+   ```bash
+   export JENKINS_URL="https://jenkins-oke.canepro.me"
+   export JENKINS_USER="admin"
+   export JENKINS_PASSWORD="<api-token>"
+   bash scripts/jenkins-clean-stale-agents.sh
+   ```
+   Then in the UI: **Build Queue** → abort any stuck items.
+
+2. **If Jenkins is not reachable yet:** Delete the stuck agent pods so the controller can use the PVC and start:
+   ```bash
+   kubectl get pods -n jenkins
+   kubectl delete pod -n jenkins <stale-agent-pod-names> --force --grace-period=0
+   ```
+   Then restart the controller pod if needed: `kubectl delete pod -n jenkins jenkins-0`.
+
+3. After the controller is up, run the script (step 1) to remove stale agent *nodes* from Jenkins so new builds create fresh pod templates.
+
+---
+
+## 5. Agent pods: ImageInspectError (short name mode is enforcing)
+
+On OKE (CRI-O), agent pods can fail with **ImageInspectError** and *short name mode is enforcing, but image name jenkins/inbound-agent:... returns ambiguous list*. CRI-O requires **fully qualified** image names (e.g. `docker.io/jenkins/inbound-agent:...`).
+
+- **Fix in this repo (GrafanaLocal):** The Jenkinsfiles under `.jenkins/` already use an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:...`. Ensure those changes are on **main** and pushed; then run the cleanup script (§4), abort stuck builds, and **re-run** the jobs so they use the latest Jenkinsfile.
+- **Fix in rocketchat-k8s:** In that repo’s Jenkinsfile(s), add an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-3-jdk21` (or the same tag your plugin uses) in the pod yaml.
+- **Cloud default:** `helm/jenkins-values.yaml` sets the Kubernetes cloud default jnlp image to the same tag with `docker.io/` so any job that doesn’t specify jnlp gets a qualified image. Sync ArgoCD and reload JCasC after changing it.
+
+---
+
+## 6. Quick reference
 
 | Symptom | Action |
 |--------|--------|
 | Pod Running, not Ready; logs show "starting" / "loading" | Wait 5–15 min or increase startup probe (§2). |
 | Pod Restarting / CrashLoopBackOff | Check logs for OOM or exception; increase memory or disable problematic plugin (§3). |
 | Logs say "Jenkins is fully up and running" but 503 | Check readiness probe; ensure service targets correct port (8080). |
+| Agent pods ImageInspectError (short name) | Use `docker.io/jenkins/inbound-agent:...` in Jenkinsfile pod yaml and/or cloud default (§5). |
