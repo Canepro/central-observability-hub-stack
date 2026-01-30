@@ -3,15 +3,57 @@
 // Purpose: CI validation only - ensures all manifests are valid before GitOps sync.
 // Agent routing (Phase 3): OKE-only — runs on OKE (label helm). For Azure jobs use label 'aks-agent'.
 pipeline {
-  // Use the 'helm' Kubernetes agent (has Helm, kubectl, kubeconform)
+  // Use the 'helm' Kubernetes agent (has Helm, kubeconform). OKE/CRI-O requires fully qualified image names.
   agent {
     kubernetes {
       label 'helm'
       defaultContainer 'helm'
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: docker.io/jenkins/inbound-agent:3302.v1cfe4e081049-1-jdk21
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  - name: helm
+    image: docker.io/alpine:3.20
+    command: ['sleep', '3600']
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+"""
     }
   }
   
   stages {
+    // Stage 0: Install helm and kubeconform (Alpine image does not include them)
+    stage('Install Tools') {
+      steps {
+        sh '''
+          apk add --no-cache curl
+          # Helm
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh || true
+          # kubeconform
+          KUBECONFORM_VERSION="v0.6.3"
+          wget -qO /usr/local/bin/kubeconform "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" && tar -xzf /usr/local/bin/kubeconform -C /usr/local/bin kubeconform 2>/dev/null || \
+          (wget -q "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -O - | tar -xz -C /usr/local/bin) || true
+          chmod +x /usr/local/bin/kubeconform 2>/dev/null || true
+          helm version || true
+          kubeconform -v || true
+        '''
+      }
+    }
     // Stage 1: ArgoCD Application Validation
     // Validates ArgoCD Application CRDs (the GitOps control plane manifests)
     // These define what ArgoCD should deploy and from where
