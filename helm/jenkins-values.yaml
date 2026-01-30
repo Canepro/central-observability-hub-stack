@@ -71,7 +71,7 @@ controller:
     - configuration-as-code:1810.v9b_c30a_249a_4c
     - git:5.2.2
     - workflow-aggregator:596.v8c21c963d92d
-    - credentials-binding:712.vc6a_4c1b_ceb_2
+    - credentials-binding:702.vfe613e537e88
     - kubernetes:4246.v5a_12b_1fe120e
   installLatestPlugins: false
   overwritePluginsFromImage: true
