@@ -19,20 +19,20 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 ## Quick Upgrade Reference
 
-**Just updated (2026-01-19)**:
-- ArgoCD 5.51.6 → 9.3.4 (app v2.9.3 → v3.2.5) 🔄
-- Promtail 6.15.3 → 6.17.1 🔄 (but deprecated, EOL March 2, 2026)
-- NGINX Ingress 4.9.0 → 4.14.1 🔄
-- Metrics Server 3.12.1 → 3.13.0 🔄
-- RocketChat 6.27.1 → 6.29.0 🔄
+**Just updated (2026-01-31)**:
+- Prometheus 25.8.0 → 28.6.1 (app v2.48.0 → v3.8.1) 🔄
+
+**Previously updated (2026-01-19)**:
+- ArgoCD 5.51.6 → 9.3.4 (app v2.9.3 → v3.2.5)
+- Promtail 6.15.3 → 6.17.1 (deprecated, EOL March 2, 2026)
+- NGINX Ingress 4.9.0 → 4.14.1
+- Metrics Server 3.12.1 → 3.13.0
+- RocketChat 6.27.1 → 6.29.0
 
 **Already at latest**:
 - Loki 6.46.0 ✅
 - Tempo 1.24.0 ✅
 - Grafana 10.4.0 ✅
-
-**Needs investigation**:
-- Prometheus 25.8.0 🔍 (verify chart variant)
 
 ## How to Update Versions
 
