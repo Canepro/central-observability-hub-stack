@@ -66,8 +66,15 @@ spec:
 
           update-ca-certificates || true
           
-          # Install tfsec (Terraform security scanner)
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          # Install tfsec (Terraform security scanner) - use direct binary (Alpine + ARM)
+          ARCH="$(uname -m)"
+          case "$ARCH" in
+            aarch64|arm64) TFSEC_ARCH="arm64" ;;
+            x86_64|amd64) TFSEC_ARCH="amd64" ;;
+            *) TFSEC_ARCH="amd64" ;;
+          esac
+          curl -sfL "https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-${TFSEC_ARCH}" -o /usr/local/bin/tfsec || true
+          chmod +x /usr/local/bin/tfsec || true
           
           # Install checkov (Infrastructure as Code security scanner)
           # Alpine uses PEP-668 "externally managed" Python; install into a venv.
@@ -224,96 +231,97 @@ spec:
     stage('Risk Assessment') {
       steps {
         script {
-          int tfsecCritical = 0
-          int tfsecHigh = 0
-          int tfsecMedium = 0
-          int tfsecLow = 0
+          sh '''
+            python3 - <<'PY'
+import json, os, datetime
 
-          int checkovCritical = 0
-          int checkovHigh = 0
-          int checkovMedium = 0
-          int checkovLow = 0
+def load_json(path):
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return None
 
-          // tfsec: { results: [ { severity: "CRITICAL|HIGH|MEDIUM|LOW", ... }, ... ] }
-          if (fileExists(env.TFSEC_OUTPUT)) {
-            try {
-              def tfsec = new groovy.json.JsonSlurperClassic().parseText(readFile(env.TFSEC_OUTPUT))
-              def results = (tfsec?.results instanceof List) ? tfsec.results : []
-              tfsecCritical = results.count { it?.severity == 'CRITICAL' }
-              tfsecHigh = results.count { it?.severity == 'HIGH' }
-              tfsecMedium = results.count { it?.severity == 'MEDIUM' }
-              tfsecLow = results.count { it?.severity == 'LOW' }
-            } catch (err) {
-              echo "WARN: Unable to parse ${env.TFSEC_OUTPUT}: ${err}"
-            }
-          }
+def count_tfsec(data):
+    counts = {"CRITICAL":0,"HIGH":0,"MEDIUM":0,"LOW":0}
+    if isinstance(data, dict):
+        for item in data.get("results", []) or []:
+            sev = item.get("severity")
+            if sev in counts:
+                counts[sev] += 1
+    return counts
 
-          // checkov output formats vary. We count FAILED checks; if severity missing, treat as MEDIUM.
-          if (fileExists(env.CHECKOV_OUTPUT)) {
-            try {
-              def checkov = new groovy.json.JsonSlurperClassic().parseText(readFile(env.CHECKOV_OUTPUT))
-              def failed = []
+def iter_failed_checkov(data):
+    failed = []
+    if isinstance(data, dict):
+        if isinstance(data.get("results", {}).get("check_results"), list):
+            failed = [x for x in data["results"]["check_results"] if x.get("check_result", {}).get("result") == "FAILED"]
+        elif isinstance(data.get("results", {}).get("failed_checks"), list):
+            failed = data["results"]["failed_checks"]
+        elif isinstance(data.get("failed_checks"), list):
+            failed = data["failed_checks"]
+    elif isinstance(data, list):
+        for rep in data:
+            if isinstance(rep.get("results", {}).get("failed_checks"), list):
+                failed.extend(rep["results"]["failed_checks"])
+            elif isinstance(rep.get("results", {}).get("check_results"), list):
+                failed.extend([x for x in rep["results"]["check_results"] if x.get("check_result", {}).get("result") == "FAILED"])
+    return failed
 
-              if (checkov instanceof Map) {
-                if (checkov?.results?.check_results instanceof List) {
-                  failed = checkov.results.check_results.findAll { it?.check_result?.result == 'FAILED' }
-                } else if (checkov?.results?.failed_checks instanceof List) {
-                  failed = checkov.results.failed_checks
-                } else if (checkov?.failed_checks instanceof List) {
-                  failed = checkov.failed_checks
-                }
-              } else if (checkov instanceof List) {
-                checkov.each { rep ->
-                  if (rep?.results?.failed_checks instanceof List) {
-                    failed.addAll(rep.results.failed_checks)
-                  } else if (rep?.results?.check_results instanceof List) {
-                    failed.addAll(rep.results.check_results.findAll { it?.check_result?.result == 'FAILED' })
-                  }
-                }
-              }
+def count_checkov(data):
+    counts = {"CRITICAL":0,"HIGH":0,"MEDIUM":0,"LOW":0}
+    for item in iter_failed_checkov(data):
+        sev = (item.get("check_result", {}).get("severity") or item.get("severity") or "MEDIUM").upper()
+        if sev not in counts:
+            sev = "MEDIUM"
+        counts[sev] += 1
+    return counts
 
-              failed.each { item ->
-                def sev = (item?.check_result?.severity ?: item?.severity)
-                if (sev == 'CRITICAL') {
-                  checkovCritical++
-                } else if (sev == 'HIGH') {
-                  checkovHigh++
-                } else if (sev == 'MEDIUM') {
-                  checkovMedium++
-                } else if (sev == 'LOW') {
-                  checkovLow++
-                } else {
-                  // Many checkov checks don't include severity; treat as MEDIUM for reporting.
-                  checkovMedium++
-                }
-              }
-            } catch (err) {
-              echo "WARN: Unable to parse ${env.CHECKOV_OUTPUT}: ${err}"
-            }
-          }
+tfsec_path = os.environ.get("TFSEC_OUTPUT", "")
+checkov_path = os.environ.get("CHECKOV_OUTPUT", "")
+risk_path = os.environ.get("RISK_REPORT", "risk-assessment.json")
 
-          int critical = tfsecCritical + checkovCritical
-          int high = tfsecHigh + checkovHigh
-          int medium = tfsecMedium + checkovMedium
-          int low = tfsecLow + checkovLow
+tfsec = load_json(tfsec_path) if tfsec_path and os.path.exists(tfsec_path) else None
+checkov = load_json(checkov_path) if checkov_path and os.path.exists(checkov_path) else None
 
-          // User intent: report always, issue for critical, PR for non-critical.
-          String riskLevel = (critical > 0) ? 'CRITICAL' : ((high > 0) ? 'HIGH' : ((medium > 0) ? 'MEDIUM' : 'LOW'))
-          boolean actionRequired = (critical > 0 || high > 0 || medium > 0)
+tf_counts = count_tfsec(tfsec)
+ck_counts = count_checkov(checkov)
 
-          def report = [
-            timestamp: sh(script: 'date -u +%Y-%m-%dT%H:%M:%SZ', returnStdout: true).trim(),
-            critical: critical,
-            high: high,
-            medium: medium,
-            low: low,
-            risk_level: riskLevel,
-            action_required: actionRequired
-          ]
+critical = tf_counts["CRITICAL"] + ck_counts["CRITICAL"]
+high = tf_counts["HIGH"] + ck_counts["HIGH"]
+medium = tf_counts["MEDIUM"] + ck_counts["MEDIUM"]
+low = tf_counts["LOW"] + ck_counts["LOW"]
 
-          def reportJson = groovy.json.JsonOutput.toJson(report)
-          writeFile file: env.RISK_REPORT, text: reportJson
-          echo "Risk Assessment: ${report}"
+if critical > 0:
+    risk_level = "CRITICAL"
+elif high > 0:
+    risk_level = "HIGH"
+elif medium > 0:
+    risk_level = "MEDIUM"
+else:
+    risk_level = "LOW"
+
+action_required = bool(critical or high or medium)
+
+report = {
+    "timestamp": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "critical": critical,
+    "high": high,
+    "medium": medium,
+    "low": low,
+    "risk_level": risk_level,
+    "action_required": action_required,
+}
+
+with open(risk_path, "w") as f:
+    json.dump(report, f)
+
+with open("risk-counts.env", "w") as f:
+    f.write(f"CRITICAL={critical}\\nHIGH={high}\\nMEDIUM={medium}\\nLOW={low}\\nRISK_LEVEL={risk_level}\\nACTION_REQUIRED={'true' if action_required else 'false'}\\n")
+
+print("Risk Assessment:", report)
+PY
+          '''
 
           // Never fail the build due to findings
           currentBuild.result = 'SUCCESS'
@@ -330,14 +338,14 @@ spec:
             return
           }
 
-          def riskReport = new groovy.json.JsonSlurperClassic().parseText(readFile(env.RISK_REPORT))
-          def riskLevel = riskReport.risk_level
-          def critical = riskReport.critical
-          def high = riskReport.high
-          def medium = riskReport.medium
-          def low = riskReport.low
+          def riskLevel = sh(script: "jq -r '.risk_level' ${env.RISK_REPORT}", returnStdout: true).trim()
+          def critical = sh(script: "jq -r '.critical' ${env.RISK_REPORT}", returnStdout: true).trim().toInteger()
+          def high = sh(script: "jq -r '.high' ${env.RISK_REPORT}", returnStdout: true).trim().toInteger()
+          def medium = sh(script: "jq -r '.medium' ${env.RISK_REPORT}", returnStdout: true).trim().toInteger()
+          def low = sh(script: "jq -r '.low' ${env.RISK_REPORT}", returnStdout: true).trim().toInteger()
+          def actionRequired = sh(script: "jq -r '.action_required' ${env.RISK_REPORT}", returnStdout: true).trim()
 
-          if (riskReport.action_required != true) {
+          if (actionRequired != "true") {
             echo "✅ No remediation needed (risk_level=${riskLevel})."
             return
           }
