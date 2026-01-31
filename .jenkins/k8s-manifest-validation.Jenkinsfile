@@ -73,8 +73,8 @@ spec:
           # These are the GitOps control plane definitions
           for app in argocd/applications/*.yaml; do
             if [ -f "$app" ]; then
-              # -strict: fail on unknown fields or API mismatches
-              kubeconform -strict "$app" || exit 1
+              # AppProject/Application are CRDs; allow missing schemas unless CRDs are provided explicitly
+              kubeconform -strict -ignore-missing-schemas "$app" || exit 1
             fi
           done
         '''
