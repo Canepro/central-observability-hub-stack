@@ -14,7 +14,7 @@ kind: Pod
 spec:
   containers:
   - name: jnlp
-    image: docker.io/jenkins/inbound-agent:3302.v1cfe4e081049-1-jdk21
+    image: docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21
     resources:
       requests:
         memory: "256Mi"

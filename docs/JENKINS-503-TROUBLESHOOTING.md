@@ -69,7 +69,7 @@ Pending or stuck agent pods and queued builds can block the Jenkins controller f
 
 1. **If Jenkins is reachable:** Run the cleanup script (skips `aks-agent` and Built-In Node):
    ```bash
-   export JENKINS_URL="https://jenkins-oke.canepro.me"
+   export JENKINS_URL="https://jenkins.canepro.me"   # or https://jenkins-oke.canepro.me before Phase 5 cutover
    export JENKINS_USER="admin"
    export JENKINS_PASSWORD="<api-token>"
    bash scripts/jenkins-clean-stale-agents.sh
@@ -91,13 +91,30 @@ Pending or stuck agent pods and queued builds can block the Jenkins controller f
 
 On OKE (CRI-O), agent pods can fail with **ImageInspectError** and *short name mode is enforcing, but image name jenkins/inbound-agent:... returns ambiguous list*. CRI-O requires **fully qualified** image names (e.g. `docker.io/jenkins/inbound-agent:...`).
 
-- **Fix in this repo (GrafanaLocal):** The Jenkinsfiles under `.jenkins/` already use an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:...`. Ensure those changes are on **main** and pushed; then run the cleanup script (§4), abort stuck builds, and **re-run** the jobs so they use the latest Jenkinsfile.
-- **Fix in rocketchat-k8s:** In that repo’s Jenkinsfile(s), add an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-3-jdk21` (or the same tag your plugin uses) in the pod yaml.
+- **Fix in this repo (GrafanaLocal):** The Jenkinsfiles under `.jenkins/` use an explicit `jnlp` container with a **valid** tag, e.g. `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21`. Do **not** use `3302.v1cfe4e081049-1-jdk21` — that tag does not exist on Docker Hub (manifest unknown). Ensure changes are on **main** and pushed; then run the cleanup script (§4), abort stuck builds, and **re-run** the jobs.
+- **Fix in rocketchat-k8s:** In that repo’s Jenkinsfile(s), add an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21` (or the same tag your plugin uses) in the pod yaml.
 - **Cloud default:** `helm/jenkins-values.yaml` sets the Kubernetes cloud default jnlp image to the same tag with `docker.io/` so any job that doesn’t specify jnlp gets a qualified image. Sync ArgoCD and reload JCasC after changing it.
 
 ---
 
-## 6. Quick reference
+## 6. Stage view only shows "Declarative: Post Actions"
+
+If the pipeline run shows **only** the stage "Declarative: Post Actions" and none of the real stages (e.g. "Resolve OCI config", "Install Tools", "Terraform Format"), the run **never got an agent**. Declarative runs `post { always { ... } }` even when no stage ran, so that is the only "stage" you see.
+
+**Common cause:** Agent pod failed to start—usually **ImageInspectError** (unqualified image name) or pod scheduling failure. The pipeline fails during agent allocation; no stage runs on an agent; only post actions run.
+
+**What to do:**
+
+1. **Fix image names** – Ensure every Jenkinsfile that uses `kubernetes { ... yaml }` has an explicit `jnlp` container with a **fully qualified** image and a **tag that exists** on Docker Hub, e.g. `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21` (avoid `3302.v1cfe4e081049-1-jdk21` — manifest unknown). Same for any other images in the pod (e.g. `docker.io/hashicorp/terraform:latest`). See §5.
+2. **Clean stale agents and queue** – Run `scripts/jenkins-clean-stale-agents.sh` (§4), abort stuck builds in the UI, then **re-run** the job so it uses the updated Jenkinsfile and a fresh pod.
+3. **Confirm branch and script path** – Multibranch jobs must be scanning the branch that has the fixed Jenkinsfile (e.g. **main**). Job config should use the correct Script Path (e.g. `.jenkins/terraform-validation.Jenkinsfile`). After pushing fixes, run "Scan Multibranch Pipeline Now" and build the **main** (or correct) branch.
+4. **Check build logs** – Open the failed run → Console Output. Look for errors **before** any stage (e.g. "Error provisioning agent", "ImageInspectError", "Unable to pull"). That confirms agent allocation failed.
+
+Once the agent pod starts successfully, the normal stages will appear in the stage view and run.
+
+---
+
+## 7. Quick reference
 
 | Symptom | Action |
 |--------|--------|
@@ -105,3 +122,4 @@ On OKE (CRI-O), agent pods can fail with **ImageInspectError** and *short name m
 | Pod Restarting / CrashLoopBackOff | Check logs for OOM or exception; increase memory or disable problematic plugin (§3). |
 | Logs say "Jenkins is fully up and running" but 503 | Check readiness probe; ensure service targets correct port (8080). |
 | Agent pods ImageInspectError (short name) | Use `docker.io/jenkins/inbound-agent:...` in Jenkinsfile pod yaml and/or cloud default (§5). |
+| Only "Declarative: Post Actions" in stage view | Agent never allocated; fix images (§5), clean stale agents (§4), re-run job; check Console for errors before first stage (§6). |
