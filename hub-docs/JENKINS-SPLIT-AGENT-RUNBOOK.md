@@ -1,8 +1,8 @@
 # Jenkins Split-Agent: Shutdown & Startup Runbook
 
-Operational steps for the hybrid setup: Controller on OKE (24/7), static agent on AKS (16:00–23:00 UTC). See [JENKINS-SPLIT-AGENT-PLAN.md](JENKINS-SPLIT-AGENT-PLAN.md) for architecture and phases.
+**Purpose:** Operational steps for the hybrid setup: Controller on OKE (24/7) at `https://jenkins.canepro.me`, static agent on AKS (when cluster is up). Use this runbook for scheduled AKS shutdown/startup and agent offline procedure.
 
-**Related in ops repo:** **JENKINS_DEPLOYMENT.md** (Split-Agent Hybrid subsection) and **OPERATIONS.md** (Jenkins Split-Agent shutdown/startup) reference this runbook and the plan.
+**Related documents:** [JENKINS-SPLIT-AGENT-PLAN.md](JENKINS-SPLIT-AGENT-PLAN.md) (architecture and phases), [JENKINS-MIGRATION-SUMMARY.md](../docs/JENKINS-MIGRATION-SUMMARY.md) (migration summary), [JENKINS-503-TROUBLESHOOTING.md](../docs/JENKINS-503-TROUBLESHOOTING.md) (troubleshooting). **In ops repo:** JENKINS_DEPLOYMENT.md (Split-Agent Hybrid) and OPERATIONS.md (Jenkins shutdown/startup) reference this runbook.
 
 ---
 
@@ -76,4 +76,6 @@ If AKS was stopped while a Terraform job was running on `aks-agent`, the lock on
 
 ---
 
-*Runbook version: 1.0 — For Split-Agent Hybrid (Controller on OKE, Agent on AKS).*
+---
+
+*Runbook version: 1.1 — Split-Agent Hybrid (Controller on OKE at jenkins.canepro.me, Agent on AKS).*

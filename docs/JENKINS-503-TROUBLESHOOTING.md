@@ -1,8 +1,14 @@
-# Jenkins 503 After Plugin Update / Restart
+# Jenkins Troubleshooting (OKE Controller)
 
-After updating plugins and restarting Jenkins, nginx returns **503 Service Temporarily Unavailable** because the Jenkins pod is not ready yet (or failed to start).
+**Purpose:** Operational troubleshooting for the Jenkins controller on OKE: 503 after restart, agent image pull failures, stage view issues, and stale agent cleanup.
+
+**Related documents:** [JENKINS-MIGRATION-SUMMARY.md](JENKINS-MIGRATION-SUMMARY.md) (migration and current state), [hub-docs/JENKINS-SPLIT-AGENT-PLAN.md](../hub-docs/JENKINS-SPLIT-AGENT-PLAN.md) (architecture and phases).
+
+---
 
 ## 1. Check pod and logs (run these first)
+
+After a plugin update or restart, nginx may return **503** because the Jenkins pod is not ready yet (or failed to start). Run these checks first:
 
 ```bash
 # Is the pod running, or CrashLoopBackOff?
@@ -92,7 +98,7 @@ Pending or stuck agent pods and queued builds can block the Jenkins controller f
 On OKE (CRI-O), agent pods can fail with **ImageInspectError** and *short name mode is enforcing, but image name jenkins/inbound-agent:... returns ambiguous list*. CRI-O requires **fully qualified** image names (e.g. `docker.io/jenkins/inbound-agent:...`).
 
 - **Fix in this repo (GrafanaLocal):** The Jenkinsfiles under `.jenkins/` use an explicit `jnlp` container with a **valid** tag, e.g. `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21`. Do **not** use `3302.v1cfe4e081049-1-jdk21` — that tag does not exist on Docker Hub (manifest unknown). Ensure changes are on **main** and pushed; then run the cleanup script (§4), abort stuck builds, and **re-run** the jobs.
-- **Fix in rocketchat-k8s:** In that repo’s Jenkinsfile(s), add an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21` (or the same tag your plugin uses) in the pod yaml.
+- **Fix in rocketchat-k8s:** In that repo’s Jenkinsfile(s), add an explicit `jnlp` container with `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21` (or another tag that exists on Docker Hub) in the pod yaml.
 - **Cloud default:** `helm/jenkins-values.yaml` sets the Kubernetes cloud default jnlp image to the same tag with `docker.io/` so any job that doesn’t specify jnlp gets a qualified image. Sync ArgoCD and reload JCasC after changing it.
 
 ---
@@ -123,3 +129,7 @@ Once the agent pod starts successfully, the normal stages will appear in the sta
 | Logs say "Jenkins is fully up and running" but 503 | Check readiness probe; ensure service targets correct port (8080). |
 | Agent pods ImageInspectError (short name) | Use `docker.io/jenkins/inbound-agent:...` in Jenkinsfile pod yaml and/or cloud default (§5). |
 | Only "Declarative: Post Actions" in stage view | Agent never allocated; fix images (§5), clean stale agents (§4), re-run job; check Console for errors before first stage (§6). |
+
+---
+
+*See [JENKINS-MIGRATION-SUMMARY.md](JENKINS-MIGRATION-SUMMARY.md) for migration context and current state.*
