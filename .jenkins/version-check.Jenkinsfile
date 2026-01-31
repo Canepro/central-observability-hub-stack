@@ -16,8 +16,8 @@ spec:
     image: docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: "128Mi"
+        cpu: "50m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -148,7 +148,8 @@ spec:
             }
           }
           
-          writeJSON file: 'chart-updates.json', json: chartUpdates
+          def chartUpdatesJson = groovy.json.JsonOutput.toJson(chartUpdates)
+          writeFile file: 'chart-updates.json', text: chartUpdatesJson
         }
       }
     }
@@ -157,7 +158,7 @@ spec:
     stage('Create Update PRs/Issues') {
       steps {
         script {
-          def chartUpdates = readJSON file: 'chart-updates.json'
+          def chartUpdates = new groovy.json.JsonSlurperClassic().parseText(readFile('chart-updates.json'))
           
           // Categorize by risk
           def highRiskUpdates = chartUpdates.findAll { it.risk == 'HIGH' }
@@ -171,7 +172,8 @@ spec:
             updates: chartUpdates
           ]
           
-          writeJSON file: "${env.UPDATE_REPORT}", json: updateReport
+          def updateReportJson = groovy.json.JsonOutput.toJson(updateReport)
+          writeFile file: "${env.UPDATE_REPORT}", text: updateReportJson
           
           echo "Version Check Summary:"
           echo "  High Risk Updates: ${highRiskUpdates.size()}"
