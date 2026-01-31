@@ -41,14 +41,23 @@ spec:
     stage('Install Tools') {
       steps {
         sh '''
-          apk add --no-cache curl
-          # Helm
+          apk add --no-cache curl openssl tar gzip
+          # Helm (needs openssl for checksum verification)
           curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh || true
           # kubeconform
           KUBECONFORM_VERSION="v0.6.3"
-          wget -qO /usr/local/bin/kubeconform "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" && tar -xzf /usr/local/bin/kubeconform -C /usr/local/bin kubeconform 2>/dev/null || \
-          (wget -q "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -O - | tar -xz -C /usr/local/bin) || true
-          chmod +x /usr/local/bin/kubeconform 2>/dev/null || true
+          ARCH="$(uname -m)"
+          case "$ARCH" in
+            x86_64) KUBECONFORM_ARCH="amd64" ;;
+            aarch64|arm64) KUBECONFORM_ARCH="arm64" ;;
+            *) KUBECONFORM_ARCH="amd64" ;;
+          esac
+          KUBECONFORM_TGZ="/tmp/kubeconform-${KUBECONFORM_VERSION}.tgz"
+          curl -fsSL -o "$KUBECONFORM_TGZ" "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-${KUBECONFORM_ARCH}.tar.gz" || true
+          if [ -f "$KUBECONFORM_TGZ" ]; then
+            tar -xzf "$KUBECONFORM_TGZ" -C /usr/local/bin kubeconform || true
+            chmod +x /usr/local/bin/kubeconform || true
+          fi
           helm version || true
           kubeconform -v || true
         '''
