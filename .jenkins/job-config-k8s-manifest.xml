@@ -25,8 +25,8 @@
   </orphanedItemStrategy>
   <triggers>
     <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@6.815.v0b_3c1e18b_81">
-      <spec>H * * * *</spec>
-      <interval>3600000</interval>
+      <spec>H H * * *</spec>
+      <interval>86400000</interval>
     </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
   </triggers>
   <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api@2.11.2">
@@ -47,7 +47,9 @@
           </traits>
         </source>
         <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
-          <properties class="empty-list"/>
+          <properties>
+            <jenkins.branch.NoTriggerBranchProperty/>
+          </properties>
         </strategy>
       </jenkins.branch.BranchSource>
     </data>
