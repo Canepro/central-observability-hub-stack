@@ -1,0 +1,31 @@
+# Phase 5: Production hostname for Jenkins (jenkins.canepro.me)
+# DNS points here; same backend as jenkins-oke.canepro.me.
+# cert-manager will issue TLS for this host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins-canepro
+  namespace: jenkins
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: jenkins.canepro.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jenkins
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - jenkins.canepro.me
+      secretName: jenkins-canepro-tls
