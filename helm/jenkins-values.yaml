@@ -144,7 +144,7 @@ controller:
                     containers:
                       - name: "jnlp"
                         # Must be fully qualified for OKE/CRI-O. Use same tag as plugin default (3355) to avoid pull mismatch.
-                        image: "docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-3-jdk21"
+                        image: "docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21"
                         alwaysPullImage: false
                         workingDir: "/home/jenkins/agent"
                         ttyEnabled: true
