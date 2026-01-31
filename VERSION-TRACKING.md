@@ -79,10 +79,11 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026** (42 days away from Jan 19, 2026). Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
 
-**🔍 Note on Prometheus**: The current version (25.8.0) is higher than the latest found (15.8.5). This may indicate:
-- Using `prometheus` chart (standard Prometheus server)
-- Should verify against `kube-prometheus-stack` (latest: 80.13.3) if using operator-based deployment
-- Chart versioning may have changed
+**🔄 Prometheus Upgrade (2026-01-31)**: Upgraded from chart 25.8.0 (Prometheus v2.48.0) → 28.6.1 (Prometheus v3.8.1)
+- Major version upgrade: Prometheus v2 → v3 (first major release in 7 years)
+- Breaking changes: UTF-8 support enabled by default, stricter scraping, new UI
+- Config compatibility: All existing values.yaml settings remain valid
+- See GitHub issue #2 for detailed analysis and migration notes
 
 **💡 Tempo Note**: Currently using single binary mode (v1.24.0). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
 
