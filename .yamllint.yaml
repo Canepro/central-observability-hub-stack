@@ -1,0 +1,10 @@
+extends: relaxed
+
+rules:
+  line-length: disable
+  trailing-spaces: enable
+  empty-lines: {max: 2}
+  comments:
+    require-starting-space: true
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']

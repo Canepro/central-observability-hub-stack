@@ -133,13 +133,13 @@ spec:
           apk add --no-cache yamllint || true
           
           # Lint ArgoCD Application manifests
-          yamllint -c .yamllint.yaml argocd/ || true
+          yamllint -c .yamllint.yaml argocd/
           
           # Lint Helm values files
-          yamllint -c .yamllint.yaml helm/ || true
+          yamllint -c .yamllint.yaml helm/
           
           # Lint raw Kubernetes manifests
-          yamllint -c .yamllint.yaml k8s/ || true
+          yamllint -c .yamllint.yaml k8s/
           # || true: warnings don't fail build, only errors
         '''
       }
