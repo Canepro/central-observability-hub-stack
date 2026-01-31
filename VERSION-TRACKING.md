@@ -13,6 +13,10 @@ This document tracks all software versions used in the OKE Observability Hub dep
 - ⚠️ **Deprecated**: Component is deprecated, consider migration path
 - 🔍 **Needs investigation**: Version discrepancy or unclear status
 
+## Dashboard Provisioning Policy
+
+Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`. Grafana.com (gnet) dashboards are pulled at the **latest** revision unless explicitly pinned. If you pin a revision, document the reason and update it during regular version reviews.
+
 ## Quick Upgrade Reference
 
 **Just updated (2026-01-19)**:

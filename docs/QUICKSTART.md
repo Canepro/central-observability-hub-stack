@@ -39,35 +39,24 @@ All datasources are pre-configured via Helm values:
 
 ---
 
-## 📊 Import Dashboards (5 minutes)
+## 📊 Dashboards (auto-provisioned)
 
-### Method 1: Import by ID
+Dashboards are provisioned automatically on startup via the Grafana Helm chart values (no manual import needed).
+
+**Default dashboard set**: See `hub-docs/GRAFANA-E1-DEFAULT-DASHBOARDS.md`.
+
+**Latest-first policy**: Grafana.com (gnet) dashboards are pulled at the latest revision unless explicitly pinned.
+
+### Manual import (optional)
+
+Use this only for ad-hoc testing or one-off dashboards.
 
 1. Click **+** (sidebar) → **Import**
-2. Enter Dashboard ID
+2. Enter Dashboard ID or paste JSON
 3. Select datasources (Prometheus, Loki, etc.)
 4. Click **Import**
 
-### Recommended Dashboard IDs:
-
-| ID | Name | Purpose |
-|----|------|---------|
-| **Custom** | **🌳 Unified World Tree** | **Multi-cluster health dashboard** (see `dashboards/unified-world-tree.json`) |
-| **315** | Kubernetes Cluster Monitoring | Overall cluster health |
-| **1860** | Node Exporter Full | Detailed node metrics (CPU, RAM, disk) |
-| **13639** | Loki Dashboard | Loki performance & ingestion stats |
-| **16537** | Tempo Dashboard | Tracing performance |
-| **12019** | Kubernetes Cluster (Prometheus) | Pod/container metrics |
-| **7249** | Kubernetes Cluster Monitoring | Alternative cluster view |
-
 **Note**: The **🌳 Unified World Tree** dashboard provides a multi-cluster view with a `cluster` variable dropdown. Import it from `dashboards/unified-world-tree.json` in this repo for best results.
-
-### Method 2: Browse Dashboards
-
-1. Visit https://grafana.com/grafana/dashboards
-2. Search for keywords (e.g., "Kubernetes", "Prometheus", "Loki")
-3. Copy dashboard ID or JSON
-4. Import in Grafana
 
 ---
 
@@ -297,4 +286,3 @@ A **production-ready centralized observability hub** with:
 ---
 
 **Ready to monitor your Rocket.Chat empire! 🚀📊**
-

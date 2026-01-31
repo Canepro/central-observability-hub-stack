@@ -832,3 +832,50 @@ dashboards:
             "version": 1,
             "links": []
           }
+    # Grafana.com dashboards (gnet). Pin revisions as needed.
+    node-exporter-full:
+      gnetId: 1860
+      datasource: Prometheus
+    k8s-views-global:
+      gnetId: 15757
+      datasource: Prometheus
+    k8s-views-pods:
+      gnetId: 15760
+      datasource: Prometheus
+    k8s-dashboard-cn-20240513-starsl:
+      gnetId: 13105
+      datasource: Prometheus
+    rocketchat-metrics:
+      gnetId: 23428
+      datasource: Prometheus
+    rocketchat-microservices:
+      gnetId: 23427
+      datasource: Prometheus
+    rocketchat-mongodb-single-node:
+      gnetId: 23712
+      datasource: Prometheus
+    windows-exporter-starsl-20230531:
+      gnetId: 10467
+      datasource: Prometheus
+    aks-maintenance-jobs:
+      json: |
+        {
+          "title": "AKS Maintenance Jobs",
+          "uid": "aks-maintenance-jobs",
+          "tags": ["aks-canepro", "cronjobs", "kubernetes", "maintenance"],
+          "timezone": "browser",
+          "schemaVersion": 38,
+          "version": 1,
+          "panels": [
+            {
+              "id": 1,
+              "title": "TODO: Add AKS maintenance panels",
+              "type": "text",
+              "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
+              "options": {
+                "mode": "markdown",
+                "content": "This dashboard is provisioned from git. Replace this placeholder with the AKS maintenance job panels."
+              }
+            }
+          ]
+        }
