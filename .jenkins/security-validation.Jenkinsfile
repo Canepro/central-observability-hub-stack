@@ -93,20 +93,21 @@ spec:
           mkdir -p /usr/local/bin
           # Prefer Alpine package if available
           apk add --no-cache kube-score 2>/dev/null || true
-          # Fallback: download from GitHub (versioned URL; /latest/download/ often 404s)
+          # Fallback: download from GitHub for correct arch
           if ! command -v kube-score >/dev/null 2>&1; then
             KUBE_SCORE_VER="1.17.0"
-            if curl -fsSL -o /tmp/kube-score.tgz "https://github.com/zegl/kube-score/releases/download/v${KUBE_SCORE_VER}/kube-score_${KUBE_SCORE_VER}_linux_amd64.tar.gz"; then
-              : # success
-            else
-              curl -fsSL -o /tmp/kube-score.tgz "https://github.com/zegl/kube-score/releases/download/v${KUBE_SCORE_VER}/kube-score_linux_amd64.tar.gz" || true
-            fi
+            ARCH="$(uname -m)"
+            case "$ARCH" in
+              aarch64|arm64) KUBE_SCORE_ARCH="arm64" ;;
+              x86_64|amd64) KUBE_SCORE_ARCH="amd64" ;;
+              *) KUBE_SCORE_ARCH="amd64" ;;
+            esac
+            curl -fsSL -o /tmp/kube-score.tgz "https://github.com/zegl/kube-score/releases/download/v${KUBE_SCORE_VER}/kube-score_${KUBE_SCORE_VER}_linux_${KUBE_SCORE_ARCH}.tar.gz" || true
             if [ -f /tmp/kube-score.tgz ] && tar -tzf /tmp/kube-score.tgz >/dev/null 2>&1; then
-              tar -xzf /tmp/kube-score.tgz -C /usr/local/bin/
+              tar -xzf /tmp/kube-score.tgz -C /usr/local/bin/ >/dev/null 2>&1 || true
               chmod +x /usr/local/bin/kube-score 2>/dev/null || true
             fi
           fi
-          chmod +x /usr/local/bin/kube-score 2>/dev/null || true
           
           # Verify installations
           tfsec --version || echo "tfsec not installed"
@@ -143,12 +144,12 @@ spec:
             checkov -d . --framework terraform --output json --output-file "${WORKSPACE}/${CHECKOV_OUTPUT}" || true
             # If checkov created a directory, copy the JSON file out so the pipeline can read it
             if [ -d "${WORKSPACE}/${CHECKOV_OUTPUT}" ]; then
-              F=$(find "${WORKSPACE}/${CHECKOV_OUTPUT}" -maxdepth 1 -name "*.json" -print -quit)
+              F=$(find "${WORKSPACE}/${CHECKOV_OUTPUT}" -type f -name "*.json" -print -quit)
               if [ -n "$F" ]; then
-                cp "$F" "${WORKSPACE}/checkov-results-merged.json"
+                cp -f "$F" "${WORKSPACE}/checkov-results-merged.json" || true
               fi
-              rm -rf "${WORKSPACE}/${CHECKOV_OUTPUT}"
-              [ -f "${WORKSPACE}/checkov-results-merged.json" ] && mv "${WORKSPACE}/checkov-results-merged.json" "${WORKSPACE}/${CHECKOV_OUTPUT}"
+              rm -rf "${WORKSPACE}/${CHECKOV_OUTPUT}" || true
+              [ -f "${WORKSPACE}/checkov-results-merged.json" ] && mv "${WORKSPACE}/checkov-results-merged.json" "${WORKSPACE}/${CHECKOV_OUTPUT}" || true
             fi
             # Also output CLI format for logs
             checkov -d . --framework terraform || true

@@ -148,14 +148,13 @@ spec:
                   *) location="" ;;
                 esac
 
-                updates=$(jq \
+                updates=$(printf '%s' "$updates" | jq \
                   --arg comp "$comp" \
                   --arg current "$current" \
                   --arg latest "$latest" \
                   --arg location "$location" \
                   --arg risk "$risk" \
-                  '. + [{component:$comp,current:$current,latest:$latest,location:$location,risk:$risk}]' \
-                  <<<"$updates")
+                  '. + [{component:$comp,current:$current,latest:$latest,location:$location,risk:$risk}]')
 
                 echo "Update available: ${comp} ${current} -> ${latest} (${risk})"
               elif [ -n "$current" ] && [ -n "$latest" ]; then
