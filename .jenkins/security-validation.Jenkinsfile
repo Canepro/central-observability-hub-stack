@@ -17,8 +17,8 @@ spec:
     image: docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: "128Mi"
+        cpu: "50m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -27,8 +27,8 @@ spec:
     command: ['sleep', '3600']
     resources:
       requests:
-        memory: "512Mi"
-        cpu: "250m"
+        memory: "256Mi"
+        cpu: "100m"
       limits:
         memory: "1Gi"
         cpu: "500m"
@@ -237,7 +237,7 @@ spec:
           // tfsec: { results: [ { severity: "CRITICAL|HIGH|MEDIUM|LOW", ... }, ... ] }
           if (fileExists(env.TFSEC_OUTPUT)) {
             try {
-              def tfsec = readJSON file: env.TFSEC_OUTPUT
+              def tfsec = new groovy.json.JsonSlurperClassic().parseText(readFile(env.TFSEC_OUTPUT))
               def results = (tfsec?.results instanceof List) ? tfsec.results : []
               tfsecCritical = results.count { it?.severity == 'CRITICAL' }
               tfsecHigh = results.count { it?.severity == 'HIGH' }
@@ -251,7 +251,7 @@ spec:
           // checkov output formats vary. We count FAILED checks; if severity missing, treat as MEDIUM.
           if (fileExists(env.CHECKOV_OUTPUT)) {
             try {
-              def checkov = readJSON file: env.CHECKOV_OUTPUT
+              def checkov = new groovy.json.JsonSlurperClassic().parseText(readFile(env.CHECKOV_OUTPUT))
               def failed = []
 
               if (checkov instanceof Map) {
@@ -311,7 +311,8 @@ spec:
             action_required: actionRequired
           ]
 
-          writeJSON file: env.RISK_REPORT, json: report
+          def reportJson = groovy.json.JsonOutput.toJson(report)
+          writeFile file: env.RISK_REPORT, text: reportJson
           echo "Risk Assessment: ${report}"
 
           // Never fail the build due to findings
@@ -329,7 +330,7 @@ spec:
             return
           }
 
-          def riskReport = readJSON file: "${env.RISK_REPORT}"
+          def riskReport = new groovy.json.JsonSlurperClassic().parseText(readFile(env.RISK_REPORT))
           def riskLevel = riskReport.risk_level
           def critical = riskReport.critical
           def high = riskReport.high
@@ -567,7 +568,7 @@ EOF
       // Publish security scan results (if using plugins)
       script {
         if (fileExists(env.RISK_REPORT)) {
-          def riskReport = readJSON file: "${env.RISK_REPORT}"
+          def riskReport = new groovy.json.JsonSlurperClassic().parseText(readFile(env.RISK_REPORT))
           echo """
           ========================================
           Security Scan Summary
