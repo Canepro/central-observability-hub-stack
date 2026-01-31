@@ -65,4 +65,23 @@ while IFS= read -r name; do
   [ "$HTTP" = "302" ] || [ "$HTTP" = "200" ] && COUNT=$((COUNT+1))
 done <<< "$NAMES"
 
-echo "Done ($COUNT agents deleted). Abort any stuck builds in the queue, then re-run jobs; new builds will create fresh pod templates."
+echo "Done ($COUNT agents deleted)."
+
+# Clear Build Queue (cancel all queued items so Jenkins stops launching new agent pods)
+echo "Fetching build queue..."
+QUEUE_JSON=$(curl -s -u "${JENKINS_USER}:${JENKINS_PASSWORD}" "${BASE}/queue/api/json?depth=0")
+if [ -n "$QUEUE_JSON" ] && [ "${QUEUE_JSON#\{}" != "$QUEUE_JSON" ]; then
+  # Parse queue item IDs: "id":123
+  QUEUE_IDS=$(echo "$QUEUE_JSON" | grep -o '"id":[0-9]*' | sed 's/"id"://g')
+  QCOUNT=0
+  for qid in $QUEUE_IDS; do
+    echo "Cancelling queue item: $qid"
+    HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X POST -u "${JENKINS_USER}:${JENKINS_PASSWORD}" "${CURL_OPTS[@]}" --data "id=${qid}" "${BASE}/queue/cancelItem")
+    [ "$HTTP" = "302" ] || [ "$HTTP" = "200" ] && QCOUNT=$((QCOUNT+1))
+  done
+  echo "Queue: $QCOUNT item(s) cancelled."
+else
+  echo "Queue: empty or could not fetch."
+fi
+
+echo "All set. Re-run jobs when ready; new builds will create fresh pod templates."

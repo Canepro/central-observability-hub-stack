@@ -1,0 +1,19 @@
+# Phase 5: Ingress for production hostname jenkins.canepro.me (same backend as jenkins-oke)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jenkins-ingress-canepro
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+    path: k8s/jenkins
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jenkins
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

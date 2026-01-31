@@ -57,11 +57,11 @@ controller:
   serviceType: ClusterIP
   servicePort: 8080
 
-  # Jenkins URL (required for agents and webhooks)
+  # Jenkins URL (required for agents and webhooks) — Phase 5: production hostname
   jenkinsUrlProtocol: https
-  jenkinsUrl: "https://jenkins-oke.canepro.me"
+  jenkinsUrl: "https://jenkins.canepro.me"
 
-  # Ingress: expose on existing NGINX Ingress (jenkins-oke.canepro.me)
+  # Ingress: expose on NGINX (jenkins-oke + jenkins.canepro.me via k8s/jenkins/)
   ingress:
     enabled: true
     apiVersion: "networking.k8s.io/v1"
