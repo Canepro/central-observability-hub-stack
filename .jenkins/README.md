@@ -1,6 +1,8 @@
 # Jenkins CI Validation for GrafanaLocal
 
-This directory contains Jenkinsfiles for CI validation of the `GrafanaLocal` repository (central-observability-hub-stack).
+This directory contains Jenkinsfiles for CI validation of the `GrafanaLocal` repository (central-observability-hub-stack). The Jenkins controller runs on OKE; pipelines use dynamic Kubernetes agents (OKE) or the static `aks-agent` (AKS) per [JENKINS-SPLIT-AGENT-PLAN.md](../hub-docs/JENKINS-SPLIT-AGENT-PLAN.md).
+
+**Related:** [docs/JENKINS-MIGRATION-SUMMARY.md](../docs/JENKINS-MIGRATION-SUMMARY.md) (migration summary), [docs/JENKINS-503-TROUBLESHOOTING.md](../docs/JENKINS-503-TROUBLESHOOTING.md) (troubleshooting).
 
 ## Available Pipelines
 
@@ -8,6 +10,10 @@ This directory contains Jenkinsfiles for CI validation of the `GrafanaLocal` rep
 - **`k8s-manifest-validation.Jenkinsfile`**: Validates Kubernetes manifests
 - **`security-validation.Jenkinsfile`**: Security scanning
 - **`version-check.Jenkinsfile`**: Version update checking
+
+## Agent Image Requirements (OKE / CRI-O)
+
+On OKE, the container runtime (CRI-O) requires **fully qualified** image names. Each Jenkinsfile that uses `agent { kubernetes { ... yaml } }` must specify an explicit `jnlp` container with a **valid** image tag from Docker Hub, e.g. `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21`. Do **not** use unqualified names (e.g. `jenkins/inbound-agent`) or tags that do not exist (e.g. `3302.v1cfe4e081049-1-jdk21` — manifest unknown). See [docs/JENKINS-503-TROUBLESHOOTING.md](../docs/JENKINS-503-TROUBLESHOOTING.md) §5 and §6 if builds fail with ImageInspectError or only show "Declarative: Post Actions".
 
 ## OCI Authentication Setup (Required for Terraform Plan)
 
@@ -91,24 +97,21 @@ For safety, the pipeline does **not** archive `terraform show` output by default
 
 ### Option 1: CLI Setup (Recommended)
 
-Use **JENKINS_URL** for the Jenkins controller you are targeting (OKE after migration, or AKS before):
+Use **JENKINS_URL** for the Jenkins controller (production URL is OKE):
 
 ```bash
 cd GrafanaLocal
-# After migration to OKE (or when testing OKE):
-export JENKINS_URL="https://jenkins-oke.canepro.me"
-# Or production URL after cutover:
-# export JENKINS_URL="https://jenkins.canepro.me"
+export JENKINS_URL="https://jenkins.canepro.me"
 export JOB_NAME="GrafanaLocal"
 export CONFIG_FILE=".jenkins/job-config.xml"
 bash .jenkins/create-job.sh
 ```
 
-**Note:** Create the **github-token** credential on that Jenkins first (Manage Jenkins → Credentials), or the multibranch scan will fail. See `hub-docs/JENKINS-SPLIT-AGENT-PLAN.md` §8.1 (Jobs, pipelines, multibranch, and credentials). (Jobs, pipelines, multibranch, and credentials) for migrating from AKS Jenkins.
+**Note:** Create the **github-token** credential on that Jenkins first (Manage Jenkins → Credentials), or the multibranch scan will fail. See [hub-docs/JENKINS-SPLIT-AGENT-PLAN.md](../hub-docs/JENKINS-SPLIT-AGENT-PLAN.md) for jobs, pipelines, and credentials.
 
 ### Option 2: UI Setup
 
-1. Go to Jenkins UI (e.g. https://jenkins-oke.canepro.me or https://jenkins.canepro.me)
+1. Go to Jenkins UI: https://jenkins.canepro.me
 2. Click "New Item"
 3. Enter job name: `GrafanaLocal`
 4. Select "Multibranch Pipeline"
@@ -119,6 +122,6 @@ bash .jenkins/create-job.sh
 
 Configure webhook in repository settings to point at the **active** Jenkins URL (OKE after migration):
 
-- **URL**: `https://jenkins-oke.canepro.me/github-webhook/` (or `https://jenkins.canepro.me/github-webhook/` after domain cutover)
+- **URL**: `https://jenkins.canepro.me/github-webhook/`
 - **Events**: Pull requests, Pushes
 - **Content type**: `application/json`

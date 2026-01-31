@@ -29,8 +29,8 @@ spec:
     image: docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: "128Mi"
+        cpu: "50m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -40,7 +40,7 @@ spec:
     resources:
       requests:
         memory: "256Mi"
-        cpu: "200m"
+        cpu: "100m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -213,7 +213,7 @@ EOF
     always {
       // NOTE: Do not archive tfplan output by default; plan output can contain sensitive resource attributes.
       // Only clean workspace when we ran on an agent; otherwise MissingContextVariableException (no FilePath).
-      script { if (currentBuild.rawBuild.getExecutor() != null) { cleanWs() } }
+      script { if (env.WORKSPACE?.trim()) { cleanWs() } }
     }
     success {
       echo '✅ Terraform validation passed'

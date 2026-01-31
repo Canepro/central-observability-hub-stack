@@ -140,7 +140,7 @@ spec:
   post {
     always {
       // Only clean workspace when we ran on an agent; otherwise MissingContextVariableException (no FilePath).
-      script { if (currentBuild.rawBuild.getExecutor() != null) { cleanWs() } }
+      script { if (env.WORKSPACE?.trim()) { cleanWs() } }
     }
     success {
       echo '✅ Kubernetes manifest validation passed'

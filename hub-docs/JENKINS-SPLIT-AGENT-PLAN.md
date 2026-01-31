@@ -2,6 +2,8 @@
 
 **Goal:** Run the Jenkins Controller on OKE (24/7) and a static Jenkins agent on AKS (only when cluster is up). Azure jobs keep using Workload Identity on AKS; webhooks and controller availability no longer depend on AKS.
 
+**Related documents:** [JENKINS-MIGRATION-SUMMARY.md](../docs/JENKINS-MIGRATION-SUMMARY.md) (summary of work and current state), [JENKINS-503-TROUBLESHOOTING.md](../docs/JENKINS-503-TROUBLESHOOTING.md) (operational troubleshooting), [JENKINS-SPLIT-AGENT-RUNBOOK.md](JENKINS-SPLIT-AGENT-RUNBOOK.md) (shutdown/startup runbook).
+
 ---
 
 ## 1. Current State & Prerequisites
@@ -77,9 +79,10 @@ Alertmanager already uses **emptyDir** (no PVC) to stay under 200GB. There is **
 | **2. AKS — Static Agent** | Add static agent manifest + RBAC + secret; connect to OKE via WebSocket; remove/repurpose `aks-jenkins` app. | Ops repo (e.g. rocketchat-k8s): `ops/manifests/`, ArgoCD. | Agent runs on AKS when cluster is up; label `aks-agent`. **Done.** |
 | **3. Job routing** | Update Jenkinsfiles to use label `aks-agent` for Azure jobs; OKE jobs use `built-in` or OKE agent. | This repo: `.jenkins/*.Jenkinsfile`; Jenkins UI. | Jobs route to correct agent. **Done (this repo).** Ops repo: Azure jobs need `aks-agent`. |
 | **4. Graceful disconnect** | Before AKS stop: check running builds → put `aks-agent` offline → wait → run AKS stop. | Ops repo: `terraform/automation.tf` (runbook); or CronJob/API. | No failed builds; no stuck Terraform lock. **Done (ops repo).** |
-| **5. Migration / domain cutover** | Point `jenkins.canepro.me` from AKS LB to OKE LB; set Jenkins URL; update agent to `jenkins.canepro.me`; retire AKS controller. | DNS; Jenkins config; ops repo. | Production URL on OKE; AKS agent only. |
+| **5a. DNS cutover** | Point `jenkins.canepro.me` from AKS LB to OKE LB; set Jenkins URL. | DNS; Jenkins config. | Production URL on OKE. |
+| **5b. AKS controller retirement** | Retire Jenkins controller on AKS (remove ArgoCD app, clean resources); keep AKS static agent only. | Ops repo. | AKS controller removed; AKS agent only. |
 
-**Ready to start?** Phases 0–4 are complete. OKE Jenkins controller is running with kubernetes cloud for dynamic pods. Graceful disconnect is implemented in ops repo (runbook disables `aks-agent` before AKS stop). **Phase 5 (domain cutover)** is next: point `jenkins.canepro.me` to OKE, retire AKS controller.
+**Ready to start?** Phases 0–4 are complete. OKE Jenkins controller is running with kubernetes cloud for dynamic pods. Graceful disconnect is implemented in ops repo (runbook disables `aks-agent` before AKS stop). **Phase 5a (DNS cutover)** is complete; **Phase 5b (AKS controller retirement)** is still pending (AKS controller will be removed when the cluster is up again).
 
 ---
 
@@ -249,7 +252,7 @@ After Jenkins is up, you need the **agent connection secret** for the **aks-agen
 - Derive controller config from `jenkins-values.yaml`: JCasC welcome message and `aks-agent` node; no dynamic K8s agents for AKS.
 - Provision controller secrets on OKE: Jenkins admin (chart default or existingSecret) + GitHub token if needed (add via Jenkins UI or JCasC later). No Azure credentials on OKE.
 - Expose controller: **HTTPS (443)** via chart Ingress; WebSocket over 443. Ensure firewall allows inbound 443 from AKS egress IPs (or VPN) for later agent connection.
-- For cutover: Point `jenkins.canepro.me` to OKE later (Phase 5); until then use `jenkins-oke.canepro.me` for testing.
+- **Cutover status:** `jenkins.canepro.me` is already pointing to OKE (Phase 5a complete). Use `jenkins-oke.canepro.me` only if you need a temporary testing hostname.
 
 ### 4.4 Optional: Expose JNLP Port 50000
 
@@ -263,7 +266,7 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 
 ### 5.1 Agent manifest on AKS
 
-- Use Jenkins agent image (e.g. `jenkins/inbound-agent` or your custom image with Azure CLI, Terraform, etc.).
+- Use a Jenkins agent image with a **fully qualified** name and a **tag that exists** on Docker Hub (e.g. `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21`). Do not use unqualified names or non-existent tags (e.g. `3302.v1cfe4e081049-1-jdk21` — manifest unknown). See [JENKINS-503-TROUBLESHOOTING.md](../docs/JENKINS-503-TROUBLESHOOTING.md) §5.
 - Run as a **Kubernetes Deployment** (or DaemonSet if one agent per node) on AKS.
 - Agent connects to OKE Controller via **JNLP**: it needs OKE Jenkins URL and port 50000, plus agent name and secret (or WebSocket if you use “Launch agent by connecting it to the controller”).
 
@@ -317,7 +320,7 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
 - **This repo (GrafanaLocal):** OKE kubernetes cloud configured; Jenkinsfiles use `agent { kubernetes { label '...' } }` with labels `terraform-oci`, `version-checker`, `security`, `helm`. Dynamic pods spin up on OKE. No changes needed.
 - **Ops repo (Azure jobs):** Jenkinsfiles using `agent { kubernetes { label 'terraform-azure' ... } }` need to change to `agent { label 'aks-agent' }` so they run on the static AKS agent (Workload Identity). Do this in the ops repo.
 - **Phase 4 done:** Graceful disconnect implemented in ops repo (runbook disables `aks-agent`, waits 60s, then stops AKS). Set `JenkinsAksAgentDisconnectToken` in Azure Automation and `jenkins_graceful_disconnect_url`/`user` in Terraform to enable.
-- **Next:** Phase 5 — domain cutover (point `jenkins.canepro.me` to OKE, retire AKS controller).
+- **Next:** Phase 5b — retire the AKS controller once the cluster is up.
 
 ### 6.4 No jobs on AKS agent during shutdown
 
@@ -365,7 +368,7 @@ Only if you use **JNLP** instead of WebSocket: expose TCP **50000** on the OKE l
   2. Deploy Jenkins on OKE (Phase 1), restore config (or recreate critical jobs/credentials).
   3. Add AKS static agent (Phase 2) and configure labels (Phase 3).
   4. Point webhooks to OKE URL; test a few jobs on `aks-agent` and `built-in`.
-  5. Retire old Jenkins on AKS after cutover.
+  5. Retire old Jenkins on AKS after cutover (pending when AKS is unavailable).
 
 See **§8.1** below for how to handle jobs, pipelines, multibranch, and credentials/secrets created in AKS Jenkins.
 
@@ -478,4 +481,4 @@ The ops repo (e.g. rocketchat-k8s) documents the same hybrid layout and procedur
 
 ---
 
-*Document version: 1.1 — Consolidated plan (OKE + AKS side); WebSocket (443); runbook linked. Split-Agent Hybrid: Controller on OKE, Agent on AKS.*
+*Document version: 1.2 — Phases 0–5; domain cutover (jenkins.canepro.me → OKE); agent image best practices (fully qualified, valid tag). See [JENKINS-MIGRATION-SUMMARY.md](../docs/JENKINS-MIGRATION-SUMMARY.md) for completed work and current state.*

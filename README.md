@@ -37,6 +37,7 @@ This repository serves as the GitOps source of truth for a production-ready obse
 |---------|-----|
 | Grafana | https://grafana.canepro.me |
 | ArgoCD | https://argocd.canepro.me |
+| Jenkins | https://jenkins.canepro.me |
 | Data Ingestion | https://observability.canepro.me |
 
 ## Quick Start
@@ -89,6 +90,8 @@ This stack is managed declaratively via ArgoCD. All changes flow through Git:
 | [hub-docs/README.md](hub-docs/README.md) | Component versions and architecture overview |
 | [hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md) | Retention policies, storage management |
 | [hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md) | ArgoCD operations and troubleshooting |
+| [docs/JENKINS-MIGRATION-SUMMARY.md](docs/JENKINS-MIGRATION-SUMMARY.md) | Jenkins migration to OKE and split-agent summary |
+| [docs/JENKINS-503-TROUBLESHOOTING.md](docs/JENKINS-503-TROUBLESHOOTING.md) | Jenkins (OKE) operational troubleshooting |
 | [docs/QUICKSTART.md](docs/QUICKSTART.md) | Getting started guide |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Integration guide for external clusters |
 | [docs/MULTI-CLUSTER-SETUP-COMPLETE.md](docs/MULTI-CLUSTER-SETUP-COMPLETE.md) | Hub-and-spoke setup guide |
@@ -106,12 +109,12 @@ The repository includes automated quality gates (`.github/workflows/devops-quali
 
 ### Jenkins
 
-Jenkins pipelines for infrastructure validation (`.jenkins/`):
+Jenkins runs on OKE at **https://jenkins.canepro.me** (split-agent hybrid: controller on OKE, optional static agent on AKS). Pipelines in `.jenkins/` provide:
 - Terraform format, validate, and (when OCI parameters are set) plan
 - Kubernetes manifest validation
-- Security scanning
+- Security scanning and version checking
 
-PR and branch builds run Terraform format and validate only unless OCI job parameters are configured. See [.jenkins/README.md](.jenkins/README.md) for OCI credentials and parameters.
+PR and branch builds run format/validate only unless OCI job parameters are configured. See [.jenkins/README.md](.jenkins/README.md) for OCI credentials and [docs/JENKINS-MIGRATION-SUMMARY.md](docs/JENKINS-MIGRATION-SUMMARY.md) for migration and troubleshooting.
 
 ## Infrastructure
 
