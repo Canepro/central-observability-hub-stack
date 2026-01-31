@@ -70,8 +70,6 @@ spec:
     stage('Check Helm Chart Versions') {
       steps {
         script {
-          def chartUpdates = []
-          
           sh '''
             # Add Helm repositories
             helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
@@ -117,39 +115,78 @@ spec:
             cat versions.env
           '''
           
-          // Parse versions and build update list
-          def components = ['GRAFANA', 'LOKI', 'PROMTAIL', 'TEMPO', 'PROMETHEUS', 'NGINX', 'METRICS_SERVER']
-          def locations = [
-            'GRAFANA': 'argocd/applications/grafana.yaml',
-            'LOKI': 'argocd/applications/loki.yaml',
-            'PROMTAIL': 'argocd/applications/promtail.yaml',
-            'TEMPO': 'argocd/applications/tempo.yaml',
-            'PROMETHEUS': 'argocd/applications/prometheus.yaml',
-            'NGINX': 'argocd/applications/nginx-ingress.yaml',
-            'METRICS_SERVER': 'argocd/applications/metrics-server.yaml'
-          ]
-          
-          components.each { comp ->
-            def current = sh(script: "grep ${comp}_CURRENT versions.env | cut -d= -f2 | tr -d '\\n'", returnStdout: true).trim()
-            def latest = sh(script: "grep ${comp}_LATEST versions.env | cut -d= -f2 | tr -d '\\n'", returnStdout: true).trim()
-            
-            if (current && latest && current != latest) {
-              def risk = isMajorVersionUpdate(current, latest) ? 'HIGH' : 'MEDIUM'
-              chartUpdates.add([
-                component: comp,
-                current: current,
-                latest: latest,
-                location: locations[comp],
-                risk: risk
-              ])
-              echo "Update available: ${comp} ${current} -> ${latest} (${risk})"
-            } else if (current && latest) {
-              echo "Up to date: ${comp} ${current}"
+          // Build update list and reports in shell (avoid Groovy JSON sandbox restrictions)
+          sh '''
+            set -e
+            components="GRAFANA LOKI PROMTAIL TEMPO PROMETHEUS NGINX METRICS_SERVER"
+            updates='[]'
+
+            major_of() {
+              echo "$1" | cut -d. -f1 | sed 's/[^0-9].*$//' | tr -d '\\n'
             }
-          }
-          
-          def chartUpdatesJson = groovy.json.JsonOutput.toJson(chartUpdates)
-          writeFile file: 'chart-updates.json', text: chartUpdatesJson
+
+            for comp in $components; do
+              current=$(grep "${comp}_CURRENT" versions.env | cut -d= -f2 | tr -d '\\n')
+              latest=$(grep "${comp}_LATEST" versions.env | cut -d= -f2 | tr -d '\\n')
+              if [ -n "$current" ] && [ -n "$latest" ] && [ "$current" != "$latest" ]; then
+                cur_major=$(major_of "$current")
+                lat_major=$(major_of "$latest")
+                if [ -n "$cur_major" ] && [ -n "$lat_major" ] && [ "$lat_major" -gt "$cur_major" ]; then
+                  risk="HIGH"
+                else
+                  risk="MEDIUM"
+                fi
+
+                case "$comp" in
+                  GRAFANA) location="argocd/applications/grafana.yaml" ;;
+                  LOKI) location="argocd/applications/loki.yaml" ;;
+                  PROMTAIL) location="argocd/applications/promtail.yaml" ;;
+                  TEMPO) location="argocd/applications/tempo.yaml" ;;
+                  PROMETHEUS) location="argocd/applications/prometheus.yaml" ;;
+                  NGINX) location="argocd/applications/nginx-ingress.yaml" ;;
+                  METRICS_SERVER) location="argocd/applications/metrics-server.yaml" ;;
+                  *) location="" ;;
+                esac
+
+                updates=$(jq \
+                  --arg comp "$comp" \
+                  --arg current "$current" \
+                  --arg latest "$latest" \
+                  --arg location "$location" \
+                  --arg risk "$risk" \
+                  '. + [{component:$comp,current:$current,latest:$latest,location:$location,risk:$risk}]' \
+                  <<<"$updates")
+
+                echo "Update available: ${comp} ${current} -> ${latest} (${risk})"
+              elif [ -n "$current" ] && [ -n "$latest" ]; then
+                echo "Up to date: ${comp} ${current}"
+              fi
+            done
+
+            echo "$updates" > chart-updates.json
+
+            high_count=$(jq '[.[] | select(.risk=="HIGH")] | length' chart-updates.json)
+            medium_count=$(jq '[.[] | select(.risk=="MEDIUM")] | length' chart-updates.json)
+            total_count=$(jq 'length' chart-updates.json)
+
+            cat > update-counts.env <<EOF
+HIGH_COUNT=${high_count}
+MEDIUM_COUNT=${medium_count}
+TOTAL_COUNT=${total_count}
+EOF
+
+            jq -r '.[] | "- **\\(.component)**: \\(.current) → \\(.latest) (\\(.risk))"' chart-updates.json > update-list-all.txt
+            jq -r '.[] | select(.risk=="HIGH") | "- **\\(.component)**: \\(.current) → \\(.latest)"' chart-updates.json > update-list-high.txt
+
+            jq -n \
+              --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --argjson high "$high_count" \
+              --argjson medium "$medium_count" \
+              --argjson total "$total_count" \
+              --argjson updates "$(cat chart-updates.json)" \
+              '{timestamp:$ts, high:$high, medium:$medium, total:$total, updates:$updates}' \
+              > "${UPDATE_REPORT}"
+          '''
         }
       }
     }
@@ -158,44 +195,33 @@ spec:
     stage('Create Update PRs/Issues') {
       steps {
         script {
-          def chartUpdates = new groovy.json.JsonSlurperClassic().parseText(readFile('chart-updates.json'))
-          
-          // Categorize by risk
-          def highRiskUpdates = chartUpdates.findAll { it.risk == 'HIGH' }
-          def mediumRiskUpdates = chartUpdates.findAll { it.risk == 'MEDIUM' }
-          
-          // Create report
-          def updateReport = [
-            timestamp: sh(script: 'date -u +%Y-%m-%dT%H:%M:%SZ', returnStdout: true).trim(),
-            high: highRiskUpdates.size(),
-            medium: mediumRiskUpdates.size(),
-            updates: chartUpdates
-          ]
-          
-          def updateReportJson = groovy.json.JsonOutput.toJson(updateReport)
-          writeFile file: "${env.UPDATE_REPORT}", text: updateReportJson
-          
+          def highCount = sh(script: "grep HIGH_COUNT update-counts.env | cut -d= -f2", returnStdout: true).trim()
+          def mediumCount = sh(script: "grep MEDIUM_COUNT update-counts.env | cut -d= -f2", returnStdout: true).trim()
+          def totalCount = sh(script: "grep TOTAL_COUNT update-counts.env | cut -d= -f2", returnStdout: true).trim()
+
           echo "Version Check Summary:"
-          echo "  High Risk Updates: ${highRiskUpdates.size()}"
-          echo "  Medium Risk Updates: ${mediumRiskUpdates.size()}"
+          echo "  High Risk Updates: ${highCount}"
+          echo "  Medium Risk Updates: ${mediumCount}"
           
-          if (chartUpdates.size() == 0) {
+          if (totalCount == "0") {
             echo "✅ All Helm charts are up to date!"
             return
           }
           
+          def mediumCountInt = mediumCount ? mediumCount.toInteger() : 0
+
           // Create PR or Issue based on findings
           withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
             if (!env.GITHUB_TOKEN?.trim()) {
               echo "⚠️ GitHub token is empty; skipping issue/PR creation."
               return
             }
-            if (highRiskUpdates.size() > 0) {
+            if (highCount != "0") {
               // Create GitHub Issue for high-risk (major version) updates
               echo "⚠️ Creating GitHub issue for HIGH risk version updates..."
               
               // Use REAL newlines so GitHub markdown renders bullet lists correctly
-              def updateList = highRiskUpdates.collect { "- **${it.component}**: ${it.current} → ${it.latest}" }.join('\n')
+              def updateList = readFile('update-list-high.txt').trim()
               
               withEnv(["UPDATE_LIST=${updateList}"]) {
                 sh '''
@@ -262,7 +288,7 @@ spec:
                     -d @issue-body.json || true
                 '''
               }
-            } else if (mediumRiskUpdates.size() >= 3) {
+            } else if (mediumCountInt >= 3) {
               // Create PR for multiple medium-risk updates
               echo "📝 Creating PR for version updates..."
               
@@ -400,7 +426,7 @@ EOF
                 fi
               '''
             } else {
-              echo "✅ Only minor updates available (${mediumRiskUpdates.size()}). No action needed."
+              echo "✅ Only minor updates available (${mediumCount}). No action needed."
             }
           }
         }
