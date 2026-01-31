@@ -29,4 +29,3 @@ spec:
   - hosts:
     - grafana.canepro.me
     secretName: grafana-tls
-
