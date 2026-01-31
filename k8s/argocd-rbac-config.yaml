@@ -12,12 +12,12 @@ data:
     # Allow all authenticated users to view logs
     p, role:readonly, logs, get, */*, allow
     p, role:admin, logs, get, */*, allow
-    
+
     # Allow admin full access
     g, admin, role:admin
-  
+
   # Default role for all users
   policy.default: role:readonly
-  
+
   # OIDC scopes
   scopes: '[groups]'

@@ -1,6 +1,6 @@
 # Cert-Manager Setup for SSL/TLS
 # This is OPTIONAL - you can set up SSL later
-# 
+#
 # Steps to enable SSL:
 # 1. Install cert-manager:
 #    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
@@ -26,4 +26,3 @@
 # 3. Uncomment TLS section in grafana-ingress.yaml
 # 4. Uncomment cert-manager annotation in grafana-ingress.yaml
 # 5. Apply the updated ingress: kubectl apply -f k8s/grafana-ingress.yaml
-
