@@ -26,10 +26,10 @@ This guide provides step-by-step instructions for connecting your applications t
 2. **Username**: `admin`
 3. **Password**: Run to retrieve:
    ```bash
-   kubectl -n monitoring get secret grafana-admin-credentials \
-     -o jsonpath="{.data.admin_password}" | base64 -d ; echo
+   kubectl -n monitoring get secret grafana \
+     -o jsonpath="{.data.admin-password}" | base64 -d ; echo
    ```
-   (Source: External Secrets Operator syncs from OCI Vault into `grafana-admin-credentials`)
+   (Source: External Secrets Operator syncs from OCI Vault into `grafana`)
 
 ### Change Admin Password
 
