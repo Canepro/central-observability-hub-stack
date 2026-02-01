@@ -36,7 +36,7 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 ## Secrets Management
 
 - **External Secrets Operator (ESO)** runs in `external-secrets` and syncs secrets from **OCI Vault**.
-- Grafana admin credentials and `secret_key` are stored in Vault and materialized as `monitoring/grafana-admin-credentials`.
+- Grafana admin credentials and `secret_key` are stored in Vault and materialized as `monitoring/grafana`.
 - ESO config manifests live in `k8s/external-secrets/`.
 - ESO CRDs are installed out-of-band via server-side apply; Helm values set `installCRDs: false`.
 

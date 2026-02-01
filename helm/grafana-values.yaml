@@ -55,13 +55,9 @@ livenessProbe:
 # Injecting SMTP Credentials via Environment Variables from Secret
 # This keeps sensitive credentials (password, email) out of the public GitHub repo.
 envValueFrom:
-  GF_SECURITY_ADMIN_PASSWORD:
-    secretKeyRef:
-      name: grafana-admin-credentials
-      key: admin_password
   GF_SECURITY_SECRET_KEY:
     secretKeyRef:
-      name: grafana-admin-credentials
+      name: grafana
       key: secret_key
   GF_SMTP_PASSWORD:
     secretKeyRef:

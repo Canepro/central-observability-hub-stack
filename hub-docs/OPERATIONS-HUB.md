@@ -216,7 +216,7 @@ Scrapes use the service account CA for TLS verification (no `insecure_skip_verif
 
 ## 🔐 Secrets Management (ESO + OCI Vault)
 - External Secrets Operator (ESO) runs in `external-secrets` and syncs from OCI Vault.
-- Grafana admin credentials and `secret_key` live in Vault and are synced to `monitoring/grafana-admin-credentials`.
+- Grafana admin credentials and `secret_key` live in Vault and are synced to `monitoring/grafana`.
 - Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
 
 ## 🔑 Grafana Admin Password Reset

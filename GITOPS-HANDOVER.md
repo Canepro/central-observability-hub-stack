@@ -64,7 +64,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 ### 🔐 Secrets Management (Hub)
 - Grafana admin credentials and `secret_key` are stored in **OCI Vault** and synced into Kubernetes via **External Secrets Operator (ESO)**.
 - Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
-- Grafana secret name: `grafana-admin-credentials` (keys: `admin_password`, `secret_key`).
+- Grafana secret name: `grafana` (keys: `admin-user`, `admin-password`, `secret_key`).
 - After rotating secrets in OCI Vault, ESO refreshes the Kubernetes secret automatically (default refresh: 1h).
 
 ### 🛡️ Automated Guardrails

@@ -11,11 +11,11 @@
 Username: admin
 Password: (run command below)
 
-kubectl -n monitoring get secret grafana-admin-credentials \
-  -o jsonpath="{.data.admin_password}" | base64 -d ; echo
+kubectl -n monitoring get secret grafana \
+  -o jsonpath="{.data.admin-password}" | base64 -d ; echo
 ```
 
-**Note**: Admin credentials and Grafana `secret_key` are sourced from OCI Vault via External Secrets Operator.
+**Note**: Admin credentials and Grafana `secret_key` are sourced from OCI Vault via External Secrets Operator into the `grafana` secret.
 
 **Note**: If HTTPS certificate errors occur, wait 2-3 minutes for certificate propagation or use HTTP fallback: http://grafana.canepro.me
 
