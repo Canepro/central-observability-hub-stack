@@ -61,6 +61,12 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
   kubectl top pods -n monitoring
   ```
 
+### 🔐 Secrets Management (Hub)
+- Grafana admin credentials and `secret_key` are stored in **OCI Vault** and synced into Kubernetes via **External Secrets Operator (ESO)**.
+- Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
+- Grafana secret name: `grafana-admin-credentials` (keys: `admin_password`, `secret_key`).
+- After rotating secrets in OCI Vault, ESO refreshes the Kubernetes secret automatically (default refresh: 1h).
+
 ### 🛡️ Automated Guardrails
 - **OCI Storage Audit**: Use `./scripts/check-oci-storage.sh` to verify we are under the 200GB Always Free limit (currently at 194GB).
 - **Self-Healing Storage**: A CronJob runs periodically to prune unused images and prevent disk pressure on the Spoke.
