@@ -1,6 +1,6 @@
 # OKE Observability Hub
 
-Central observability hub providing storage, analysis, and visualization for multi-cluster telemetry.
+Central observability hub for storage, analysis, and visualization of multi-cluster telemetry.
 
 ## Role
 
@@ -9,7 +9,7 @@ The OKE Hub serves as the centralized monitoring platform, ingesting metrics, lo
 ### Capabilities
 
 - **Unified Dashboard**: Multi-cluster health visualization with cluster-based filtering
-- **Centralized Storage**: Long-term telemetry persistence using OCI Object Storage
+- **Centralized Storage**: Telemetry persistence using OCI Object Storage
 - **Single Pane of Glass**: One Grafana instance for querying all environments
 - **GitOps Management**: Declarative configuration via ArgoCD
 
@@ -21,14 +21,8 @@ All metrics include a `cluster` label for filtering:
 
 ## Stack Components
 
-Optimized for OCI Always Free Tier:
-
-| Component | Version | Role | Storage |
-|-----------|---------|------|---------|
-| Grafana | 12.3.0 | Visualization | Block Volume (50Gi) |
-| Prometheus | 25.8.0 | Metrics & Alerting | Block Volume (50Gi) |
-| Loki | 3.5.7 | Log Aggregation | Object Storage (S3) |
-| Tempo | 1.24.0 | Distributed Tracing | Object Storage (S3) |
+Optimized for OCI Always Free Tier.  
+Current versions are tracked in [VERSION-TRACKING.md](../VERSION-TRACKING.md).
 
 ## ArgoCD Configuration
 
@@ -50,4 +44,3 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 - [DIAGRAM.md](DIAGRAM.md) - Data flow visualization
 - [../GITOPS-HANDOVER.md](../GITOPS-HANDOVER.md) - Multi-cluster operational handover
 - [../docs/MULTI-CLUSTER-SETUP-COMPLETE.md](../docs/MULTI-CLUSTER-SETUP-COMPLETE.md) - Hub-and-spoke setup guide
-

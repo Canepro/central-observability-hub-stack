@@ -95,6 +95,8 @@ For safety, the pipeline does **not** archive `terraform show` output by default
 
 ## Setup in Jenkins
 
+**Note:** UI config changes are locked in this environment. Use the CLI/API config files in `.jenkins/` (job-config XML) or Jenkins REST API updates.
+
 ### Option 1: CLI Setup (Recommended)
 
 Use **JENKINS_URL** for the Jenkins controller (production URL is OKE):

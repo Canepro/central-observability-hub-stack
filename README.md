@@ -4,11 +4,11 @@ A centralized observability platform deployed on Oracle Kubernetes Engine (OKE),
 
 ## Overview
 
-This repository serves as the GitOps source of truth for a production-ready observability stack:
+This repository is the GitOps source of truth for a production-ready observability stack:
 
 | Component | Purpose | Storage |
 |-----------|---------|---------|
-| **Grafana** | Unified visualization and dashboards | Block Volume (50Gi) |
+| **Grafana** | Unified visualization and dashboards | Ephemeral (emptyDir); dashboards provisioned from git |
 | **Prometheus** | Metrics collection and alerting | Block Volume (50Gi) |
 | **Loki** | Log aggregation | OCI Object Storage (S3) |
 | **Tempo** | Distributed tracing | OCI Object Storage (S3) |
@@ -16,19 +16,31 @@ This repository serves as the GitOps source of truth for a production-ready obse
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        OKE Hub Cluster                          │
-│  ┌─────────┐  ┌────────────┐  ┌──────┐  ┌───────┐  ┌─────────┐ │
-│  │ Grafana │  │ Prometheus │  │ Loki │  │ Tempo │  │ ArgoCD  │ │
-│  └─────────┘  └────────────┘  └──────┘  └───────┘  └─────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-        ▲               ▲              ▲           ▲
-        │               │              │           │
-   ┌────┴────┐    ┌─────┴─────┐   ┌────┴────┐  ┌───┴───┐
-   │ Spoke 1 │    │  Spoke 2  │   │ Spoke N │  │ Agents│
-   │  (AKS)  │    │   (K3s)   │   │   ...   │  │       │
-   └─────────┘    └───────────┘   └─────────┘  └───────┘
+```mermaid
+flowchart LR
+  subgraph Spokes[Spoke Clusters]
+    S1[AKS Spoke] -->|remote_write| P
+    S2[K3s Spoke] -->|remote_write| P
+    SN[Other Spokes] -->|remote_write| P
+    S1 -->|logs| L
+    S2 -->|logs| L
+    SN -->|logs| L
+    S1 -->|traces| T
+    S2 -->|traces| T
+    SN -->|traces| T
+  end
+
+  subgraph Hub[OKE Hub Cluster]
+    A[ArgoCD] -->|GitOps sync| G[Grafana]
+    A -->|GitOps sync| P[Prometheus]
+    A -->|GitOps sync| L[Loki]
+    A -->|GitOps sync| T[Tempo]
+    G -->|queries| P
+    G -->|queries| L
+    G -->|queries| T
+  end
+
+  Git[(Git repo)] -->|manifests/values| A
 ```
 
 ### Endpoints
@@ -42,18 +54,7 @@ This repository serves as the GitOps source of truth for a production-ready obse
 
 ## Quick Start
 
-### Access Grafana
-
-```bash
-# Retrieve admin password
-kubectl get secret grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d; echo
-```
-
-### Validate Deployment
-
-```bash
-./scripts/validate-deployment.sh
-```
+See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a fast, end-to-end checklist.
 
 ## Repository Structure
 
