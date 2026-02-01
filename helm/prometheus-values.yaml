@@ -409,6 +409,9 @@ configmapReload:
     enabled: true
 
 server:
+  # Disable default scrape configs - we define all in serverFiles
+  defaultScrapeConfig: false
+  
   retention: "15d"
 
   extraFlags:
