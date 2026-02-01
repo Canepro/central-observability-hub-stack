@@ -31,3 +31,5 @@ spec:
       name: prometheus-alertmanager
       jsonPointers:
         - /spec/volumeClaimTemplates
+  source:
+    targetRevision: 28.7.0
