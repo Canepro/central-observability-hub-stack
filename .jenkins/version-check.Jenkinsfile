@@ -355,9 +355,8 @@ EOF
                 jq -r '.[] | "\\(.component)|\\(.current)|\\(.latest)|\\(.location)"' chart-updates.json 2>/dev/null | while IFS='|' read -r component current latest location; do
                   if [ -n "$component" ] && [ -n "$latest" ] && [ -f "$location" ]; then
                     echo "Updating $component: $current → $latest in $location"
-                    # Update targetRevision in ArgoCD app manifest
-                    yq -i ".spec.source.targetRevision = \\"${latest}\\"" "$location" 2>/dev/null || \
-                    yq -i ".spec.sources[0].targetRevision = \\"${latest}\\"" "$location" 2>/dev/null || true
+                    # Update targetRevision in ArgoCD app manifest (multi-source preferred)
+                    yq -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$location" 2>/dev/null || true
                   fi
                 done
                 
