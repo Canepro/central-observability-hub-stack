@@ -44,7 +44,7 @@ If ArgoCD sync fails with errors like **"volumeMounts[1].name: Not found: 'stora
 1. **Verify the manifest locally** (from repo root):
    ```bash
    helm repo add grafana https://grafana.github.io/helm-charts
-   helm template grafana grafana/grafana --version 10.4.0 -f helm/grafana-values.yaml -n monitoring | grep -A 5 "name: storage"
+   helm template grafana grafana/grafana --version 10.5.15 -f helm/grafana-values.yaml -n monitoring | grep -A 5 "name: storage"
    ```
    You should see `volumes` and `volumeMounts` with `name: storage` and `emptyDir: {}`.
 
