@@ -71,6 +71,9 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
+          - source_labels:
+              - __meta_kubernetes_node_name
+            target_label: service
           - target_label: cluster
             replacement: oke-hub
         scheme: https
@@ -91,6 +94,9 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
+          - source_labels:
+              - __meta_kubernetes_node_name
+            target_label: service
           - target_label: cluster
             replacement: oke-hub
         scheme: https
@@ -107,6 +113,9 @@ serverFiles:
               - __meta_kubernetes_namespace
               - __meta_kubernetes_service_name
             regex: monitoring;prometheus-prometheus-node-exporter
+          - source_labels:
+              - __meta_kubernetes_pod_node_name
+            target_label: service
           - target_label: cluster
             replacement: oke-hub
 
