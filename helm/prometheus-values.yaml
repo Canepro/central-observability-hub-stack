@@ -6,6 +6,29 @@
 # serverFiles must be at the top level, NOT nested under 'server:'
 # NOTE: Do NOT include 'global:' or 'alerting:' in serverFiles.prometheus.yml
 # as the chart generates those from server.global and alertmanager sections.
+# Disable ALL default scrape configs - we define custom ones in serverFiles
+scrapeConfigs:
+  prometheus:
+    enabled: false
+  kubernetes-apiservers:
+    enabled: false
+  kubernetes-nodes:
+    enabled: false
+  kubernetes-nodes-cadvisor:
+    enabled: false
+  kubernetes-service-endpoints:
+    enabled: false
+  kubernetes-service-endpoints-slow:
+    enabled: false
+  kubernetes-services:
+    enabled: false
+  kubernetes-pods:
+    enabled: false
+  kubernetes-pods-slow:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+
 serverFiles:
   # Custom Prometheus config with cluster label relabeling for all scrape jobs.
   # This ensures hub metrics are queryable with cluster="oke-hub" in dashboards.
@@ -409,9 +432,6 @@ configmapReload:
     enabled: true
 
 server:
-  # Disable default scrape configs - we define all in serverFiles
-  defaultScrapeConfig: false
-  
   retention: "15d"
 
   extraFlags:
