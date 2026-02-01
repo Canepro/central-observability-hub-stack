@@ -97,6 +97,32 @@ serverFiles:
         tls_config:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 
+      # Node Exporter (Prometheus chart)
+      - job_name: node-exporter
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - action: keep
+            source_labels:
+              - __meta_kubernetes_namespace
+              - __meta_kubernetes_service_name
+            regex: monitoring;prometheus-prometheus-node-exporter
+          - target_label: cluster
+            replacement: oke-hub
+
+      # Kube State Metrics (Prometheus chart)
+      - job_name: kube-state-metrics
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - action: keep
+            source_labels:
+              - __meta_kubernetes_namespace
+              - __meta_kubernetes_service_name
+            regex: monitoring;prometheus-kube-state-metrics
+          - target_label: cluster
+            replacement: oke-hub
+
       - job_name: kubernetes-service-endpoints
         honor_labels: true
         kubernetes_sd_configs:
