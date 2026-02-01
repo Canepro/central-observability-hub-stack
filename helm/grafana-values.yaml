@@ -863,6 +863,15 @@ dashboards:
     windows-exporter-starsl-20230531:
       gnetId: 10467
       datasource: Prometheus
+    loki-dashboard:
+      gnetId: 13186
+      datasource: Loki
+    loki-quick-search:
+      gnetId: 12019
+      datasource: Loki
+    opentelemetry-tempo:
+      gnetId: 23242
+      datasource: Tempo
     aks-maintenance-jobs:
       json: |
         {
