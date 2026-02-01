@@ -8,7 +8,7 @@ spec:
   sources:
     - repoURL: https://grafana.github.io/helm-charts
       chart: loki
-      targetRevision: 6.46.0
+      targetRevision: 6.51.0
       helm:
         valueFiles:
           - $values/helm/loki-values.yaml
@@ -26,5 +26,3 @@ spec:
       - CreateNamespace=true
       - Replace=true
       - ServerSideApply=true
-  source:
-    targetRevision: 6.51.0

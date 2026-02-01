@@ -19,20 +19,18 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 ## Quick Upgrade Reference
 
-**Just updated (2026-01-31)**:
-- Prometheus 25.8.0 → 28.6.1 (app v2.48.0 → v3.8.1) 🔄
+**Just updated (2026-02-01)**:
+- Grafana 10.4.0 → 10.5.15
+- Loki 6.46.0 → 6.51.0
+- Tempo 1.24.0 → 1.24.4
+- NGINX Ingress 4.14.1 → 4.14.2
+- Prometheus 25.8.0 → 28.7.0 (app v2.48.0 → v3.x) 🔄
 
 **Previously updated (2026-01-19)**:
 - ArgoCD 5.51.6 → 9.3.4 (app v2.9.3 → v3.2.5)
 - Promtail 6.15.3 → 6.17.1 (deprecated, EOL March 2, 2026)
-- NGINX Ingress 4.9.0 → 4.14.1
 - Metrics Server 3.12.1 → 3.13.0
 - RocketChat 6.27.1 → 6.29.0
-
-**Already at latest**:
-- Loki 6.46.0 ✅
-- Tempo 1.24.0 ✅
-- Grafana 10.4.0 ✅
 
 ## How to Update Versions
 
@@ -71,22 +69,22 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **Grafana** | `10.4.0` | `10.1.5` | ✅ **Up to date** (current newer than latest found) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Loki** | `6.46.0` | `6.46.0` | ✅ **Up to date** (2025-11-05) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Grafana** | `10.5.15` | `10.5.15` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Loki** | `6.51.0` | `6.51.0` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Tempo** | `1.24.0` | `1.24.0` | ✅ **Up to date** (single binary mode) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `28.6.1` | `28.6.1` | 🔄 **Just updated** (2026-01-31) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Prometheus** | `28.7.0` | `28.7.0` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
 
-**🔄 Prometheus Upgrade (2026-01-31)**: Upgraded from chart 25.8.0 (Prometheus v2.48.0) → 28.6.1 (Prometheus v3.8.1)
+**🔄 Prometheus Upgrade (2026-01-31; patch bump 2026-02-01)**: Upgraded from chart 25.8.0 (Prometheus v2.48.0) → 28.7.0 (Prometheus v3.x)
 - Major version upgrade: Prometheus v2 → v3 (first major release in 7 years)
 - Breaking changes: UTF-8 support enabled by default, stricter scraping behavior
 - New features: New web UI with tree view and metrics explorer
 - Config compatibility: All existing settings in `helm/prometheus-values.yaml` remain valid
 - See GitHub issue #2 for detailed analysis and migration notes
 
-**💡 Tempo Note**: Currently using single binary mode (v1.24.0). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
+**💡 Tempo Note**: Currently using single binary mode (v1.24.4). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
 
 ---
 
@@ -94,7 +92,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **NGINX Ingress Controller** | `4.14.1` | `4.14.1` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
+| **NGINX Ingress Controller** | `4.14.2` | `4.14.2` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
 | **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
 
 ---
@@ -126,19 +124,19 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 ```bash
 # 1. Check current version in manifest
 grep "targetRevision:" argocd/applications/grafana.yaml
-# Current output: targetRevision: 10.4.0
+# Current output: targetRevision: 10.5.15
 
 # 2. Check latest version at https://github.com/grafana/helm-charts/releases
-# Example: Latest is 10.5.0
+# Example: Latest is 10.5.15
 
 # 3. Update the manifest file
 # Edit: argocd/applications/grafana.yaml
-# Change: targetRevision: 10.4.0
-# To:     targetRevision: 10.5.0
+# Change: targetRevision: 10.5.0
+# To:     targetRevision: 10.5.15
 
 # 4. Update this file (VERSION-TRACKING.md)
 # Edit the "Current Version" column in the Monitoring & Observability Stack table above
-# Change: 10.4.0 → 10.5.0
+# Change: 10.5.0 → 10.5.15
 # Update status to: 🔄 **Just updated** (2026-MM-DD)
 
 # 5. Commit the changes
@@ -223,19 +221,18 @@ kubectl edit application grafana -n argocd
 ### ✅ Recently Completed (2026-01-19)
 - ArgoCD: 5.51.6 → 9.3.4 (major version upgrade)
 - Promtail: 6.15.3 → 6.17.1 (minor update, but plan migration)
-- NGINX Ingress: 4.9.0 → 4.14.1 (5 minor versions)
 - Metrics Server: 3.12.1 → 3.13.0 (minor update)
 - RocketChat: 6.27.1 → 6.29.0 (minor update)
 
-### 🔍 Investigation Required
-**Prometheus Version**: Verify which Prometheus chart is being used and confirm latest version.
+### ✅ Verification (Optional)
+**Prometheus Chart Version**: Confirm the chart in ArgoCD and the running release match.
 
 ```bash
 # Check the actual chart being used
 helm list -n monitoring
 helm get values prometheus -n monitoring
 
-# If using kube-prometheus-stack instead, latest is 80.13.3
+# Compare against current chart versions from helm search (see repository references below)
 ```
 
 ### 📅 Next Review Date: 2026-02-18
@@ -291,16 +288,16 @@ For security updates:
 - [ ] Check metrics and monitoring dashboards
 
 ### Promtail v6.17.1
-- Compatible with Loki v6.46.0
+- Compatible with Loki v6.51.0
 - **Deprecated**: EOL March 2, 2026
 - Plan migration to Grafana Alloy before EOL
 
-### NGINX Ingress v4.14.1
+### NGINX Ingress v4.14.2
 - Controller version: v1.14.1
 - Check for any ingress annotation changes
 - Verify TLS certificate handling
 
-### Tempo v1.24.0 (Single Binary)
+### Tempo v1.24.4 (Single Binary)
 - Alternative: tempo-distributed v1.57.0 for microservices mode
 - Current mode suitable for moderate workloads
 - Consider distributed mode for high-scale tracing
@@ -377,6 +374,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-01-19  
-**Next Scheduled Review**: 2026-02-19  
+**Document Last Updated**: 2026-02-01  
+**Next Scheduled Review**: 2026-02-18  
 **Maintained By**: Infrastructure Team
