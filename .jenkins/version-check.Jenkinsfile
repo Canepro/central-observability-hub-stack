@@ -262,7 +262,7 @@ EOF
                     printf "%s" "${UPDATE_LIST}" > update-list.md
                     TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
                     COMMENT_JSON=$(jq -n --rawfile updates update-list.md --arg ts "$TS" --arg build "${BUILD_URL:-}" \
-                      '{body:("## New version updates detected\n\nTime: " + $ts + ( ($build|length)>0 ? ("\nBuild: " + $build) : "" ) + "\n\n**Updates Available:**\n" + $updates)}')
+                      '{body:("## New version updates detected\n\nTime: " + $ts + ( ($build|length)>0 ? ("\nBuild: " + $build) : "" ) + "\n\n**Updates:**\n" + $updates + "\n\n### Notes\n- Major version updates can be breaking\n- Review release notes and test in staging")}')
                     curl -X POST \
                       -H "Authorization: token ${GITHUB_TOKEN}" \
                       -H "Accept: application/vnd.github.v3+json" \
@@ -277,7 +277,8 @@ EOF
                   ISSUE_BODY_JSON=$(jq -n \
                     --arg title "${ISSUE_TITLE}" \
                     --rawfile updates update-list.md \
-                    '{title:$title, body:("## Version Update Alert\n\n**Risk Level:** HIGH (Major Version Updates)\n\n**Updates Available:**\n" + $updates + "\n\n## Action Required\n\nMajor version updates detected. These may include breaking changes and require careful testing.\n\n## Next Steps\n\n1. Review release notes for each component\n2. Check for breaking changes and migration guides\n3. Test in staging environment if available\n4. Update VERSION-TRACKING.md after upgrade\n\n---\n*This issue was automatically created by Jenkins version check pipeline.*"), labels:["dependencies","helm","automated","upgrade"]}')
+                    --arg build "${BUILD_URL:-}" \
+                    '{title:$title, body:("## Version Update Alert\n\n**Risk Level:** HIGH (Major Version Updates)\n\n**Updates:**\n" + $updates + ( ($build|length)>0 ? ("\n\nBuild: " + $build) : "" ) + "\n\n## Action Required\n\nMajor version updates detected. These may include breaking changes and require careful testing.\n\n## Next Steps\n\n1. Review release notes for each component\n2. Check for breaking changes and migration guides\n3. Test in staging environment if available\n4. Update VERSION-TRACKING.md after upgrade\n\n---\n*This issue was automatically created by Jenkins version check pipeline.*"), labels:["dependencies","helm","automated","upgrade"]}')
                   echo "$ISSUE_BODY_JSON" > issue-body.json
                   
                   curl -X POST \
@@ -410,7 +411,7 @@ EOF
   "title": "${PR_TITLE}",
   "head": "${BRANCH_NAME}",
   "base": "main",
-  "body": "## Automated Helm Chart Updates\\n\\nThis PR includes version updates detected by automated checks.\\n\\n### Updates\\n${UPDATES_SUMMARY}\\n\\n### Review Checklist\\n\\n- [ ] Review release notes for each updated component\\n- [ ] Verify no breaking changes\\n- [ ] Test ArgoCD sync after merge\\n- [ ] Update VERSION-TRACKING.md if needed\\n\\n---\\n*This PR was automatically created by Jenkins version check pipeline.*"
+  "body": "## Automated Helm Chart Updates\\n\\nThis PR includes version updates detected by automated checks.\\n\\n### Updates\\n${UPDATES_SUMMARY}\\n\\n### Build\\n${BUILD_URL:-N/A}\\n\\n### Review Checklist\\n\\n- [ ] Review release notes for each updated component\\n- [ ] Verify no breaking changes\\n- [ ] Test ArgoCD sync after merge\\n- [ ] Update VERSION-TRACKING.md if needed\\n\\n---\\n*This PR was automatically created by Jenkins version check pipeline.*"
 }
 EOF
                   
