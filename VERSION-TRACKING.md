@@ -2,14 +2,14 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-01-19
+**Last Updated**: 2026-01-31
 
 ## Upgrade Status Legend
 
 - ✅ **Up to date**: Already at latest version (updated on date shown)
 - ⚠️ **Can upgrade**: Has newer version available, can be upgraded with testing
 - ⚠️ **Check latest**: Version not verified, check official source for latest
-- 🔄 **Just updated**: Version updated as part of 2026-01-19 upgrade
+- 🔄 **Just updated**: Version recently updated (see date in status column)
 - ⚠️ **Deprecated**: Component is deprecated, consider migration path
 - 🔍 **Needs investigation**: Version discrepancy or unclear status
 
@@ -19,20 +19,20 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 ## Quick Upgrade Reference
 
-**Just updated (2026-01-19)**:
-- ArgoCD 5.51.6 → 9.3.4 (app v2.9.3 → v3.2.5) 🔄
-- Promtail 6.15.3 → 6.17.1 🔄 (but deprecated, EOL March 2, 2026)
-- NGINX Ingress 4.9.0 → 4.14.1 🔄
-- Metrics Server 3.12.1 → 3.13.0 🔄
-- RocketChat 6.27.1 → 6.29.0 🔄
+**Just updated (2026-01-31)**:
+- Prometheus 25.8.0 → 28.6.1 (app v2.48.0 → v3.8.1) 🔄
+
+**Previously updated (2026-01-19)**:
+- ArgoCD 5.51.6 → 9.3.4 (app v2.9.3 → v3.2.5)
+- Promtail 6.15.3 → 6.17.1 (deprecated, EOL March 2, 2026)
+- NGINX Ingress 4.9.0 → 4.14.1
+- Metrics Server 3.12.1 → 3.13.0
+- RocketChat 6.27.1 → 6.29.0
 
 **Already at latest**:
 - Loki 6.46.0 ✅
 - Tempo 1.24.0 ✅
 - Grafana 10.4.0 ✅
-
-**Needs investigation**:
-- Prometheus 25.8.0 🔍 (verify chart variant)
 
 ## How to Update Versions
 
@@ -75,14 +75,16 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | **Loki** | `6.46.0` | `6.46.0` | ✅ **Up to date** (2025-11-05) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.0` | `1.24.0` | ✅ **Up to date** (single binary mode) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `25.8.0` | `15.8.5` | 🔍 **Needs investigation** (version discrepancy) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `28.6.1` | `28.6.1` | 🔄 **Just updated** (2026-01-31) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 
-**⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026** (42 days away from Jan 19, 2026). Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
+**⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
 
-**🔍 Note on Prometheus**: The current version (25.8.0) is higher than the latest found (15.8.5). This may indicate:
-- Using `prometheus` chart (standard Prometheus server)
-- Should verify against `kube-prometheus-stack` (latest: 80.13.3) if using operator-based deployment
-- Chart versioning may have changed
+**🔄 Prometheus Upgrade (2026-01-31)**: Upgraded from chart 25.8.0 (Prometheus v2.48.0) → 28.6.1 (Prometheus v3.8.1)
+- Major version upgrade: Prometheus v2 → v3 (first major release in 7 years)
+- Breaking changes: UTF-8 support enabled by default, stricter scraping behavior
+- New features: New web UI with tree view and metrics explorer
+- Config compatibility: All existing settings in `helm/prometheus-values.yaml` remain valid
+- See GitHub issue #2 for detailed analysis and migration notes
 
 **💡 Tempo Note**: Currently using single binary mode (v1.24.0). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
 
