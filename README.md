@@ -82,6 +82,7 @@ This stack is managed declaratively via ArgoCD. All changes flow through Git:
 
 - ArgoCD watches the `main` branch - every push triggers reconciliation
 - For PVC-backed components (Grafana, Prometheus), take snapshots before upgrades
+- Grafana admin credentials and `secret_key` are sourced from OCI Vault via External Secrets Operator (`k8s/external-secrets/`)
 - Run `./scripts/validate-deployment.sh` after changes to verify health
 
 ## Documentation

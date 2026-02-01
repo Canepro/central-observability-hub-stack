@@ -26,10 +26,10 @@ This guide provides step-by-step instructions for connecting your applications t
 2. **Username**: `admin`
 3. **Password**: Run to retrieve:
    ```bash
-   kubectl get secret grafana -n monitoring \
-     -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+   kubectl -n monitoring get secret grafana-admin-credentials \
+     -o jsonpath="{.data.admin_password}" | base64 -d ; echo
    ```
-   (Note: Secret name is `grafana`, not `prometheus-grafana` in this deployment)
+   (Source: External Secrets Operator syncs from OCI Vault into `grafana-admin-credentials`)
 
 ### Change Admin Password
 
@@ -45,6 +45,8 @@ This guide provides step-by-step instructions for connecting your applications t
 kubectl exec -n monitoring deployment/grafana -- \
   grafana-cli admin reset-admin-password <new-password>
 ```
+
+**Credential source of truth**: Update the JSON secret in OCI Vault (keys: `admin_password`, `secret_key`). ESO refreshes the Kubernetes secret automatically.
 
 ### Configure Loki Datasource
 

@@ -212,9 +212,15 @@ The “Master Health Dashboard” includes a PVC usage panel. Live “% full” 
 
 In this repo those are enabled via `extraScrapeConfigs` in `helm/prometheus-values.yaml` (scraping kubelet via the API server proxy).
 If the PVC panel shows `No data`, check whether these metrics exist in Prometheus Explore first.
+Scrapes use the service account CA for TLS verification (no `insecure_skip_verify`).
+
+## 🔐 Secrets Management (ESO + OCI Vault)
+- External Secrets Operator (ESO) runs in `external-secrets` and syncs from OCI Vault.
+- Grafana admin credentials and `secret_key` live in Vault and are synced to `monitoring/grafana-admin-credentials`.
+- Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
 
 ## 🔑 Grafana Admin Password Reset
-If you lose access to the Grafana UI, you can reset the admin password directly from the cluster:
+If you lose access to the Grafana UI, the preferred fix is to rotate the Vault secret (`admin_password`) so ESO refreshes the Kubernetes secret. If you must reset via CLI, update Vault afterward to avoid drift.
 
 ```bash
 # 1. Get the pod name first
