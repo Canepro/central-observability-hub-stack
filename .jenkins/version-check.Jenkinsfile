@@ -332,6 +332,9 @@ EOF
                   echo "Found existing version update PR #${EXISTING_PR_NUMBER} on branch ${BRANCH_NAME}; will update it."
                 fi
                 BRANCH_NAME="${BRANCH_NAME:-chore/helm-version-updates-$(date +%Y%m%d)}"
+                if [ "${BRANCH_NAME}" = "main" ]; then
+                  BRANCH_NAME="chore/helm-version-updates-$(date +%Y%m%d)"
+                fi
                 # Ensure git operations are allowed in this workspace
                 git config --global --add safe.directory "${WORKSPACE}"
 
