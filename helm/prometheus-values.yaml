@@ -128,6 +128,19 @@ serverFiles:
         kubernetes_sd_configs:
           - role: endpoints
         relabel_configs:
+          # Normalize job labels for common gnet dashboards
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_service_name
+            regex: prometheus-prometheus-node-exporter
+            target_label: job
+            replacement: node-exporter
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_service_name
+            regex: prometheus-kube-state-metrics
+            target_label: job
+            replacement: kube-state-metrics
           - action: keep
             regex: true
             source_labels:
