@@ -401,9 +401,10 @@ PY
 
                   if [ -n "${ISSUE_NUMBER}" ]; then
                     echo "Existing open issue #${ISSUE_NUMBER} found; adding comment instead of creating duplicate."
+                    TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
                     cat > issue-comment.json << EOF
                     {
-                      "body": "## New security scan results\\n\\nBuild: ${BUILD_URL}\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nArtifacts: ${BUILD_URL}artifact/\\n\\n(De-dupe enabled: this comment updates an existing open issue.)"
+                      "body": "## New security scan results\\n\\nTime: ${TS}\\nBuild: ${BUILD_URL}\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nArtifacts: ${BUILD_URL}artifact/\\n\\n(De-dupe enabled: this comment updates an existing open issue.)"
                     }
 EOF
                     curl -X POST \
@@ -418,7 +419,7 @@ EOF
                   cat > issue-body.json << EOF
                   {
                     "title": "${ISSUE_TITLE}",
-                    "body": "## Security Scan Results\\n\\n**Risk Level:** CRITICAL\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\n## Action Required\\n\\nPlease review the security scan results and address critical vulnerabilities immediately.\\n\\n## Scan Artifacts\\n\\n- tfsec results: See Jenkins build artifacts\\n- checkov results: See Jenkins build artifacts\\n- trivy results: See Jenkins build artifacts\\n\\n## Next Steps\\n\\n1. Review all critical findings\\n2. Create remediation PRs for each critical issue\\n3. Update security policies if needed\\n\\n---\\n*This issue was automatically created by Jenkins security validation pipeline.*",
+                    "body": "## Security Scan Results\\n\\n**Risk Level:** CRITICAL\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nBuild: ${BUILD_URL}\\nArtifacts: ${BUILD_URL}artifact/\\n\\n## Action Required\\n\\nPlease review the security scan results and address critical vulnerabilities immediately.\\n\\n## Scan Artifacts\\n\\n- tfsec results: Jenkins build artifacts\\n- checkov results: Jenkins build artifacts\\n- trivy results: Jenkins build artifacts\\n- kube-score results (if enabled): Jenkins build artifacts\\n\\n## Next Steps\\n\\n1. Review all critical findings\\n2. Create remediation PRs for each critical issue\\n3. Update security policies if needed\\n\\n---\\n*This issue was automatically created by Jenkins security validation pipeline.*",
                     "labels": ["security", "critical", "automated"]
                   }
                   EOF
@@ -476,9 +477,10 @@ EOF
 
                   if [ -n "${PR_NUMBER}" ]; then
                     echo "Existing open PR #${PR_NUMBER} found; adding comment instead of creating duplicate."
+                    TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
                     cat > pr-comment.json << EOF
                     {
-                      "body": "## New security scan results\\n\\nBuild: ${BUILD_URL}\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nArtifacts: ${BUILD_URL}artifact/\\n\\n(De-dupe enabled: this comment updates an existing open PR.)"
+                      "body": "## New security scan results\\n\\nTime: ${TS}\\nBuild: ${BUILD_URL}\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nArtifacts: ${BUILD_URL}artifact/\\n\\n(De-dupe enabled: this comment updates an existing open PR.)"
                     }
 EOF
                     curl -X POST \
@@ -540,7 +542,7 @@ EOF
                     "title": "${PR_TITLE}",
                     "head": "${BRANCH_NAME}",
                     "base": "main",
-                    "body": "## Automated Security Fixes\\n\\nThis PR addresses **${HIGH_COUNT} high-priority** security findings detected by automated scans.\\n\\n### Findings Summary\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\n### Changes\\n\\nThis PR includes automated fixes for high-priority security issues. Please review all changes carefully.\\n\\n### Review Checklist\\n\\n- [ ] Review all automated changes\\n- [ ] Verify fixes don't break functionality\\n- [ ] Test in staging if applicable\\n- [ ] Check for any manual fixes needed\\n\\n---\\n*This PR was automatically created by Jenkins security validation pipeline.*"
+                    "body": "## Automated Security Fixes\\n\\nThis PR addresses **${HIGH_COUNT} high-priority** security findings detected by automated scans.\\n\\n### Findings Summary\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\n### Build\\n${BUILD_URL}\\n\\n### Changes\\n\\nThis PR includes automated fixes for high-priority security issues. Please review all changes carefully.\\n\\n### Review Checklist\\n\\n- [ ] Review all automated changes\\n- [ ] Verify fixes don't break functionality\\n- [ ] Test in staging if applicable\\n- [ ] Check for any manual fixes needed\\n\\n---\\n*This PR was automatically created by Jenkins security validation pipeline.*"
                   }
                   EOF
                   
