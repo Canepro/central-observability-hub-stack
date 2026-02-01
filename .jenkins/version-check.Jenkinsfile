@@ -332,6 +332,9 @@ EOF
                   echo "Found existing version update PR #${EXISTING_PR_NUMBER} on branch ${BRANCH_NAME}; will update it."
                 fi
                 BRANCH_NAME="${BRANCH_NAME:-chore/helm-version-updates-$(date +%Y%m%d)}"
+                # Ensure git operations are allowed in this workspace
+                git config --global --add safe.directory "${WORKSPACE}"
+
                 
                 git config user.name "Jenkins Version Bot"
                 git config user.email "jenkins@canepro.me"
@@ -362,7 +365,7 @@ EOF
                 git add argocd/applications/*.yaml VERSION-TRACKING.md 2>/dev/null || true
                 
                 # Check if there are changes to commit
-                if git diff --cached --quiet; then
+                if [ -z "$(git status --porcelain)" ]; then
                   echo "No changes to commit"
                   if [ -n "${EXISTING_PR_NUMBER}" ]; then
                     echo "No new changes; existing PR #${EXISTING_PR_NUMBER} is up to date."
