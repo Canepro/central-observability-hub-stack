@@ -3,8 +3,8 @@
 # Version: 10.4.0 (pinned via ArgoCD Application)
 # App Version: 12.x (Grafana OSS)
 
-# ArgoCD/Helm render safeguard: allow admin password in values (prefer secret/env in production)
-assertNoLeakedSecrets: false
+# ArgoCD/Helm render safeguard: prevent admin password/secret_key in values
+assertNoLeakedSecrets: true
 
 # Deployment configuration
 replicas: 1
@@ -55,6 +55,14 @@ livenessProbe:
 # Injecting SMTP Credentials via Environment Variables from Secret
 # This keeps sensitive credentials (password, email) out of the public GitHub repo.
 envValueFrom:
+  GF_SECURITY_ADMIN_PASSWORD:
+    secretKeyRef:
+      name: grafana-admin-credentials
+      key: admin_password
+  GF_SECURITY_SECRET_KEY:
+    secretKeyRef:
+      name: grafana-admin-credentials
+      key: secret_key
   GF_SMTP_PASSWORD:
     secretKeyRef:
       name: grafana-smtp-credentials
@@ -74,8 +82,6 @@ grafana.ini:
     root_url: https://grafana.canepro.me
   security:
     admin_user: admin
-    admin_password: admin  # Change on first login
-    secret_key: "observability-hub-secret-key"
 
   # SMTP Configuration
   # Credentials are automatically injected via environment variables above:
