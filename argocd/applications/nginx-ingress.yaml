@@ -24,3 +24,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+  source:
+    targetRevision: 4.14.2

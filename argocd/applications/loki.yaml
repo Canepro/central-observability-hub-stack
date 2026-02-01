@@ -26,3 +26,5 @@ spec:
       - CreateNamespace=true
       - Replace=true
       - ServerSideApply=true
+  source:
+    targetRevision: 6.51.0
