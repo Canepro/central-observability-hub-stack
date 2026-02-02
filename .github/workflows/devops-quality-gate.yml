@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install yamllint
+        run: python3 -m pip install --user yamllint
+
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
@@ -73,6 +76,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install yamllint
+        run: python3 -m pip install --user yamllint
       - name: Validate ArgoCD Applications
         run: |
           # Simple check to ensure Application manifests are valid YAML
