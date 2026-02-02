@@ -11,6 +11,7 @@ on:
 jobs:
   lint-and-validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +42,7 @@ jobs:
 
   oci-storage-audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
@@ -74,6 +76,7 @@ jobs:
 
   argocd-validator:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Install yamllint
