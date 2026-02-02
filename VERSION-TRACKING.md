@@ -19,6 +19,9 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 ## Quick Upgrade Reference
 
+**Just updated (2026-02-02)**:
+- Prometheus 28.7.0 → 28.8.0 (patch)
+
 **Just updated (2026-02-01)**:
 - Grafana 10.4.0 → 10.5.15
 - Loki 6.46.0 → 6.51.0
@@ -73,7 +76,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | **Loki** | `6.51.0` | `6.51.0` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `28.7.0` | `28.7.0` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `28.8.0` | `28.8.0` | 🔄 **Just updated** (2026-02-02) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
 
@@ -374,6 +377,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-02-01  
+**Document Last Updated**: 2026-02-02  
 **Next Scheduled Review**: 2026-02-18  
 **Maintained By**: Infrastructure Team
