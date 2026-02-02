@@ -484,7 +484,7 @@ Remediation: create PR(s) manually to fix. This issue is updated on each run."
                   -H "Authorization: token ${GITHUB_TOKEN}" \
                   -H "Accept: application/vnd.github.v3+json" \
                   "https://api.github.com/repos/${GITHUB_REPO}/issues" \
-                  -d @"${WORKDIR}/issue-body.json"; then
+                  -d @"${WORKDIR}/issue-body.json" >/dev/null 2>&1; then
                   echo "⚠️ WARNING: Failed to create GitHub issue for security findings. Manual review required."
                 fi
                 exit 0
