@@ -201,6 +201,7 @@ EOF
     }
     
     // Stage 3: Assess Risk and Create PR/Issue
+    // Logic: HIGH (major) → GitHub issue only. MEDIUM (minor/patch) → PR when count ≥ 1. Else → no action.
     stage('Create Update PRs/Issues') {
       when {
         branch 'main'
@@ -222,6 +223,7 @@ EOF
           
           def mediumCountInt = mediumCount ? mediumCount.toInteger() : 0
 
+          // HIGH → issue; MEDIUM ≥ 1 → PR; else no action
           // Create PR or Issue based on findings
           withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
             if (!env.GITHUB_TOKEN?.trim()) {
@@ -301,8 +303,8 @@ EOF
                     -d @issue-body.json || true
                 '''
               }
-            } else if (mediumCountInt >= 3) {
-              // Create PR for multiple medium-risk updates
+            } else if (mediumCountInt >= 1) {
+              // Create PR for medium-risk updates (any count)
               echo "📝 Creating PR for version updates..."
               
               sh '''
@@ -443,8 +445,6 @@ EOF
                   fi
                 fi
               '''
-            } else {
-              echo "✅ Only minor updates available (${mediumCount}). No action needed."
             }
           }
         }

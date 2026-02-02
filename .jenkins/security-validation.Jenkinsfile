@@ -643,6 +643,7 @@ EOF
           }
           sh '''
             set +e
+            WORKDIR="${WORKSPACE:-$(pwd)}"
             ISSUE_TITLE="CI Failure: ${JOB_NAME}"
             
             ensure_label() {
@@ -675,7 +676,7 @@ EOF
             ISSUE_URL=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].html_url // empty' 2>/dev/null || true)
             
             if [ -n "${ISSUE_NUMBER}" ]; then
-              cat > issue-comment.json << EOF
+              cat > "${WORKDIR}/issue-comment.json" << EOF
             {
               "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\n(Automated update on existing issue.)"
             }
@@ -684,12 +685,12 @@ EOF
                 -H "Authorization: token ${GITHUB_TOKEN}" \
                 -H "Accept: application/vnd.github.v3+json" \
                 "https://api.github.com/repos/${GITHUB_REPO}/issues/${ISSUE_NUMBER}/comments" \
-                -d @issue-comment.json >/dev/null 2>&1 || true
+                -d @"${WORKDIR}/issue-comment.json" >/dev/null 2>&1 || true
               echo "Updated existing failure issue: ${ISSUE_URL}"
               exit 0
             fi
             
-            cat > issue-body.json << EOF
+            cat > "${WORKDIR}/issue-body.json" << EOF
             {
               "title": "${ISSUE_TITLE}",
               "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\nPlease check Jenkins logs for details.\\n\\n---\\n*This issue was automatically created by Jenkins.*",
@@ -701,7 +702,7 @@ EOF
               -H "Authorization: token ${GITHUB_TOKEN}" \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${GITHUB_REPO}/issues" \
-              -d @issue-body.json >/dev/null 2>&1 || true
+              -d @"${WORKDIR}/issue-body.json" >/dev/null 2>&1 || true
           '''
         }
       }
