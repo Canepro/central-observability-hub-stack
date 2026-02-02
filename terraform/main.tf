@@ -107,7 +107,7 @@ resource "oci_core_security_list" "k8s_public_sl" {
   # tfsec:ignore:oci-networking-no-public-ingress-api
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"  # Personal use - restrict via terraform.tfvars if needed
+    source   = "0.0.0.0/0" # Personal use - restrict via terraform.tfvars if needed
     tcp_options {
       min = 6443
       max = 6443
@@ -119,7 +119,7 @@ resource "oci_core_security_list" "k8s_public_sl" {
   # tfsec:ignore:oci-networking-no-public-ingress-ssh
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"  # Personal use - key-based auth, no password login
+    source   = "0.0.0.0/0" # Personal use - key-based auth, no password login
     tcp_options {
       min = 22
       max = 22
