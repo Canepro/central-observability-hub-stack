@@ -114,7 +114,7 @@ serverFiles:
               - __meta_kubernetes_service_name
             regex: monitoring;prometheus-prometheus-node-exporter
           - source_labels:
-              - __meta_kubernetes_pod_node_name
+              - __meta_kubernetes_endpoint_node_name
             target_label: service
           - target_label: cluster
             replacement: oke-hub
