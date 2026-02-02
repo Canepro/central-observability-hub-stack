@@ -41,10 +41,17 @@ spec:
     VERSIONS_FILE = 'VERSION-TRACKING.md'
     UPDATE_REPORT = 'version-updates.json'
   }
+
+  triggers {
+    cron('H H * * *')
+  }
   
   stages {
     // Stage 1: Install Tools
     stage('Install Tools') {
+      when {
+        branch 'main'
+      }
       steps {
         sh '''
           # Alpine-based agent: install tools via apk (openssl required for Helm install script checksum)
@@ -68,6 +75,9 @@ spec:
     
     // Stage 2: Check Helm Chart Versions
     stage('Check Helm Chart Versions') {
+      when {
+        branch 'main'
+      }
       steps {
         script {
           sh '''
@@ -192,6 +202,9 @@ EOF
     
     // Stage 3: Assess Risk and Create PR/Issue
     stage('Create Update PRs/Issues') {
+      when {
+        branch 'main'
+      }
       steps {
         script {
           def highCount = sh(script: "grep HIGH_COUNT update-counts.env | cut -d= -f2", returnStdout: true).trim()
