@@ -11,6 +11,20 @@ This directory contains Jenkinsfiles for CI validation of the `GrafanaLocal` rep
 - **`security-validation.Jenkinsfile`**: Security scanning
 - **`version-check.Jenkinsfile`**: Version update checking
 
+### Version check pipeline (PR creation)
+
+The version-check pipeline compares Helm chart versions in `argocd/applications/*.yaml` to the latest in Helm repos. When updates are found it creates GitHub artifacts in the **repo root** (main branch):
+
+- **HIGH (major version bump)** → creates a **GitHub issue** only (no PR).
+- **MEDIUM (minor/patch)** → creates a **PR** when there is at least one medium update (threshold ≥ 1). The pipeline checks out a branch (e.g. `chore/helm-version-updates-YYYYMMDD`), updates `targetRevision` in the ArgoCD app manifests and the "Last Updated" date in `VERSION-TRACKING.md`, then pushes and opens the PR.
+
+**Requirements for PR branch updates to work:**
+
+- **mikefarah/yq** is required for in-place YAML edits. Alpine’s `apk yq` (kislyuk) uses different syntax; the pipeline installs mikefarah/yq to `/usr/local/bin/yq` so manifest updates (e.g. `argocd/applications/prometheus.yaml`) are applied correctly. Without it, the PR may only contain the `VERSION-TRACKING.md` date change.
+- **WORKDIR** — All paths used when applying updates and when calling `curl -d @...` for GitHub API payloads use `WORKDIR="${WORKSPACE:-$(pwd)}"` so files are found regardless of current directory.
+
+See `version-check.Jenkinsfile` comments for the exact logic (HIGH → issue; MEDIUM ≥ 1 → PR).
+
 ## Agent Image Requirements (OKE / CRI-O)
 
 On OKE, the container runtime (CRI-O) requires **fully qualified** image names. Each Jenkinsfile that uses `agent { kubernetes { ... yaml } }` must specify an explicit `jnlp` container with a **valid** image tag from Docker Hub, e.g. `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21`. Do **not** use unqualified names (e.g. `jenkins/inbound-agent`) or tags that do not exist (e.g. `3302.v1cfe4e081049-1-jdk21` — manifest unknown). See [docs/JENKINS-503-TROUBLESHOOTING.md](../docs/JENKINS-503-TROUBLESHOOTING.md) §5 and §6 if builds fail with ImageInspectError or only show "Declarative: Post Actions".

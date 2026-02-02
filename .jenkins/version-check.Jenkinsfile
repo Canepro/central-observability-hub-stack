@@ -61,11 +61,13 @@ spec:
           # GitHub CLI is optional; log if missing
           command -v gh >/dev/null 2>&1 && gh --version || echo "gh not installed (ok)"
 
-          # Install yq for YAML parsing (apk 'yq' preferred; fallback binary if missing)
-          if ! command -v yq >/dev/null 2>&1; then
-            wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-            chmod +x /usr/local/bin/yq || true
-          fi
+          # In-place YAML edits (PR creation) require mikefarah/yq; apk yq (kislyuk) uses different syntax.
+          # Always install mikefarah yq to /usr/local/bin so PR branch updates work.
+          ARCH="$(uname -m)"
+          case "$ARCH" in aarch64|arm64) YQ_ARCH="arm64" ;; *) YQ_ARCH="amd64" ;; esac
+          wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${YQ_ARCH}" || true
+          chmod +x /usr/local/bin/yq 2>/dev/null || true
+          export PATH="/usr/local/bin:${PATH}"
           
           # Install helm for repo searches (openssl above enables checksum verification)
           curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash || true
@@ -366,12 +368,18 @@ EOF
                   git checkout -b "${BRANCH_NAME}"
                 fi
                 
-                # Read updates and apply them
+                # Read updates and apply them (use absolute path; mikefarah/yq required for -i)
+                WORKDIR="${WORKSPACE:-$(pwd)}"
+                export PATH="/usr/local/bin:${PATH}"
                 jq -r '.[] | "\\(.component)|\\(.current)|\\(.latest)|\\(.location)"' chart-updates.json 2>/dev/null | while IFS='|' read -r component current latest location; do
-                  if [ -n "$component" ] && [ -n "$latest" ] && [ -f "$location" ]; then
-                    echo "Updating $component: $current → $latest in $location"
-                    # Update targetRevision in ArgoCD app manifest (multi-source preferred)
-                    yq -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$location" 2>/dev/null || true
+                  if [ -n "$component" ] && [ -n "$latest" ]; then
+                    FILE="${WORKDIR}/${location}"
+                    if [ -f "$FILE" ]; then
+                      echo "Updating $component: $current → $latest in $location"
+                      yq -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$FILE" || { echo "ERROR: yq failed for $FILE"; exit 1; }
+                    else
+                      echo "WARN: manifest not found $FILE"
+                    fi
                   fi
                 done
                 
