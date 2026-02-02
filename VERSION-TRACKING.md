@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-02-01
+**Last Updated**: 2026-02-02
 
 ## Upgrade Status Legend
 
