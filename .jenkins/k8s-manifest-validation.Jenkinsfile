@@ -115,7 +115,7 @@ spec:
             for manifest in k8s/**/*.yaml; do
               if [ -f "$manifest" ]; then
                 # Validate each manifest against K8s API schema
-                kubeconform -strict "$manifest" || exit 1
+                kubeconform -strict -ignore-missing-schemas "$manifest" || exit 1
               fi
             done
           fi

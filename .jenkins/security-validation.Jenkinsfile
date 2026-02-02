@@ -393,6 +393,7 @@ PY
               ]) {
                 sh '''
                   set +e
+                  WORKDIR="${WORKSPACE:-$(pwd)}"
                   ISSUE_TITLE="🚨 Security: Critical vulnerabilities detected (automated)"
                   
                   ensure_label() {
@@ -427,7 +428,7 @@ PY
                   if [ -n "${ISSUE_NUMBER}" ]; then
                     echo "Existing open issue #${ISSUE_NUMBER} found; adding comment instead of creating duplicate."
                     TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-                    cat > issue-comment.json << EOF
+                    cat > "${WORKDIR}/issue-comment.json" << EOF
                     {
                       "body": "## New security scan results\\n\\nTime: ${TS}\\nBuild: ${BUILD_URL}\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nArtifacts: ${BUILD_URL}artifact/\\n\\n(De-dupe enabled: this comment updates an existing open issue.)"
                     }
@@ -436,12 +437,12 @@ EOF
                       -H "Authorization: token ${GITHUB_TOKEN}" \
                       -H "Accept: application/vnd.github.v3+json" \
                       "https://api.github.com/repos/${GITHUB_REPO}/issues/${ISSUE_NUMBER}/comments" \
-                      -d @issue-comment.json >/dev/null 2>&1 || true
+                      -d @"${WORKDIR}/issue-comment.json" >/dev/null 2>&1 || true
                     echo "Updated existing issue: ${ISSUE_URL}"
                     exit 0
                   fi
 
-                  cat > issue-body.json << EOF
+                  cat > "${WORKDIR}/issue-body.json" << EOF
                   {
                     "title": "${ISSUE_TITLE}",
                     "body": "## Security Scan Results\\n\\n**Risk Level:** CRITICAL\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nBuild: ${BUILD_URL}\\nArtifacts: ${BUILD_URL}artifact/\\n\\n## Action Required\\n\\nPlease review the security scan results and address critical vulnerabilities immediately.\\n\\n## Scan Artifacts\\n\\n- tfsec results: Jenkins build artifacts\\n- checkov results: Jenkins build artifacts\\n- trivy results: Jenkins build artifacts\\n- kube-score results (if enabled): Jenkins build artifacts\\n\\n## Next Steps\\n\\n1. Review all critical findings\\n2. Create remediation PRs for each critical issue\\n3. Update security policies if needed\\n\\n---\\n*This issue was automatically created by Jenkins security validation pipeline.*",
@@ -453,7 +454,7 @@ EOF
                     -H "Authorization: token ${GITHUB_TOKEN}" \
                     -H "Accept: application/vnd.github.v3+json" \
                     "https://api.github.com/repos/${GITHUB_REPO}/issues" \
-                    -d @issue-body.json || true
+                    -d @"${WORKDIR}/issue-body.json" || true
                   exit 0
                 '''
               }
@@ -469,6 +470,7 @@ EOF
               ]) {
                 sh '''
                   set +e
+                  WORKDIR="${WORKSPACE:-$(pwd)}"
                   PR_TITLE="🔒 Security: Automated remediation (automated)"
                   
                   ensure_label() {
@@ -503,7 +505,7 @@ EOF
                   if [ -n "${PR_NUMBER}" ]; then
                     echo "Existing open PR #${PR_NUMBER} found; adding comment instead of creating duplicate."
                     TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-                    cat > pr-comment.json << EOF
+                    cat > "${WORKDIR}/pr-comment.json" << EOF
                     {
                       "body": "## New security scan results\\n\\nTime: ${TS}\\nBuild: ${BUILD_URL}\\n\\n**Findings:**\\n- Critical: ${CRITICAL_COUNT}\\n- High: ${HIGH_COUNT}\\n- Medium: ${MEDIUM_COUNT}\\n- Low: ${LOW_COUNT}\\n\\nArtifacts: ${BUILD_URL}artifact/\\n\\n(De-dupe enabled: this comment updates an existing open PR.)"
                     }
@@ -512,7 +514,7 @@ EOF
                       -H "Authorization: token ${GITHUB_TOKEN}" \
                       -H "Accept: application/vnd.github.v3+json" \
                       "https://api.github.com/repos/${GITHUB_REPO}/issues/${PR_NUMBER}/comments" \
-                      -d @pr-comment.json >/dev/null 2>&1 || true
+                      -d @"${WORKDIR}/pr-comment.json" >/dev/null 2>&1 || true
                     echo "Updated existing PR: ${PR_URL}"
                     exit 0
                   fi
@@ -562,7 +564,7 @@ EOF
                   git -C "${WORKSPACE}" push origin "${BRANCH_NAME}"
                   
                   # Create PR
-                  cat > pr-body.json << EOF
+                  cat > "${WORKDIR}/pr-body.json" << EOF
                   {
                     "title": "${PR_TITLE}",
                     "head": "${BRANCH_NAME}",
@@ -575,7 +577,7 @@ EOF
                     -H "Authorization: token ${GITHUB_TOKEN}" \
                     -H "Accept: application/vnd.github.v3+json" \
                     "https://api.github.com/repos/${GITHUB_REPO}/pulls" \
-                    -d @pr-body.json || echo '{}')
+                    -d @"${WORKDIR}/pr-body.json" || echo '{}')
                   
                   PR_CREATED_NUMBER=$(echo "$PR_CREATE_JSON" | jq -r '.number // empty' 2>/dev/null || true)
                   if [ -n "${PR_CREATED_NUMBER}" ]; then
