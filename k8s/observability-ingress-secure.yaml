@@ -14,8 +14,8 @@ metadata:
     # Performance
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/limit-rps: "5000"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    # Note: CORS removed - this endpoint is for server-to-server communication only
+    # (Prometheus remote_write, Loki push, OTLP traces from external clusters)
 spec:
   ingressClassName: nginx
   tls:
