@@ -62,15 +62,38 @@ spec:
           command -v gh >/dev/null 2>&1 && gh --version || echo "gh not installed (ok)"
 
           # In-place YAML edits (PR creation) require mikefarah/yq; apk yq (kislyuk) uses different syntax.
-          # Always install mikefarah yq to /usr/local/bin so PR branch updates work.
+          # Always install mikefarah yq to /usr/local/bin so PR branch updates work; verify checksum.
           ARCH="$(uname -m)"
           case "$ARCH" in aarch64|arm64) YQ_ARCH="arm64" ;; *) YQ_ARCH="amd64" ;; esac
-          wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${YQ_ARCH}" || true
-          chmod +x /usr/local/bin/yq 2>/dev/null || true
+          YQ_URL="https://github.com/mikefarah/yq/releases/latest/download"
+          if wget -qO /tmp/yq_linux_${YQ_ARCH} "${YQ_URL}/yq_linux_${YQ_ARCH}" && \
+             wget -qO /tmp/yq_checksums "${YQ_URL}/checksums" && \
+             (cd /tmp && grep " yq_linux_${YQ_ARCH}" yq_checksums | sha256sum -c -) && \
+             mv /tmp/yq_linux_${YQ_ARCH} /usr/local/bin/yq && chmod +x /usr/local/bin/yq; then
+            echo "mikefarah/yq installed successfully"
+          else
+            echo "WARN: Failed to download or verify mikefarah/yq; PR manifest updates may fail"
+          fi
           export PATH="/usr/local/bin:${PATH}"
-          
-          # Install helm for repo searches (openssl above enables checksum verification)
-          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash || true
+          # Install helm for repo searches (pinned script for reproducibility; openssl enables built-in checksum verification)
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/v3.14.0/scripts/get-helm-3 | bash || true
+          # Shared helper for GitHub label ensure (sourced in Create PR/Issue and post failure)
+          cat > "${WORKSPACE}/ensure_label.sh" << 'ENSURE_LABEL_EOF'
+ensure_label() {
+  LABEL_NAME="$1"
+  LABEL_COLOR="$2"
+  LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
+  curl -fsSL \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github.v3+json" \
+    "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
+  curl -fsSL -X POST \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github.v3+json" \
+    "https://api.github.com/repos/${GITHUB_REPO}/labels" \
+    -d "$LABEL_JSON" >/dev/null 2>&1 || true
+}
+ENSURE_LABEL_EOF
         '''
       }
     }
@@ -243,22 +266,7 @@ EOF
                 sh '''
                   set +e
                   ISSUE_TITLE="⚠️ Helm Chart: Major version updates available"
-                  
-                  ensure_label() {
-                    LABEL_NAME="$1"
-                    LABEL_COLOR="$2"
-                    LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
-                    curl -fsSL \
-                      -H "Authorization: token ${GITHUB_TOKEN}" \
-                      -H "Accept: application/vnd.github.v3+json" \
-                      "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
-                    curl -fsSL -X POST \
-                      -H "Authorization: token ${GITHUB_TOKEN}" \
-                      -H "Accept: application/vnd.github.v3+json" \
-                      "https://api.github.com/repos/${GITHUB_REPO}/labels" \
-                      -d "$LABEL_JSON" >/dev/null 2>&1 || true
-                  }
-                  
+                  [ -f "${WORKSPACE}/ensure_label.sh" ] && . "${WORKSPACE}/ensure_label.sh"
                   ensure_label "dependencies" "0366d6"
                   ensure_label "helm" "0e8a16"
                   ensure_label "automated" "0e8a16"
@@ -312,22 +320,7 @@ EOF
               sh '''
                 set +e
                 PR_TITLE="⬆️ Helm Chart Updates Available"
-                
-                ensure_label() {
-                  LABEL_NAME="$1"
-                  LABEL_COLOR="$2"
-                  LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
-                  curl -fsSL \
-                    -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
-                  curl -fsSL -X POST \
-                    -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    "https://api.github.com/repos/${GITHUB_REPO}/labels" \
-                    -d "$LABEL_JSON" >/dev/null 2>&1 || true
-                }
-                
+                [ -f "${WORKSPACE}/ensure_label.sh" ] && . "${WORKSPACE}/ensure_label.sh"
                 ensure_label "dependencies" "0366d6"
                 ensure_label "helm" "0e8a16"
                 ensure_label "automated" "0e8a16"
@@ -368,20 +361,22 @@ EOF
                   git checkout -b "${BRANCH_NAME}"
                 fi
                 
-                # Read updates and apply them (use absolute path; mikefarah/yq required for -i)
+                # Read updates and apply them (absolute path; mikefarah/yq required for -i)
                 WORKDIR="${WORKSPACE:-$(pwd)}"
                 export PATH="/usr/local/bin:${PATH}"
-                jq -r '.[] | "\\(.component)|\\(.current)|\\(.latest)|\\(.location)"' chart-updates.json 2>/dev/null | while IFS='|' read -r component current latest location; do
+                UPDATE_FAILED=0
+                while IFS='|' read -r component current latest location; do
                   if [ -n "$component" ] && [ -n "$latest" ]; then
                     FILE="${WORKDIR}/${location}"
                     if [ -f "$FILE" ]; then
                       echo "Updating $component: $current → $latest in $location"
-                      yq -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$FILE" || { echo "ERROR: yq failed for $FILE"; exit 1; }
+                      yq -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$FILE" || { echo "ERROR: yq failed for $FILE"; UPDATE_FAILED=1; break; }
                     else
                       echo "WARN: manifest not found $FILE"
                     fi
                   fi
-                done
+                done < <(jq -r '.[] | "\\(.component)|\\(.current)|\\(.latest)|\\(.location)"' chart-updates.json 2>/dev/null)
+                [ "$UPDATE_FAILED" -eq 1 ] && exit 1
                 
                 # Update VERSION-TRACKING.md with today's date
                 TODAY=$(date +%Y-%m-%d)
@@ -478,22 +473,15 @@ EOF
           sh '''
             set +e
             ISSUE_TITLE="CI Failure: ${JOB_NAME}"
-            
-            ensure_label() {
-              LABEL_NAME="$1"
-              LABEL_COLOR="$2"
-              LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
-              curl -fsSL \
-                -H "Authorization: token ${GITHUB_TOKEN}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
-              curl -fsSL -X POST \
-                -H "Authorization: token ${GITHUB_TOKEN}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/${GITHUB_REPO}/labels" \
-                -d "$LABEL_JSON" >/dev/null 2>&1 || true
-            }
-            
+            [ -f "${WORKSPACE}/ensure_label.sh" ] && . "${WORKSPACE}/ensure_label.sh"
+            if ! type ensure_label >/dev/null 2>&1; then
+              ensure_label() {
+                LABEL_NAME="$1"; LABEL_COLOR="$2"
+                LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
+                curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
+                curl -fsSL -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${GITHUB_REPO}/labels" -d "$LABEL_JSON" >/dev/null 2>&1 || true
+              }
+            fi
             ensure_label "ci" "6a737d"
             ensure_label "jenkins" "5319e7"
             ensure_label "failure" "b60205"
@@ -540,17 +528,5 @@ EOF
         }
       }
     }
-  }
-}
-
-// Helper function to determine if version update is major
-def isMajorVersionUpdate(String current, String latest) {
-  try {
-    if (!current || !latest) return false
-    def currentMajor = current.split('\\.')[0].replaceAll('[^0-9]', '').toInteger()
-    def latestMajor = latest.split('\\.')[0].replaceAll('[^0-9]', '').toInteger()
-    return latestMajor > currentMajor
-  } catch (Exception e) {
-    return false
   }
 }
