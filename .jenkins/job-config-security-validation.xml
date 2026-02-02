@@ -46,11 +46,6 @@
             </org.jenkinsci.plugins.github_branch_source.OriginPullRequestDiscoveryTrait>
           </traits>
         </source>
-        <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
-          <properties>
-            <jenkins.branch.NoTriggerBranchProperty/>
-          </properties>
-        </strategy>
       </jenkins.branch.BranchSource>
     </data>
     <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>

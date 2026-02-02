@@ -53,10 +53,17 @@ spec:
     TRIVY_OUTPUT = 'trivy-results.json'
     RISK_REPORT = 'risk-assessment.json'
   }
+
+  triggers {
+    cron('H H * * *')
+  }
   
   stages {
     // Stage 1: Install Security Scanning Tools
     stage('Install Security Tools') {
+      when {
+        branch 'main'
+      }
       steps {
         sh '''
           # Install required tools
@@ -120,6 +127,9 @@ spec:
     
     // Stage 2: Terraform Security Scan (tfsec)
     stage('Terraform Security Scan (tfsec)') {
+      when {
+        branch 'main'
+      }
       steps {
         dir('terraform') {
           sh '''
@@ -135,6 +145,9 @@ spec:
     
     // Stage 3: Infrastructure Security Scan (checkov)
     stage('Infrastructure Security Scan (checkov)') {
+      when {
+        branch 'main'
+      }
       steps {
         dir('terraform') {
           sh '''
@@ -160,6 +173,9 @@ spec:
     
     // Stage 4: Kubernetes Manifest Security Scan
     stage('Kubernetes Security Scan') {
+      when {
+        branch 'main'
+      }
       steps {
         sh '''
           # Scan Kubernetes manifests in ops/manifests/
@@ -180,6 +196,9 @@ spec:
     
     // Stage 5: Container Image Security Scan (Trivy)
     stage('Container Image Security Scan') {
+      when {
+        branch 'main'
+      }
       steps {
         script {
           // Extract container images from values.yaml
@@ -230,6 +249,9 @@ spec:
     
     // Stage 6: Risk Assessment
     stage('Risk Assessment') {
+      when {
+        branch 'main'
+      }
       steps {
         script {
           sh '''
@@ -332,6 +354,9 @@ PY
     
     // Stage 7: Create PR or Issue Based on Risk
     stage('Create Remediation PR/Issue') {
+      when {
+        branch 'main'
+      }
       steps {
         script {
           if (!fileExists(env.RISK_REPORT)) {
