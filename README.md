@@ -109,6 +109,14 @@ The repository includes automated quality gates (`.github/workflows/devops-quali
 - Kubernetes manifest security scanning (kube-linter)
 - ArgoCD application validation
 
+**Troubleshooting CI Failures:**
+If workflows fail with "no steps executed" or jobs sit in queue for extended periods:
+1. Check [GitHub Status](https://www.githubstatus.com/) for Actions outages
+2. Verify runner availability issues are not widespread
+3. Re-run failed workflows once service is restored
+
+All jobs have timeout limits (5-15 minutes) to fail fast when runners are unavailable.
+
 ### Jenkins
 
 Jenkins runs on OKE at **https://jenkins.canepro.me** (split-agent hybrid: controller on OKE, optional static agent on AKS). Pipelines in `.jenkins/` provide:
