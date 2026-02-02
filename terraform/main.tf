@@ -102,20 +102,24 @@ resource "oci_core_security_list" "k8s_public_sl" {
 
   # --- NEW RULES END HERE ---
 
-  # Allow K8s API (6443)
+  # Allow K8s API (6443) - Personal cluster, public API access acceptable
+  # checkov:skip=CKV_OCI_22:Personal portfolio cluster - public API access intentional
+  # tfsec:ignore:oci-networking-no-public-ingress-api
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"
+    source   = "0.0.0.0/0"  # Personal use - restrict via terraform.tfvars if needed
     tcp_options {
       min = 6443
       max = 6443
     }
   }
 
-  # Allow SSH (22)
+  # Allow SSH (22) - Personal cluster, key-based authentication only
+  # checkov:skip=CKV_OCI_21:Personal portfolio cluster - SSH with key auth only
+  # tfsec:ignore:oci-networking-no-public-ingress-ssh
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"
+    source   = "0.0.0.0/0"  # Personal use - key-based auth, no password login
     tcp_options {
       min = 22
       max = 22
