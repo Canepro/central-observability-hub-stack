@@ -361,16 +361,41 @@ EOF
                   git checkout -b "${BRANCH_NAME}"
                 fi
                 
-                # Read updates and apply them (absolute path; mikefarah/yq required for -i)
+                # Read updates and apply them (absolute path; prefer mikefarah/yq, fallback for other yq flavors)
                 WORKDIR="${WORKSPACE:-$(pwd)}"
                 export PATH="/usr/local/bin:${PATH}"
+                YQ_BIN="/usr/local/bin/yq"
+                if [ ! -x "$YQ_BIN" ]; then
+                  YQ_BIN="$(command -v yq 2>/dev/null || true)"
+                fi
+                yq_apply_target_revision() {
+                  local file="$1"
+                  local latest="$2"
+                  # Try mikefarah/yq v4 syntax first
+                  if [ -n "$YQ_BIN" ] && "$YQ_BIN" -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file"; then
+                    return 0
+                  fi
+                  # Try kislyuk yq (requires -y with -i)
+                  if [ -n "$YQ_BIN" ] && "$YQ_BIN" -y -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file"; then
+                    return 0
+                  fi
+                  # Try mikefarah/yq v3 syntax as last resort
+                  if [ -n "$YQ_BIN" ]; then
+                    if "$YQ_BIN" r "$file" 'spec.sources[0].targetRevision' >/dev/null 2>&1; then
+                      "$YQ_BIN" w -i "$file" 'spec.sources[0].targetRevision' "$latest" && return 0
+                    else
+                      "$YQ_BIN" w -i "$file" 'spec.source.targetRevision' "$latest" && return 0
+                    fi
+                  fi
+                  return 1
+                }
                 UPDATE_FAILED=0
                 while IFS='|' read -r component current latest location; do
                   if [ -n "$component" ] && [ -n "$latest" ]; then
                     FILE="${WORKDIR}/${location}"
                     if [ -f "$FILE" ]; then
                       echo "Updating $component: $current → $latest in $location"
-                      yq -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$FILE" || { echo "ERROR: yq failed for $FILE"; UPDATE_FAILED=1; break; }
+                      yq_apply_target_revision "$FILE" "$latest" || { echo "ERROR: yq failed for $FILE (yq=$(command -v "$YQ_BIN" 2>/dev/null || echo "not found"))"; UPDATE_FAILED=1; break; }
                     else
                       echo "WARN: manifest not found $FILE"
                     fi
