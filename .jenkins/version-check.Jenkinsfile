@@ -66,9 +66,10 @@ spec:
           ARCH="$(uname -m)"
           case "$ARCH" in aarch64|arm64) YQ_ARCH="arm64" ;; *) YQ_ARCH="amd64" ;; esac
           YQ_URL="https://github.com/mikefarah/yq/releases/latest/download"
-          if wget -qO /tmp/yq_linux_${YQ_ARCH} "${YQ_URL}/yq_linux_${YQ_ARCH}" && \
-             wget -qO /tmp/yq_checksums "${YQ_URL}/checksums" && \
+          if curl -fsSL -o /tmp/yq_linux_${YQ_ARCH} "${YQ_URL}/yq_linux_${YQ_ARCH}" && \
+             curl -fsSL -o /tmp/yq_checksums "${YQ_URL}/checksums" && \
              (cd /tmp && grep " yq_linux_${YQ_ARCH}" yq_checksums | sha256sum -c -) && \
+             mkdir -p /usr/local/bin && \
              mv /tmp/yq_linux_${YQ_ARCH} /usr/local/bin/yq && chmod +x /usr/local/bin/yq; then
             echo "mikefarah/yq installed successfully"
           else
