@@ -109,7 +109,7 @@ resource "oci_core_security_list" "k8s_public_sl" {
   # Allow K8s API (6443) - Personal cluster, public API access intentional
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"  # Personal use - public API access intentional
+    source   = "0.0.0.0/0" # Personal use - public API access intentional
     tcp_options {
       min = 6443
       max = 6443
