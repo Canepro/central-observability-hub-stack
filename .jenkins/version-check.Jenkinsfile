@@ -369,25 +369,68 @@ EOF
                 if [ ! -x "$YQ_BIN" ]; then
                   YQ_BIN="$(command -v yq 2>/dev/null || true)"
                 fi
+                detect_yq_flavor() {
+                  if [ -z "$YQ_BIN" ] || [ ! -x "$YQ_BIN" ]; then
+                    echo "none"
+                    return 0
+                  fi
+                  # Capture version output for detailed detection
+                  YQ_VERSION_OUT=$("$YQ_BIN" --version 2>&1 || true)
+                  echo "DEBUG: yq version output: $YQ_VERSION_OUT" >&2
+                  
+                  # Check for mikefarah yq v4+ (supports 'eval' command)
+                  if echo "$YQ_VERSION_OUT" | grep -Eq '(mikefarah|yq).*(version 4|version v4)'; then
+                    echo "mikefarah"
+                    return 0
+                  fi
+                  # Check for mikefarah yq v3 (uses read/write commands)
+                  if echo "$YQ_VERSION_OUT" | grep -Eq '(mikefarah|yq).*(version 3|version v3)'; then
+                    echo "mikefarah-v3"
+                    return 0
+                  fi
+                  # Check for any other mikefarah version (assume v4+)
+                  if echo "$YQ_VERSION_OUT" | grep -qi 'mikefarah'; then
+                    echo "mikefarah"
+                    return 0
+                  fi
+                  # Check for kislyuk/yq (jq wrapper for YAML)
+                  if "$YQ_BIN" --help 2>/dev/null | grep -qi 'jq filter'; then
+                    echo "kislyuk"
+                    return 0
+                  fi
+                  echo "unknown"
+                }
+                YQ_FLAVOR="$(detect_yq_flavor)"
+                echo "Using yq: ${YQ_BIN:-not-found} (flavor=${YQ_FLAVOR})"
+
                 yq_apply_target_revision() {
                   local file="$1"
                   local latest="$2"
-                  # Try mikefarah/yq v4 syntax first
-                  if [ -n "$YQ_BIN" ] && "$YQ_BIN" -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file"; then
-                    return 0
-                  fi
-                  # Try kislyuk yq (requires -y with -i)
-                  if [ -n "$YQ_BIN" ] && "$YQ_BIN" -y -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file"; then
-                    return 0
-                  fi
-                  # Try mikefarah/yq v3 syntax as last resort
-                  if [ -n "$YQ_BIN" ]; then
-                    if "$YQ_BIN" r "$file" 'spec.sources[0].targetRevision' >/dev/null 2>&1; then
-                      "$YQ_BIN" w -i "$file" 'spec.sources[0].targetRevision' "$latest" && return 0
-                    else
-                      "$YQ_BIN" w -i "$file" 'spec.source.targetRevision' "$latest" && return 0
-                    fi
-                  fi
+                  case "$YQ_FLAVOR" in
+                    mikefarah)
+                      # mikefarah/yq v4 syntax
+                      echo "DEBUG: Running: $YQ_BIN eval -i 'if .spec.sources then .spec.sources[0].targetRevision = \"${latest}\" else .spec.source.targetRevision = \"${latest}\" end' $file" >&2
+                      "$YQ_BIN" eval -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file" && return 0
+                      ;;
+                    kislyuk)
+                      # kislyuk yq (jq wrapper) requires -y with -i
+                      echo "DEBUG: Running: $YQ_BIN -y -i 'if .spec.sources then .spec.sources[0].targetRevision = \"${latest}\" else .spec.source.targetRevision = \"${latest}\" end' $file" >&2
+                      "$YQ_BIN" -y -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file" && return 0
+                      ;;
+                    mikefarah-v3)
+                      if "$YQ_BIN" r "$file" 'spec.sources[0].targetRevision' >/dev/null 2>&1; then
+                        echo "DEBUG: Running: $YQ_BIN w -i $file 'spec.sources[0].targetRevision' $latest" >&2
+                        "$YQ_BIN" w -i "$file" 'spec.sources[0].targetRevision' "$latest" && return 0
+                      else
+                        echo "DEBUG: Running: $YQ_BIN w -i $file 'spec.source.targetRevision' $latest" >&2
+                        "$YQ_BIN" w -i "$file" 'spec.source.targetRevision' "$latest" && return 0
+                      fi
+                      ;;
+                    *)
+                      echo "ERROR: Unknown or unsupported yq flavor: $YQ_FLAVOR" >&2
+                      return 1
+                      ;;
+                  esac
                   return 1
                 }
                 UPDATE_FAILED=0
@@ -396,7 +439,7 @@ EOF
                     FILE="${WORKDIR}/${location}"
                     if [ -f "$FILE" ]; then
                       echo "Updating $component: $current → $latest in $location"
-                      yq_apply_target_revision "$FILE" "$latest" || { echo "ERROR: yq failed for $FILE (yq=$(command -v "$YQ_BIN" 2>/dev/null || echo "not found"))"; UPDATE_FAILED=1; break; }
+                      yq_apply_target_revision "$FILE" "$latest" || { echo "ERROR: yq failed for $FILE (binary=${YQ_BIN:-not-found}, flavor=${YQ_FLAVOR})"; UPDATE_FAILED=1; break; }
                     else
                       echo "WARN: manifest not found $FILE"
                     fi
