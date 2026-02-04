@@ -68,7 +68,7 @@ spec:
           YQ_URL="https://github.com/mikefarah/yq/releases/latest/download"
           if curl -fsSL -o /tmp/yq_linux_${YQ_ARCH} "${YQ_URL}/yq_linux_${YQ_ARCH}" && \
              curl -fsSL -o /tmp/yq_checksums "${YQ_URL}/checksums" && \
-             (cd /tmp && grep " yq_linux_${YQ_ARCH}" yq_checksums | sha256sum -c -) && \
+             (cd /tmp && grep " yq_linux_${YQ_ARCH}$" yq_checksums | sha256sum -c -) && \
              mkdir -p /usr/local/bin && \
              mv /tmp/yq_linux_${YQ_ARCH} /usr/local/bin/yq && chmod +x /usr/local/bin/yq; then
             echo "mikefarah/yq installed successfully"
@@ -418,7 +418,10 @@ EOF
                       "$YQ_BIN" -y -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file" && return 0
                       ;;
                     mikefarah-v3)
-                      if "$YQ_BIN" r "$file" 'spec.sources[0].targetRevision' >/dev/null 2>&1; then
+                      # Check if spec.sources[0] exists by capturing output
+                      local sources_val
+                      sources_val=$("$YQ_BIN" r "$file" 'spec.sources[0].targetRevision' 2>/dev/null || echo "")
+                      if [ -n "$sources_val" ]; then
                         echo "DEBUG: Running: $YQ_BIN w -i $file 'spec.sources[0].targetRevision' $latest" >&2
                         "$YQ_BIN" w -i "$file" 'spec.sources[0].targetRevision' "$latest" && return 0
                       else
