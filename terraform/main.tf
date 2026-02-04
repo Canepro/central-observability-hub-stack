@@ -73,11 +73,12 @@ resource "oci_core_route_table" "free_rt" {
   }
 }
 
-# checkov:skip=CKV_OCI_21:Personal portfolio cluster - SSH with key auth only; public SSH ingress intentional
-# checkov:skip=CKV_OCI_22:Personal portfolio cluster - public API access intentional
 # tfsec:ignore:oci-networking-no-public-ingress-api
 # tfsec:ignore:oci-networking-no-public-ingress-ssh
 resource "oci_core_security_list" "k8s_public_sl" {
+  # checkov:skip=CKV_OCI_19:Personal portfolio cluster - SSH with key auth only; public SSH ingress intentional
+  # checkov:skip=CKV_OCI_21:Personal portfolio cluster - SSH with key auth only; public SSH ingress intentional
+  # checkov:skip=CKV_OCI_22:Personal portfolio cluster - public API access intentional
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.free_k8s_vcn.id
   display_name   = "k8s-public-sl"
@@ -162,6 +163,8 @@ resource "oci_core_subnet" "node_subnet" {
 # --- CLUSTER ---
 
 resource "oci_containerengine_cluster" "k8s_cluster" {
+  # checkov:skip=CKV2_OCI_3:Personal portfolio cluster - using Security Lists instead of NSGs for simplicity (Always Free tier)
+  # checkov:skip=CKV2_OCI_6:Personal portfolio cluster - BASIC_CLUSTER type does not support Pod Security Policy (deprecated in K8s 1.25+)
   compartment_id     = var.compartment_id
   kubernetes_version = "v1.34.1"
   name               = "oke-cluster"
@@ -185,6 +188,7 @@ resource "oci_containerengine_cluster" "k8s_cluster" {
 # --- NEW POOL (Green: v1.34, 2 Nodes, Split Resources) ---
 
 resource "oci_containerengine_node_pool" "pool_1_34" {
+  # checkov:skip=CKV2_OCI_5:Personal portfolio cluster - boot volume in-transit encryption not available for Always Free tier
   cluster_id         = oci_containerengine_cluster.k8s_cluster.id
   compartment_id     = var.compartment_id
   kubernetes_version = "v1.34.1" # <--- New Version
