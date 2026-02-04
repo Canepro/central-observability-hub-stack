@@ -73,6 +73,10 @@ resource "oci_core_route_table" "free_rt" {
   }
 }
 
+# checkov:skip=CKV_OCI_21:Personal portfolio cluster - SSH with key auth only; public SSH ingress intentional
+# checkov:skip=CKV_OCI_22:Personal portfolio cluster - public API access intentional
+# tfsec:ignore:oci-networking-no-public-ingress-api
+# tfsec:ignore:oci-networking-no-public-ingress-ssh
 resource "oci_core_security_list" "k8s_public_sl" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.free_k8s_vcn.id
@@ -102,20 +106,20 @@ resource "oci_core_security_list" "k8s_public_sl" {
 
   # --- NEW RULES END HERE ---
 
-  # Allow K8s API (6443)
+  # Allow K8s API (6443) - Personal cluster, public API access intentional
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"
+    source   = "0.0.0.0/0" # Personal use - public API access intentional
     tcp_options {
       min = 6443
       max = 6443
     }
   }
 
-  # Allow SSH (22)
+  # Allow SSH (22) - Personal cluster, key-based authentication only; public SSH ingress intentional
   ingress_security_rules {
     protocol = "6"
-    source   = "0.0.0.0/0"
+    source   = "0.0.0.0/0" # Personal use - key-based auth, no password login
     tcp_options {
       min = 22
       max = 22
