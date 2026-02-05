@@ -409,7 +409,7 @@ EOF
                   case "$YQ_FLAVOR" in
                     mikefarah)
                       # mikefarah/yq v4 syntax
-                      if "$YQ_BIN" eval -e '.spec.sources[0].targetRevision' "$file" >/dev/null 2>&1; then
+                      if "$YQ_BIN" eval -e '.spec.sources | length > 0' "$file" >/dev/null 2>&1; then
                         echo "DEBUG: Running: $YQ_BIN eval -i '.spec.sources[0].targetRevision = strenv(LATEST)' $file" >&2
                         LATEST="$latest" "$YQ_BIN" eval -i '.spec.sources[0].targetRevision = strenv(LATEST)' "$file" && return 0
                       else
@@ -419,7 +419,7 @@ EOF
                       ;;
                     kislyuk)
                       # kislyuk yq (jq wrapper) requires -y with -i
-                      if "$YQ_BIN" -r '.spec.sources[0].targetRevision // empty' "$file" 2>/dev/null | grep -q .; then
+                      if "$YQ_BIN" -r '.spec.sources | length > 0' "$file" 2>/dev/null | grep -q 'true'; then
                         echo "DEBUG: Updating $file (sources[0]) to ${latest}" >&2
                         LATEST="$latest" "$YQ_BIN" -y -i '.spec.sources[0].targetRevision = env.LATEST' "$file" && return 0
                       else
