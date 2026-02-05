@@ -409,13 +409,23 @@ EOF
                   case "$YQ_FLAVOR" in
                     mikefarah)
                       # mikefarah/yq v4 syntax
-                      echo "DEBUG: Running: $YQ_BIN eval -i 'if .spec.sources then .spec.sources[0].targetRevision = \"${latest}\" else .spec.source.targetRevision = \"${latest}\" end' $file" >&2
-                      "$YQ_BIN" eval -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file" && return 0
+                      if "$YQ_BIN" eval -e '.spec.sources[0].targetRevision' "$file" >/dev/null 2>&1; then
+                        echo "DEBUG: Running: $YQ_BIN eval -i '.spec.sources[0].targetRevision = strenv(LATEST)' $file" >&2
+                        LATEST="$latest" "$YQ_BIN" eval -i '.spec.sources[0].targetRevision = strenv(LATEST)' "$file" && return 0
+                      else
+                        echo "DEBUG: Running: $YQ_BIN eval -i '.spec.source.targetRevision = strenv(LATEST)' $file" >&2
+                        LATEST="$latest" "$YQ_BIN" eval -i '.spec.source.targetRevision = strenv(LATEST)' "$file" && return 0
+                      fi
                       ;;
                     kislyuk)
                       # kislyuk yq (jq wrapper) requires -y with -i
-                      echo "DEBUG: Running: $YQ_BIN -y -i 'if .spec.sources then .spec.sources[0].targetRevision = \"${latest}\" else .spec.source.targetRevision = \"${latest}\" end' $file" >&2
-                      "$YQ_BIN" -y -i 'if .spec.sources then .spec.sources[0].targetRevision = "'"${latest}"'" else .spec.source.targetRevision = "'"${latest}"'" end' "$file" && return 0
+                      if "$YQ_BIN" -r '.spec.sources[0].targetRevision // empty' "$file" 2>/dev/null | grep -q .; then
+                        echo "DEBUG: Updating $file (sources[0]) to ${latest}" >&2
+                        LATEST="$latest" "$YQ_BIN" -y -i '.spec.sources[0].targetRevision = env.LATEST' "$file" && return 0
+                      else
+                        echo "DEBUG: Updating $file (source) to ${latest}" >&2
+                        LATEST="$latest" "$YQ_BIN" -y -i '.spec.source.targetRevision = env.LATEST' "$file" && return 0
+                      fi
                       ;;
                     mikefarah-v3)
                       # Check if spec.sources[0] exists by capturing output
