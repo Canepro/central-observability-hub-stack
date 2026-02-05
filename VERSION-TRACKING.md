@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-05
 
 ## Upgrade Status Legend
 
@@ -19,7 +19,12 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 ## Quick Upgrade Reference
 
-**Just updated (2026-02-02)**:
+**Just updated (2026-02-05)**:
+- Loki 6.51.0 → 6.52.0 (patch)
+- Prometheus 28.8.0 → 28.8.1 (patch)
+- NGINX Ingress 4.14.2 → 4.14.3 (patch)
+
+**Previously updated (2026-02-02)**:
 - Prometheus 28.7.0 → 28.8.0 (patch)
 
 **Just updated (2026-02-01)**:
@@ -73,10 +78,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **Grafana** | `10.5.15` | `10.5.15` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Loki** | `6.51.0` | `6.51.0` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Loki** | `6.52.0` | `6.52.0` | 🔄 **Just updated** (2026-02-05) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `28.8.0` | `28.8.0` | 🔄 **Just updated** (2026-02-02) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `28.8.1` | `28.8.1` | 🔄 **Just updated** (2026-02-05) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
 
@@ -95,7 +100,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **NGINX Ingress Controller** | `4.14.2` | `4.14.2` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
+| **NGINX Ingress Controller** | `4.14.3` | `4.14.3` | 🔄 **Just updated** (2026-02-05) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
 | **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
 
 ---
