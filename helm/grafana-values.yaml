@@ -1,6 +1,6 @@
 # Grafana Helm Chart Values
 # Chart: grafana/grafana
-# Version: 10.4.0 (pinned via ArgoCD Application)
+# Version: 10.5.15 (pinned via ArgoCD Application)
 # App Version: 12.x (Grafana OSS)
 
 # ArgoCD/Helm render safeguard: prevent admin password/secret_key in values
@@ -72,6 +72,52 @@ envValueFrom:
       name: grafana-smtp-credentials
       key: from_address
 
+# Mount in-repo dashboards (dashboards/*.json) into the provisioning path.
+# These are packaged by the `grafana-dashboards` ArgoCD app into:
+# ConfigMap `grafana-dashboards-repo` (see dashboards/kustomization.yaml).
+extraConfigmapMounts:
+  - name: repo-dashboard-unified-world-tree
+    configMap: grafana-dashboards-repo
+    mountPath: /var/lib/grafana/dashboards/default/unified-world-tree.json
+    subPath: unified-world-tree.json
+    readOnly: true
+  - name: repo-dashboard-master-health
+    configMap: grafana-dashboards-repo
+    mountPath: /var/lib/grafana/dashboards/default/master-health.json
+    subPath: master-health-backup.json
+    readOnly: true
+  - name: repo-dashboard-aks-maintenance-jobs
+    configMap: grafana-dashboards-repo
+    mountPath: /var/lib/grafana/dashboards/default/aks-maintenance-jobs.json
+    subPath: aks-maintenance-jobs.json
+    readOnly: true
+
+# Some upstream dashboards share the same UID, which breaks provisioning ("the
+# same UID is used more than once") and disables DB writes for the provider.
+# Patch the downloaded JSON on startup to ensure unique UIDs.
+extraInitContainers:
+  - name: fix-dashboard-uids
+    image: busybox:1.36.1
+    imagePullPolicy: IfNotPresent
+    command: ["sh", "-c"]
+    args:
+      - |
+        set -euf
+        f="/var/lib/grafana/dashboards/default/loki-quick-search.json"
+        if [ -f "$f" ]; then
+          # Grafana.com dashboards 13186 and 12019 currently share uid=liz0yRCZz.
+          sed -i 's/"uid": "liz0yRCZz"/"uid": "loki-quick-search"/' "$f" || true
+        fi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
+    volumeMounts:
+      - name: storage
+        mountPath: /var/lib/grafana
+
 # Grafana configuration
 grafana.ini:
   server:
@@ -127,766 +173,54 @@ dashboardProviders:
         options:
           path: /var/lib/grafana/dashboards/default
 
-# Inline Dashboards
+# Dashboards
+# Custom dashboards live in `dashboards/*.json` and are mounted into the provider
+# path by `extraConfigmapMounts` (see above). Public dashboards (gnet) are
+# downloaded at startup into the same path.
 dashboards:
   default:
-    master-health:
-      json: |
-        {
-          "title": "Master Health Dashboard",
-          "uid": "master-health",
-          "tags": ["hub", "spoke", "health"],
-          "timezone": "browser",
-          "templating": {
-            "list": [
-              {
-                "name": "cluster",
-                "type": "query",
-                "query": "label_values(up, cluster)",
-                "refresh": 1,
-                "includeAll": true,
-                "allValue": ".*",
-                "multi": false
-              }
-            ]
-          },
-          "panels": [
-            {
-              "title": "What this dashboard means",
-              "type": "text",
-              "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
-              "options": {
-                "mode": "markdown",
-                "content": "This is a **hub health** dashboard.\n\n- **Targets Up**: how many Prometheus scrape targets are responding.\n- **Nodes Ready / CPU / Memory / Disk**: infrastructure pressure signals.\n- **Restarts / Not Ready**: early warning that workloads are unstable.\n- **PVC Usage**: avoid hitting free-tier storage surprises.\n- **Egress (GiB)**: outbound bytes *this dashboard time range* (set time to **This month so far** for a monthly view).\n\nTip: set the time range to **Last 15m** when debugging, and **Last 6h/24h** to spot trends."
-              }
-            },
-            {
-              "title": "Targets Up",
-              "type": "stat",
-              "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
-              "targets": [
-                { "expr": "sum(up)", "legendFormat": "Targets Up" }
-              ]
-            },
-            {
-              "title": "Nodes Ready",
-              "type": "stat",
-              "gridPos": { "h": 4, "w": 6, "x": 6, "y": 4 },
-              "targets": [
-                { "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})", "legendFormat": "Ready Nodes" }
-              ]
-            },
-            {
-              "title": "Pods Not Ready",
-              "type": "stat",
-              "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 },
-              "targets": [
-                { "expr": "sum(max by (namespace,pod) (1 - kube_pod_status_ready{condition=\"true\"}))", "legendFormat": "Pods Not Ready" }
-              ]
-            },
-            {
-              "title": "Container Restarts (last 1h)",
-              "type": "stat",
-              "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 },
-              "targets": [
-                { "expr": "sum(increase(kube_pod_container_status_restarts_total[1h]))", "legendFormat": "Restarts/1h" }
-              ]
-            },
-            {
-              "title": "Node CPU % (avg by node)",
-              "type": "timeseries",
-              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-              "targets": [
-                { "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}" }
-              ]
-            },
-            {
-              "title": "Node Memory % (avg by node)",
-              "type": "timeseries",
-              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-              "targets": [
-                { "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))", "legendFormat": "{{instance}}" }
-              ]
-            },
-            {
-              "title": "Guardrail (Node Root Disk Free %)",
-              "type": "gauge",
-              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-              "targets": [
-                { "expr": "min(100 * (node_filesystem_avail_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\", fstype!~\"tmpfs|overlay\"}))", "legendFormat": "Min Root Free %" }
-              ],
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      { "color": "red", "value": null },
-                      { "color": "yellow", "value": 10 },
-                      { "color": "green", "value": 15 }
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              "title": "PVC Usage % (Grafana + Prometheus)",
-              "type": "timeseries",
-              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-              "targets": [
-                { "expr": "100 * (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\"})", "legendFormat": "{{persistentvolumeclaim}}" }
-              ]
-            },
-            {
-              "title": "Egress (GiB, this range)",
-              "type": "stat",
-              "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
-              "targets": [
-                { "expr": "sum(increase(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*\"}[$__range])) / 1024 / 1024 / 1024", "legendFormat": "Egress GiB" }
-              ],
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "gbytes",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      { "color": "green", "value": null },
-                      { "color": "yellow", "value": 8000 },
-                      { "color": "red", "value": 9500 }
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              "title": "Alerts Firing",
-              "type": "stat",
-              "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
-              "targets": [
-                { "expr": "count(ALERTS{alertstate=\"firing\"})", "legendFormat": "Firing" }
-              ]
-            },
-            {
-              "title": "ArgoCD Apps Not Healthy",
-              "type": "stat",
-              "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
-              "targets": [
-                { "expr": "count(argocd_app_info{health_status!=\"Healthy\"})", "legendFormat": "Not Healthy" }
-              ]
-            },
-            {
-              "title": "Ingress 5xx Rate (/s)",
-              "type": "timeseries",
-              "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
-              "targets": [
-                { "expr": "sum(rate(nginx_ingress_controller_requests{status=~\"5..\"}[5m]))", "legendFormat": "5xx/s" }
-              ]
-            },
-            {
-              "title": "Ingress Latency p95 (s)",
-              "type": "timeseries",
-              "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
-              "targets": [
-                { "expr": "histogram_quantile(0.95, sum by (le) (rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" }
-              ]
-            },
-            {
-              "title": "Top Restarts (24h)",
-              "type": "table",
-              "gridPos": { "h": 10, "w": 12, "x": 0, "y": 40 },
-              "targets": [
-                { "expr": "topk(10, increase(kube_pod_container_status_restarts_total[24h]))", "format": "table", "instant": true }
-              ]
-            },
-            {
-              "title": "Targets Down",
-              "type": "table",
-              "gridPos": { "h": 10, "w": 12, "x": 12, "y": 40 },
-              "targets": [
-                { "expr": "topk(20, sum by (job, instance) (up == 0))", "format": "table", "instant": true }
-              ]
-            },
-            {
-              "title": "App Stack (Monitoring + ArgoCD Pods Ready)",
-              "type": "state-timeline",
-              "gridPos": { "h": 10, "w": 24, "x": 0, "y": 50 },
-              "targets": [
-                { "expr": "kube_pod_container_status_ready{namespace=~\"monitoring|argocd\"}", "legendFormat": "{{namespace}}/{{pod}}", "format": "time_series", "instant": false, "range": true }
-              ]
-            }
-          ]
-        }
-    unified-world-tree:
-      json: |
-          {
-            "title": "🌳 Unified World Tree - Multi-Cluster Health",
-            "uid": "unified-world-tree",
-            "tags": ["hub", "spoke", "world-tree", "multi-cluster"],
-            "timezone": "browser",
-            "refresh": "30s",
-            "templating": {
-              "list": [
-                {
-                  "name": "cluster",
-                  "type": "query",
-                  "query": "label_values(up, cluster)",
-                  "refresh": 1,
-                  "includeAll": true,
-                  "allValue": ".*",
-                  "multi": true,
-                  "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": "$__all"
-                  }
-                }
-              ]
-            },
-            "panels": [
-              {
-                "id": 1,
-                "title": "🌳 World Tree Overview",
-                "type": "text",
-                "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
-                "options": {
-                  "mode": "markdown",
-                  "content": "## Unified World Tree Dashboard\n\nThis dashboard provides a **unified view** of all clusters in the World Tree infrastructure:\n\n- **Hub (OKE)**: Central observability and GitOps hub\n- **Spoke (Kind Lab)**: Training/lab environment connected via L4 proxy\n\n**Key Metrics**:\n- Cluster connectivity and health status\n- Node resources (CPU, Memory, Disk) across all clusters\n- Pod health and restarts\n- Remote write status (Spoke → Hub)\n- Storage usage and alerts\n\n💡 **Tip**: Use the cluster filter to focus on a specific cluster, or view all clusters together for comparison."
-                }
-              },
-              {
-                "id": 2,
-                "title": "Cluster Status",
-                "type": "stat",
-                "gridPos": { "h": 6, "w": 6, "x": 0, "y": 4 },
-                "targets": [
-                  {
-                    "expr": "count(count by (cluster) (up{cluster=~\"$cluster\"}))",
-                    "legendFormat": "Clusters Online"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "thresholds"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "red", "value": null },
-                        { "color": "yellow", "value": 1 },
-                        { "color": "green", "value": 2 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 3,
-                "title": "Total Nodes Ready",
-                "type": "stat",
-                "gridPos": { "h": 6, "w": 6, "x": 6, "y": 4 },
-                "targets": [
-                  {
-                    "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\",cluster=~\"$cluster\"})",
-                    "legendFormat": "Ready Nodes"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "thresholds"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "red", "value": null },
-                        { "color": "yellow", "value": 1 },
-                        { "color": "green", "value": 2 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 4,
-                "title": "Targets Up (by Cluster)",
-                "type": "stat",
-                "gridPos": { "h": 6, "w": 6, "x": 12, "y": 4 },
-                "targets": [
-                  {
-                    "expr": "sum(up{cluster=~\"$cluster\"})",
-                    "legendFormat": "Targets Up"
-                  }
-                ]
-              },
-              {
-                "id": 5,
-                "title": "Remote Write Status (Spoke → Hub)",
-                "type": "stat",
-                "gridPos": { "h": 6, "w": 6, "x": 18, "y": 4 },
-                "targets": [
-                  {
-                    "expr": "up{job=~\"node-exporter|kube-state-metrics|kubernetes-nodes\",cluster=\"kind-kind-cluster\"}",
-                    "legendFormat": "{{job}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "thresholds"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "red", "value": 0 },
-                        { "color": "green", "value": 1 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 6,
-                "title": "Node CPU Usage % (by Cluster)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
-                "targets": [
-                  {
-                    "expr": "100 - (avg by (cluster, instance) (rate(node_cpu_seconds_total{mode=\"idle\",cluster=~\"$cluster\"}[5m])) * 100)",
-                    "legendFormat": "{{cluster}} - {{instance}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "percent",
-                    "min": 0,
-                    "max": 100,
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "green", "value": null },
-                        { "color": "yellow", "value": 70 },
-                        { "color": "red", "value": 85 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 7,
-                "title": "Node Memory Usage % (by Cluster)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
-                "targets": [
-                  {
-                    "expr": "100 * (1 - (node_memory_MemAvailable_bytes{cluster=~\"$cluster\"} / node_memory_MemTotal_bytes{cluster=~\"$cluster\"}))",
-                    "legendFormat": "{{cluster}} - {{instance}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "percent",
-                    "min": 0,
-                    "max": 100,
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "green", "value": null },
-                        { "color": "yellow", "value": 80 },
-                        { "color": "red", "value": 90 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 8,
-                "title": "Node Disk Free % (by Cluster)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
-                "targets": [
-                  {
-                    "expr": "100 * (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\",cluster=~\"$cluster\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\",cluster=~\"$cluster\"})",
-                    "legendFormat": "{{cluster}} - {{instance}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "percent",
-                    "min": 0,
-                    "max": 100,
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "red", "value": null },
-                        { "color": "yellow", "value": 15 },
-                        { "color": "green", "value": 20 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 9,
-                "title": "Pods Not Ready (by Cluster)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
-                "targets": [
-                  {
-                    "expr": "sum by (cluster) (max by (namespace,pod,cluster) (1 - kube_pod_status_ready{condition=\"true\",cluster=~\"$cluster\"}))",
-                    "legendFormat": "{{cluster}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "palette-classic"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "green", "value": 0 },
-                        { "color": "yellow", "value": 1 },
-                        { "color": "red", "value": 2 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 10,
-                "title": "Container Restarts (24h, by Cluster)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
-                "targets": [
-                  {
-                    "expr": "sum by (cluster) (increase(kube_pod_container_status_restarts_total{cluster=~\"$cluster\"}[24h]))",
-                    "legendFormat": "{{cluster}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "palette-classic"
-                    }
-                  }
-                }
-              },
-              {
-                "id": 11,
-                "title": "Alerts Firing (by Cluster)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
-                "targets": [
-                  {
-                    "expr": "count by (cluster) (ALERTS{alertstate=\"firing\",cluster=~\"$cluster\"})",
-                    "legendFormat": "{{cluster}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "palette-classic"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "green", "value": 0 },
-                        { "color": "yellow", "value": 1 },
-                        { "color": "red", "value": 2 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 12,
-                "title": "Hub (OKE) - PVC Usage %",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
-                "targets": [
-                  {
-                    "expr": "100 * (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\",cluster=~\"oke.*|.*hub.*\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~\"grafana|prometheus-server\",cluster=~\"oke.*|.*hub.*\"})",
-                    "legendFormat": "{{persistentvolumeclaim}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "percent",
-                    "min": 0,
-                    "max": 100,
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "green", "value": null },
-                        { "color": "yellow", "value": 80 },
-                        { "color": "red", "value": 90 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 13,
-                "title": "ArgoCD Applications Health (Hub)",
-                "type": "stat",
-                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
-                "targets": [
-                  {
-                    "expr": "count(argocd_app_info{health_status=\"Healthy\"})",
-                    "legendFormat": "Healthy"
-                  },
-                  {
-                    "expr": "count(argocd_app_info{health_status!=\"Healthy\"})",
-                    "legendFormat": "Not Healthy"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "thresholds"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        { "color": "red", "value": null },
-                        { "color": "green", "value": 1 }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "id": 14,
-                "title": "Remote Write Metrics Received (Spoke → Hub)",
-                "type": "timeseries",
-                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
-                "targets": [
-                  {
-                    "expr": "sum(rate(prometheus_remote_write_samples_total{cluster=\"kind-kind-cluster\"}[5m]))",
-                    "legendFormat": "Samples/sec"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "short",
-                    "color": {
-                      "mode": "palette-classic"
-                    }
-                  }
-                }
-              },
-              {
-                "id": 15,
-                "title": "Cluster Comparison - Node Count",
-                "type": "bargauge",
-                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
-                "targets": [
-                  {
-                    "expr": "count by (cluster) (kube_node_info{cluster=~\"$cluster\"})",
-                    "legendFormat": "{{cluster}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "short",
-                    "color": {
-                      "mode": "palette-classic"
-                    }
-                  }
-                }
-              },
-              {
-                "id": 16,
-                "title": "Top Pods by CPU Usage (All Clusters)",
-                "type": "table",
-                "gridPos": { "h": 10, "w": 12, "x": 0, "y": 50 },
-                "targets": [
-                  {
-                    "expr": "topk(10, sum by (pod, namespace, cluster) (rate(container_cpu_usage_seconds_total{cluster=~\"$cluster\",container!=\"POD\",container!=\"\"}[5m])))",
-                    "format": "table",
-                    "instant": true,
-                    "legendFormat": "{{cluster}}/{{namespace}}/{{pod}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "short",
-                    "custom": {
-                      "displayMode": "color-background"
-                    }
-                  }
-                }
-              },
-              {
-                "id": 17,
-                "title": "Top Pods by Memory Usage (All Clusters)",
-                "type": "table",
-                "gridPos": { "h": 10, "w": 12, "x": 12, "y": 50 },
-                "targets": [
-                  {
-                    "expr": "topk(10, sum by (pod, namespace, cluster) (container_memory_working_set_bytes{cluster=~\"$cluster\",container!=\"POD\",container!=\"\"}))",
-                    "format": "table",
-                    "instant": true,
-                    "legendFormat": "{{cluster}}/{{namespace}}/{{pod}}"
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "bytes",
-                    "custom": {
-                      "displayMode": "color-background"
-                    }
-                  }
-                }
-              },
-              {
-                "id": 18,
-                "title": "Targets Down (by Cluster)",
-                "type": "table",
-                "gridPos": { "h": 10, "w": 12, "x": 0, "y": 60 },
-                "targets": [
-                  {
-                    "expr": "up{cluster=~\"$cluster\"} == 0",
-                    "format": "table",
-                    "instant": true
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "custom": {
-                      "displayMode": "color-background"
-                    },
-                    "mappings": [
-                      {
-                        "type": "value",
-                        "options": {
-                          "0": {
-                            "text": "DOWN",
-                            "color": "red"
-                          },
-                          "1": {
-                            "text": "UP",
-                            "color": "green"
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "id": 19,
-                "title": "Firing Alerts (All Clusters)",
-                "type": "table",
-                "gridPos": { "h": 10, "w": 12, "x": 12, "y": 60 },
-                "targets": [
-                  {
-                    "expr": "ALERTS{alertstate=\"firing\",cluster=~\"$cluster\"}",
-                    "format": "table",
-                    "instant": true
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "custom": {
-                      "displayMode": "color-background"
-                    }
-                  }
-                }
-              },
-              {
-                "id": 20,
-                "title": "Cluster Health Timeline",
-                "type": "state-timeline",
-                "gridPos": { "h": 10, "w": 24, "x": 0, "y": 70 },
-                "targets": [
-                  {
-                    "expr": "up{cluster=~\"$cluster\"}",
-                    "legendFormat": "{{cluster}} - {{job}}",
-                    "format": "time_series",
-                    "instant": false,
-                    "range": true
-                  }
-                ],
-                "fieldConfig": {
-                  "defaults": {
-                    "mappings": [
-                      {
-                        "type": "value",
-                        "options": {
-                          "0": {
-                            "text": "DOWN",
-                            "color": "red"
-                          },
-                          "1": {
-                            "text": "UP",
-                            "color": "green"
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            ],
-            "schemaVersion": 38,
-            "version": 1,
-            "links": []
-          }
     # Grafana.com dashboards (gnet). Pin revisions as needed.
     node-exporter-full:
       gnetId: 1860
+      revision: latest
       datasource: Prometheus
     k8s-views-global:
       gnetId: 15757
+      revision: latest
       datasource: Prometheus
     k8s-views-pods:
       gnetId: 15760
+      revision: latest
       datasource: Prometheus
     k8s-dashboard-cn-20240513-starsl:
       gnetId: 13105
+      revision: latest
       datasource: Prometheus
     rocketchat-metrics:
       gnetId: 23428
+      revision: latest
       datasource: Prometheus
     rocketchat-microservices:
       gnetId: 23427
+      revision: latest
       datasource: Prometheus
     rocketchat-mongodb-single-node:
       gnetId: 23712
+      revision: latest
       datasource: Prometheus
     windows-exporter-starsl-20230531:
       gnetId: 10467
+      revision: latest
       datasource: Prometheus
     loki-dashboard:
       gnetId: 13186
+      revision: latest
       datasource: Loki
     loki-quick-search:
       gnetId: 12019
+      revision: latest
       datasource: Loki
     opentelemetry-tempo:
       gnetId: 23242
+      revision: latest
       datasource: Tempo
-    aks-maintenance-jobs:
-      json: |
-        {
-          "title": "AKS Maintenance Jobs",
-          "uid": "aks-maintenance-jobs",
-          "tags": ["aks-canepro", "cronjobs", "kubernetes", "maintenance"],
-          "timezone": "browser",
-          "schemaVersion": 38,
-          "version": 1,
-          "panels": [
-            {
-              "id": 1,
-              "title": "TODO: Add AKS maintenance panels",
-              "type": "text",
-              "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
-              "options": {
-                "mode": "markdown",
-                "content": "This dashboard is provisioned from git. Replace this placeholder with the AKS maintenance job panels."
-              }
-            }
-          ]
-        }

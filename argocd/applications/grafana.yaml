@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: grafana
   namespace: argocd
+  annotations:
+    # App-of-apps ordering: sync after grafana-dashboards so the ConfigMap exists
+    # before the Grafana Deployment starts.
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   sources:

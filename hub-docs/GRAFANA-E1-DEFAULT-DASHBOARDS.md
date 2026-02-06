@@ -100,8 +100,8 @@ Optional (add if you use them):
 
 1. **In-repo JSON**  
    - Place dashboard JSONs under `dashboards/` (e.g. `master-health-backup.json`, `unified-world-tree.json`, and any new files like `node-exporter-full.json`).  
-   - Ensure the Grafana Helm chart’s dashboard provisioning points at a path that includes these files (e.g. a ConfigMap or volume that mounts `dashboards/*.json` into `/var/lib/grafana/dashboards/default` or the provider path you use).  
-   - Today, `helm/grafana-values.yaml` embeds **Master Health** inline (`dashboards.default.master-health`); that is re-applied on every deploy/restart. For E1, that’s enough for Master Health; add other defaults as files or inline as needed.
+   - These files are packaged into a ConfigMap by the `grafana-dashboards` ArgoCD app (see `argocd/applications/grafana-dashboards.yaml` + `dashboards/kustomization.yaml`).  
+   - Grafana mounts them into the provider path via `extraConfigmapMounts` in `helm/grafana-values.yaml`, so they load on every Grafana start (E1).
 
 2. **Public IDs**  
    - **Option A:** Download JSON from `https://grafana.com/api/dashboards/<ID>/revisions/<rev>/download` (or from the UI), save into `dashboards/<name>.json`, and add to provisioning so they load from git.  
@@ -115,8 +115,9 @@ Optional (add if you use them):
 ## 5. Verify provisioning path
 
 - Current provider in `helm/grafana-values.yaml`: `path: /var/lib/grafana/dashboards/default`.  
-- Inline dashboards from the chart are written into that path by the Helm deployment.  
-- For **file-based** dashboards in `dashboards/*.json`, ensure they are mounted into that path (e.g. via a chart value that adds a volume/ConfigMap for `dashboards/`). If not, add a volume and mount so that `dashboards/master-health-backup.json` and `dashboards/unified-world-tree.json` (and any new JSONs) appear under `/var/lib/grafana/dashboards/default/`. Then they will load on every Grafana start (E1).
+- In-repo dashboards in `dashboards/*.json` are mounted into that path via:
+  - ArgoCD app `grafana-dashboards` (creates ConfigMap `grafana-dashboards-repo`)
+  - Grafana Helm value `extraConfigmapMounts` (mounts each JSON into `/var/lib/grafana/dashboards/default/`)
 
 ---
 

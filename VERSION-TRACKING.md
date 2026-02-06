@@ -15,7 +15,9 @@ This document tracks all software versions used in the OKE Observability Hub dep
 
 ## Dashboard Provisioning Policy
 
-Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`. Grafana.com (gnet) dashboards are pulled at the **latest** revision unless explicitly pinned. If you pin a revision, document the reason and update it during regular version reviews.
+Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml` plus in-repo JSONs under `dashboards/` (mounted into Grafana via the `grafana-dashboards` ArgoCD app).
+
+**Grafana.com (gnet) revision policy**: the Grafana Helm chart defaults to downloading **revision 1** unless `revision:` is explicitly set. Use `revision: latest` for latest-first behavior, and pin a numeric revision only when you have a specific reason (document why and update it during regular version reviews).
 
 ## Quick Upgrade Reference
 
