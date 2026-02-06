@@ -47,7 +47,7 @@ Dashboards are provisioned automatically on startup via the Grafana Helm chart v
 
 **Default dashboard set**: See `hub-docs/GRAFANA-E1-DEFAULT-DASHBOARDS.md`.
 
-**Latest-first policy**: Grafana.com (gnet) dashboards are pulled at the latest revision unless explicitly pinned.
+**Latest-first policy (gnet)**: Set `revision: latest` for Grafana.com dashboards in `helm/grafana-values.yaml`. The Grafana Helm chart otherwise defaults to downloading revision `1`.
 
 ### Manual import (optional)
 
@@ -58,7 +58,7 @@ Use this only for ad-hoc testing or one-off dashboards.
 3. Select datasources (Prometheus, Loki, etc.)
 4. Click **Import**
 
-**Note**: The **🌳 Unified World Tree** dashboard provides a multi-cluster view with a `cluster` variable dropdown. Import it from `dashboards/unified-world-tree.json` in this repo for best results.
+**Note**: The **🌳 Unified World Tree** dashboard provides a multi-cluster view with a `cluster` variable dropdown. It is provisioned from this repo (source JSON: `dashboards/unified-world-tree.json`); import manually only for ad-hoc testing.
 
 ---
 
