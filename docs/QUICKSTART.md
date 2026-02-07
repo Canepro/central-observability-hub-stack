@@ -105,7 +105,7 @@ kubectl top pods -n monitoring
 
 ### Note: Live PVC usage panel
 If the “Master Health Dashboard” shows `No data` for PVC usage, Prometheus may not be scraping kubelet volume stats.
-This repo enables them via `helm/prometheus-values.yaml` (`extraScrapeConfigs`).
+This repo enables them via `helm/prometheus-values.yaml` (`serverFiles.prometheus.yml.scrape_configs` job `kubelet-volume-stats`).
 
 ### Test 3: View Logs (Multi-Cluster)
 
@@ -139,6 +139,21 @@ curl -H "Content-Type: application/json" \
 # Kill port-forward
 kill %1
 ```
+
+### Test 5: View Traces (Real Ingress Traffic)
+
+This repo enables OpenTelemetry tracing for `ingress-nginx` and forwards spans to Tempo via the in-cluster `otel-collector`.
+
+1. Generate a few requests through ingress (from inside the cluster):
+   ```bash
+   kubectl run -it --rm curl --image=curlimages/curl --restart=Never -- \
+     curl -sS -H "Host: grafana.canepro.me" http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/ >/dev/null
+   ```
+2. Explore (Prometheus) and confirm Tempo is receiving spans:
+   ```promql
+   sum(increase(tempo_distributor_spans_received_total[5m]))
+   ```
+3. Explore (Tempo) and search for service `ingress-nginx`.
 
 ---
 
@@ -232,12 +247,10 @@ kubectl delete pod alertmanager-prometheus-alertmanager-0 -n monitoring
 
 ## 📚 Next Steps
 
-1. ✅ **Access Grafana** and configure Loki datasource
-2. ✅ **Import dashboards** for cluster monitoring
-3. ✅ **Test queries** in Explore
-4. 📖 **Read [CONFIGURATION.md](CONFIGURATION.md)** to connect external apps
-5. 🎨 **Create custom dashboards** for your Rocket.Chat deployments
-6. 🚨 **Set up alerting** for critical metrics
+1. ✅ **Test queries** in Explore (Prometheus/Loki/Tempo)
+2. 📖 **Read [CONFIGURATION.md](CONFIGURATION.md)** to connect external clusters and apps (remote_write, Loki push, OTLP traces)
+3. 🎨 **Extend dashboards** by adding JSON to `dashboards/` (GitOps-provisioned via `grafana-dashboards`)
+4. 🚨 **Set up alerting** for critical metrics
 
 ---
 

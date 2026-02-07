@@ -12,6 +12,8 @@ This repository is the GitOps source of truth for a production-ready observabili
 | **Prometheus** | Metrics collection and alerting | Block Volume (50Gi) |
 | **Loki** | Log aggregation | OCI Object Storage (S3) |
 | **Tempo** | Distributed tracing | OCI Object Storage (S3) |
+| **OpenTelemetry Collector** | Receives OTLP traces and forwards to Tempo | Ephemeral (deployment) |
+| **NGINX Ingress** | Single LoadBalancer + HTTPS routing | OCI NLB (Always Free tier limits apply) |
 | **ArgoCD** | GitOps continuous delivery | - |
 
 ## Architecture
@@ -35,9 +37,13 @@ flowchart LR
     A -->|GitOps sync| P[Prometheus]
     A -->|GitOps sync| L[Loki]
     A -->|GitOps sync| T[Tempo]
+    A -->|GitOps sync| O[OTel Collector]
+    A -->|GitOps sync| I[ingress-nginx]
     G -->|queries| P
     G -->|queries| L
     G -->|queries| T
+    I -->|OTLP spans| O
+    O -->|OTLP spans| T
   end
 
   Git[(Git repo)] -->|manifests/values| A

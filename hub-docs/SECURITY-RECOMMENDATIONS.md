@@ -62,15 +62,15 @@ spec:
       http:
         paths:
           # Prometheus
-          - path: /prometheus
+          - path: /api/v1/write
             pathType: Prefix
             backend:
               service:
-                name: prometheus-prometheus
+                name: prometheus-server
                 port:
-                  number: 9090
+                  number: 80
           # Loki
-          - path: /loki
+          - path: /loki/api/v1/push
             pathType: Prefix
             backend:
               service:
@@ -78,7 +78,7 @@ spec:
                 port:
                   number: 80
           # Tempo OTLP HTTP
-          - path: /tempo
+          - path: /v1/traces
             pathType: Prefix
             backend:
               service:
@@ -121,7 +121,10 @@ annotations:
   nginx.ingress.kubernetes.io/use-regex: "true"
 ```
 
-Then use paths like `/prometheus(/|$)(.*)`.
+This repo's default is to avoid rewrites and use direct ingestion paths:
+- `/api/v1/write` (Prometheus remote_write)
+- `/loki/api/v1/push` (Loki push)
+- `/v1/traces` (Tempo OTLP HTTP)
 
 ---
 
@@ -139,7 +142,7 @@ If OKE and AKS are in the same cloud provider or connected via VPN:
 
 1. **Set up VPN/Peering** between OKE and AKS networks
 2. **Use internal service names** directly:
-   - `http://prometheus-prometheus.monitoring.svc.cluster.local:9090`
+   - `http://prometheus-server.monitoring.svc.cluster.local:80`
    - Requires DNS resolution between clusters (CoreDNS federation)
 
 3. **Or use internal LoadBalancer IPs** (if available in your cloud setup)
@@ -294,4 +297,3 @@ If you absolutely need direct LoadBalancers (not recommended), at minimum:
 
 **Last Updated**: Based on current OKE deployment  
 **Status**: ⚠️ Security recommendations for production use
-
