@@ -10,6 +10,16 @@ controller:
       # Use OCI Network Load Balancer (Always Free & Fast)
       oci.oraclecloud.com/load-balancer-type: "nlb"
 
+  # Enable OpenTelemetry tracing for real ingress traffic (exported via OTLP gRPC).
+  # The collector is deployed by ArgoCD app `otel-collector` (namespace `monitoring`).
+  config:
+    enable-opentelemetry: "true"
+    otlp-collector-host: "otel-collector.monitoring.svc.cluster.local"
+    otlp-collector-port: "4317"
+    otel-service-name: "ingress-nginx"
+    otel-sampler: "AlwaysOn"
+    otel-sampler-ratio: "1.0"
+
   # Resource limits for Always Free tier
   resources:
     requests:
