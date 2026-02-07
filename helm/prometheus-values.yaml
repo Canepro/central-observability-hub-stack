@@ -105,6 +105,10 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
+          # Compatibility label: many k8s dashboards expect `node=...` on kubelet/cAdvisor series.
+          - source_labels:
+              - __meta_kubernetes_node_name
+            target_label: node
           - source_labels:
               - __meta_kubernetes_node_name
             target_label: service
@@ -128,6 +132,10 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
+          # Compatibility label: many k8s dashboards expect `node=...` on kubelet/cAdvisor series.
+          - source_labels:
+              - __meta_kubernetes_node_name
+            target_label: node
           - source_labels:
               - __meta_kubernetes_node_name
             target_label: service
