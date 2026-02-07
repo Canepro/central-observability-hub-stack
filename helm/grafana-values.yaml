@@ -108,6 +108,20 @@ extraInitContainers:
           # Grafana.com dashboards 13186 and 12019 currently share uid=liz0yRCZz.
           sed -i 's/"uid": "liz0yRCZz"/"uid": "loki-quick-search"/' "$f" || true
         fi
+
+        # StarsL k8s dashboard (gnet 13105) ships with:
+        # - a VictoriaMetrics-specific datasource UID placeholder
+        # - `origin_prometheus=~"$origin_prometheus"` label matchers
+        # Our stack is Prometheus-backed and doesn't have the `origin_prometheus` label.
+        f="/var/lib/grafana/dashboards/default/k8s-dashboard-cn-20240513-starsl.json"
+        if [ -f "$f" ]; then
+          sed -E -i \
+            -e 's/\"uid\": \"\\$\\{DS__VICTORIAMETRICS-PROD-ALL\\}\"/\"uid\": \"prometheus\"/g' \
+            -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\",//g' \
+            -e 's/,origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
+            -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
+            "$f" || true
+        fi
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -143,17 +157,20 @@ datasources:
     apiVersion: 1
     datasources:
       - name: Prometheus
+        uid: prometheus
         type: prometheus
         access: proxy
         url: http://prometheus-server.monitoring.svc.cluster.local:80
         isDefault: true
         editable: true
       - name: Loki
+        uid: loki
         type: loki
         access: proxy
         url: http://loki-gateway.monitoring.svc.cluster.local
         editable: true
       - name: Tempo
+        uid: tempo
         type: tempo
         access: proxy
         url: http://tempo.monitoring.svc.cluster.local:3200
