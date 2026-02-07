@@ -20,6 +20,10 @@ The version-check pipeline compares Helm chart versions in `argocd/applications/
 
 **PR content (auto-generated):** The PR description states that it includes version updates detected by automated checks, lists each update (e.g. `PROMETHEUS: 28.7.0 → 28.8.0`), links to the Jenkins build, and includes a review checklist (release notes, breaking changes, ArgoCD sync, `VERSION-TRACKING.md`). The PR diff contains the monitoring/observability manifest changes (e.g. Prometheus upgraded to the new patch) and the version-tracking document with updated "Last Updated" timestamps.
 
+**Stability notes:**
+- The pipeline updates both `**Last Updated**` and the `**Document Last Updated**` footer to keep timestamps aligned.
+- When updating an existing open PR branch, the pipeline retries `git push` with a `rebase` to avoid non-fast-forward failures from concurrent runs.
+
 **Requirements for PR branch updates to work:**
 
 - **mikefarah/yq** is required for in-place YAML edits. Alpine’s `apk yq` (kislyuk) uses different syntax; the pipeline installs mikefarah/yq to `/usr/local/bin/yq` so manifest updates (e.g. `argocd/applications/prometheus.yaml`) are applied correctly. Without it, the PR may only contain the `VERSION-TRACKING.md` date change.
