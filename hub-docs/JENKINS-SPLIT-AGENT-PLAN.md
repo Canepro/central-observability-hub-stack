@@ -41,11 +41,11 @@ The Hub is sized for **OCI Always Free Tier**. Adding Jenkins on OKE must respec
 | Item | Size | Notes |
 |------|------|-------|
 | Worker node boot volumes | 2 × 47GB = **94GB** | OKE node pool (2 × VM.Standard.A1.Flex) |
-| Observability Hub PVCs | 2 × 50GB = **100GB** | Prometheus 50Gi, Grafana 50Gi (Block Volumes) |
+| Observability Hub PVCs | 2 × 50GB = **100GB** | Prometheus 50Gi + Jenkins 50Gi (Grafana is E1/emptyDir) |
 | **Current total** | **194GB** | **Buffer: 6GB** |
 | Loki / Tempo | Object Storage (S3) | Not counted in the 200GB; separate free-tier limits |
 
-Alertmanager already uses **emptyDir** (no PVC) to stay under 200GB. There is **no room** for a new Block Volume PVC for Jenkins without exceeding the limit or changing existing usage.
+Alertmanager already uses **emptyDir** (no PVC) to stay under 200GB. With Prometheus + Jenkins using the two 50GB Block Volume slots, there is **no room** for an additional Block Volume PVC without exceeding the limit or changing existing usage.
 
 **Quota:** OCI Block Volumes have a **minimum size of 50GB** (requesting less in Helm still provisions 50GB). The Hub has **exhausted the 200GB Always Free quota** (194GB used). Any new volume (e.g. Jenkins) is a **paid resource** (PAYG), ~**$0.025/GB** for the portion over 200GB. See `hub-docs/OPERATIONS-HUB.md` (section “OCI Block Volumes: minimum size and quota”).
 

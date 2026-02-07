@@ -3,7 +3,7 @@
 This repo uses an **App-of-Apps** pattern:
 
 - Parent app: `oke-observability-stack` (in `argocd` namespace)
-- Child apps (in `argocd/applications/`): `grafana`, `prometheus`, `loki`, `tempo`, `promtail`, `nginx-ingress`
+- Child apps (in `argocd/applications/`): `grafana-dashboards`, `grafana`, `prometheus`, `loki`, `tempo`, `otel-collector`, `promtail`, `nginx-ingress`
 
 All applications are managed by Argo CD with `prune: true` and `selfHeal: true`.
 
@@ -45,6 +45,15 @@ kubectl -n argocd patch application oke-observability-stack --type merge \
   -p '{"operation":{"sync":{"prune":true}}}'
 ```
 
+### Check app status quickly (CLI)
+
+If you have the ArgoCD CLI configured, this is often the fastest way to see what is wrong:
+
+```bash
+argocd app get <app-name> --grpc-web
+argocd app diff <app-name> --grpc-web
+```
+
 ### Sync a specific app to a git tag / revision
 Useful for “get me back to a known good state” without changing ArgoCD’s tracked branch:
 
@@ -58,6 +67,14 @@ Sync a single child app (recommended for isolated changes):
 kubectl -n argocd patch application loki --type merge \
   -p '{"operation":{"sync":{"prune":true}}}'
 ```
+
+### Grafana dashboards are a separate app (ordering)
+
+This repo provisions in-repo dashboards (JSON under `dashboards/`) via the `grafana-dashboards` app, which creates ConfigMap `grafana-dashboards-repo`.
+
+Grafana mounts that ConfigMap at startup (see `helm/grafana-values.yaml`). If dashboards seem "missing", check that:
+- `grafana-dashboards` is Healthy/Synced
+- Grafana has restarted since the dashboard ConfigMap change (Grafana reads file-provisioned dashboards at startup)
 
 ### Hard refresh (clear “cached manifest” issues)
 
@@ -170,6 +187,8 @@ spec:
 ```
 
 ### Grafana can look Degraded during rollouts (RWO PVC attach contention)
+
+This applies only when Grafana persistence is enabled (RWO PVC). In E1/emptyDir mode (this repo default), there is no PVC attach deadlock, but keeping `maxSurge: 0` is still useful to avoid extra pods during rollouts.
 
 If Grafana uses a **ReadWriteOnce** PVC, the default **RollingUpdate** strategy can lead to a second Grafana pod getting stuck in `Init:0/2` / `PodInitializing` because the PVC is still mounted by the old pod.
 

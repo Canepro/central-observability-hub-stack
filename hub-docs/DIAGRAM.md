@@ -14,6 +14,8 @@ graph LR
 
     subgraph hub ["OKE Hub Cluster (Central Hub)"]
         LB[OCI Load Balancer]
+        IngressNginx[ingress-nginx]
+        OTelCollector[OpenTelemetry Collector]
         
         subgraph backend [Storage & Backend]
             Mimir[(Prometheus: Metrics)]
@@ -33,6 +35,10 @@ graph LR
     LokiAgent -- "Push Logs (HTTPS)" --> LB
     AppTraces -- "OTLP (HTTPS)" --> LB
     
+    %% Ingress traffic tracing (real spans from hub ingress)
+    IngressNginx -- "OTLP (gRPC)" --> OTelCollector
+    OTelCollector -- "OTLP (gRPC)" --> Tempo
+
     LB -- "/api/v1/write" --> Mimir
     LB -- "/loki/api/v1/push" --> Loki
     LB -- "/v1/traces" --> Tempo
@@ -46,6 +52,7 @@ graph LR
 
 ## Flow Description
 1. **Ingestion**: External agents (Prometheus Agent, Promtail) push telemetry via the OCI Load Balancer using HTTPS and Basic Auth.
+   - Hub ingress traces are generated from real ingress traffic (`ingress-nginx`) and forwarded to Tempo via an in-cluster OpenTelemetry Collector.
 2. **Persistence**: The Hub components store high-velocity data (metrics) on Block Volumes and high-volume data (logs/traces) on OCI Object Storage.
 3. **Visualization**: Grafana queries the backend services internally within the cluster.
 4. **Management**: ArgoCD monitors the repository and applies updates to the Hub cluster itself via Server-Side Apply.

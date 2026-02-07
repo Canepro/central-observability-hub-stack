@@ -61,7 +61,7 @@ kubectl exec -n monitoring deployment/grafana -- \
 
 **Important**: Update Grafana root URL to match your domain for proper redirects and OAuth callbacks.
 
-1. Edit `helm/prometheus-values.yaml` (or `grafana-values.yaml` if separate):
+1. Edit `helm/grafana-values.yaml`:
    ```yaml
    grafana:
      grafana.ini:
@@ -79,15 +79,30 @@ kubectl exec -n monitoring deployment/grafana -- \
 
 Configure external Prometheus instances to `remote_write` to the central Prometheus.
 
-#### On External Prometheus
-Add to `prometheus.yml`:
+#### Recommended for external clusters (secure ingress)
+
+Use the authenticated ingestion endpoint exposed via Ingress:
+
+```yaml
+remote_write:
+  - url: https://observability.canepro.me/api/v1/write
+    basic_auth:
+      username: observability-user
+      password: <password>
+    external_labels:
+      cluster: rocket-chat-azure
+      environment: production
+      workspace: production
+      domain: rocketchat.azure.example.com
+```
+
+#### If Prometheus can reach the cluster service (in-cluster / private network)
+
+If the Prometheus instance is running inside the hub cluster (or has private network access to `*.svc.cluster.local`), you can remote_write directly to the ClusterIP service:
+
 ```yaml
 remote_write:
   - url: http://prometheus-server.monitoring.svc.cluster.local:80/api/v1/write
-    # Optional: authentication
-    basic_auth:
-      username: admin
-      password: <password>
     # Optional: external labels to identify source
     external_labels:
       cluster: rocket-chat-azure
@@ -164,6 +179,12 @@ Metrics endpoint: `http://<rocketchat-ip>:9458/metrics`
 
 Deploy Promtail on external systems to forward logs to Loki.
 
+#### Recommended for external systems (secure ingress)
+
+Point Promtail at the authenticated ingestion endpoint:
+- Push URL: `https://observability.canepro.me/loki/api/v1/push`
+- Auth: use the same basic auth credentials as the ingress
+
 #### Expose Loki Gateway (Securely)
 **Option A**: Use port-forward for testing:
 ```bash
@@ -231,6 +252,14 @@ Configure Fluent Bit to forward to Loki:
 
 Deploy OTEL Collector to forward traces to Tempo.
 
+#### In-cluster collector (this repo)
+
+This repo deploys an OpenTelemetry Collector in the hub cluster via ArgoCD:
+- App: `argocd/applications/otel-collector.yaml`
+- Values: `helm/otel-collector-values.yaml`
+
+It receives OTLP (gRPC/HTTP) and exports to the in-cluster Tempo service. This is used for **real traces** from `ingress-nginx` (see `helm/nginx-ingress-values.yaml`).
+
 #### Expose Tempo (Securely)
 **For testing** (port-forward):
 ```bash
@@ -254,10 +283,10 @@ processors:
   batch:
 
 exporters:
-  otlp/http:
+  otlphttp:
     endpoint: https://observability.canepro.me
     headers:
-      authorization: "Basic <base64-encoded-credentials>"
+      Authorization: "Basic <base64-encoded-credentials>"
     # Note: Path /v1/traces is standard OTLP HTTP path
 
 service:
@@ -265,7 +294,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/http]
+      exporters: [otlphttp]
 ```
 
 ### Option 2: Direct Application Instrumentation
@@ -335,8 +364,8 @@ Edit `k8s/alertmanager-config.yaml` and apply.
 2. **Enter dashboard ID**:
    - **315**: Kubernetes Cluster Monitoring
    - **1860**: Node Exporter Full
-   - **13639**: Loki Dashboard
-   - **16537**: Tempo Dashboard
+   - **13186** / **12019**: Loki dashboards (this repo provisions both by default)
+   - **23242**: OpenTelemetry + Tempo (this repo provisions by default)
 
 ---
 

@@ -2,6 +2,14 @@
 
 This guide covers setting up NGINX Ingress Controller with LoadBalancer and configuring Grafana Ingress for domain access.
 
+## GitOps-First (This Repo)
+
+In this repository, Ingress-NGINX is deployed and managed via ArgoCD:
+- Argo app: `argocd/applications/nginx-ingress.yaml`
+- Values: `helm/nginx-ingress-values.yaml`
+
+Prefer: edit values/manifests in git, commit, then sync the Argo app. Use the manual Helm commands below only for one-off/bootstrap scenarios.
+
 ## Prerequisites
 
 - OKE cluster running
@@ -246,6 +254,23 @@ To add more services (e.g., Rocket.Chat):
 
 All services share the same LoadBalancer IP!
 
+## OpenTelemetry Tracing (Real Ingress Traffic -> Tempo)
+
+This repo enables OpenTelemetry tracing in ingress-nginx and exports spans via OTLP gRPC to an in-cluster collector:
+- Collector app: `argocd/applications/otel-collector.yaml`
+- Collector values: `helm/otel-collector-values.yaml`
+- Ingress config keys: `helm/nginx-ingress-values.yaml` under `controller.config`
+
+**How to verify quickly**
+1. Generate a few requests through ingress (from inside the cluster):
+   ```bash
+   kubectl run -it --rm curl --image=curlimages/curl --restart=Never -- \
+     curl -sS -H "Host: grafana.canepro.me" http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/ >/dev/null
+   ```
+2. In Grafana Explore:
+   - Prometheus: query `sum(increase(tempo_distributor_spans_received_total[5m]))` (should be > 0)
+   - Tempo: search for service `ingress-nginx`
+
 ## Cost Considerations
 
 - **1 LoadBalancer**: ~$10-15/month (or free if within Always Free tier)
@@ -257,14 +282,10 @@ All services share the same LoadBalancer IP!
 
 After Ingress is working:
 
-1. Update Grafana root URL in `helm/prometheus-values.yaml`:
-   ```yaml
-   grafana.ini:
-     server:
-       root_url: https://grafana.canepro.me
+1. Update Grafana root URL in `helm/grafana-values.yaml`:
+   - `grafana.ini.server.root_url: https://grafana.canepro.me`
+2. Commit and let ArgoCD reconcile (or sync manually):
+   ```bash
+   kubectl -n argocd patch application grafana --type merge -p '{"operation":{"sync":{"prune":true}}}'
    ```
-
-2. Upgrade Grafana: `helm upgrade prometheus ... -f helm/prometheus-values.yaml`
-
-3. Configure additional services as needed
-
+3. Configure additional services by adding/modifying Ingress manifests under `k8s/` and syncing the owning Argo app.

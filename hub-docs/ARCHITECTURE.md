@@ -59,7 +59,7 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 **Configuration**:
 
 - **Deployment**: 1 replica
-- **Storage**: 50 GiB PVC (OCI Block Volume)
+- **Storage (E1 default in this repo)**: Ephemeral `emptyDir` (dashboards provisioned from git on startup)
 - **Access**: `https://grafana.canepro.me`
 
 ### 2. Prometheus (Metrics Layer)
@@ -96,7 +96,13 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 - **Deployment**: Monolithic
 - **Storage**: **OCI Object Storage (S3 Compatible)**
   - Bucket: `tempo-data`
-- **Access**: `https://observability.canepro.me/tempo` (Basic Auth)
+- **Access (external ingest)**: `https://observability.canepro.me/v1/traces` (OTLP HTTP, Basic Auth)
+- **Access (in-cluster OTLP gRPC)**: `tempo.monitoring.svc.cluster.local:4317`
+
+**Note on "real traces" in this repo**
+- `ingress-nginx` exports spans via OTLP gRPC to the in-cluster `otel-collector`
+- `otel-collector` forwards those spans to Tempo
+- External apps/clusters can send OTLP HTTP to the secure ingress endpoint above
 
 ### 5. NGINX Ingress (The Gatekeeper)
 
@@ -107,9 +113,12 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 - **SSL**: Let's Encrypt (cert-manager)
 - **Authentication**: Basic Auth (`observability-auth` secret)
 - **Path Routing**:
-  - `/prometheus` -> Prometheus Server
-  - `/loki` -> Loki Gateway
-  - `/tempo` -> Tempo Distributor
+  - `/api/v1/write` -> Prometheus remote_write receiver
+  - `/loki/api/v1/push` -> Loki push endpoint
+  - `/v1/traces` -> Tempo OTLP HTTP ingest
+
+**Tracing**
+- Ingress request traces are enabled and exported to Tempo via `otel-collector` (see `helm/nginx-ingress-values.yaml` and `argocd/applications/otel-collector.yaml`).
 
 ## Storage Architecture
 
@@ -117,10 +126,11 @@ This observability stack serves as a **centralized monitoring hub** that aggrega
 
 1. **Block Volumes (PVC)**: Used for high-performance, random-access workloads.
    - Prometheus TSDB (50Gi)
-   - Grafana Database (50Gi)
+   - (Optional) Grafana database (only if you re-enable persistence; E1 uses `emptyDir`)
 
 2. **Ephemeral Storage (emptyDir)**: Used for non-critical transient state to save on OCI quotas.
    - Alertmanager State (Silence/Alert history)
+   - Grafana (E1: dashboards provisioned from git)
 
 3. **Object Storage (S3)**: Used for bulk, long-term data storage (Lower Cost).
    - Loki Chunks & Indexes
@@ -149,7 +159,7 @@ All inter-service communication happens via ClusterIP services within the `monit
 
 Argo CD is installed into the cluster using Terraform + the Helm provider:
 
-- **Terraform**: `terraform/argocd.tf` defines `helm_release.argocd` (chart `argo-cd`, version `5.51.6`).
+- **Terraform**: `terraform/argocd.tf` defines `helm_release.argocd` (chart `argo-cd`; version is pinned in code and tracked in `VERSION-TRACKING.md`).
 - **Ingress**: `argocd.canepro.me` via NGINX Ingress (`ingressClassName: nginx`).
 - **TLS**: cert-manager issues `Certificate/argocd-tls` using `ClusterIssuer/letsencrypt-prod` (created via ingress-shim).
 - **Server mode**: Argo CD server runs with `--insecure` and the ingress terminates TLS.

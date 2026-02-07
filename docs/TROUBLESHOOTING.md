@@ -6,9 +6,10 @@ Common issues and solutions for the OKE observability stack deployment.
 
 1. [Authentication Issues](#authentication-issues)
 2. [Loki Issues](#loki-issues)
-3. [Prometheus Issues](#prometheus-issues)
-4. [Ingress & Network Issues](#ingress--network-issues)
-5. [Pod Issues](#pod-issues)
+3. [Tempo Issues](#tempo-issues)
+4. [Prometheus Issues](#prometheus-issues)
+5. [Ingress & Network Issues](#ingress--network-issues)
+6. [Pod Issues](#pod-issues)
 
 ---
 
@@ -143,6 +144,52 @@ kubectl -n monitoring create secret generic loki-s3-credentials \
   --from-literal=AWS_SECRET_ACCESS_KEY='...'
 ```
 
+### Grafana Loki dashboard error: `parse error ... unexpected IDENTIFIER`
+
+**Symptoms**
+- Loki dashboard panels/variables error with: `parse error at line 1, col 1: syntax error: unexpected IDENTIFIER`
+
+**Root cause**
+The dashboard is trying to run a **Prometheus-style** templating query (e.g. `label_values(kube_pod_info, namespace)`) against the **Loki** datasource. Grafana sends that query to Loki as LogQL and Loki rejects it.
+
+**Fix (this repo)**
+This repo patches the affected upstream Loki dashboards at startup via an initContainer in `helm/grafana-values.yaml`:
+- variable queries rewritten to Loki `label_values(...)` semantics
+- filters rewritten to use `pod=...` (our promtail labels) instead of `instance=...`
+
+If you imported a Loki dashboard manually, re-import from the provisioned set (or patch the dashboard JSON to match Loki templating semantics).
+
+---
+
+## Tempo Issues
+
+### Tempo dashboard shows metrics but no traces
+
+**Symptoms**
+- Tempo datasource tests fine, Tempo dashboards render some panels, but Trace search returns nothing.
+
+**Root cause**
+Tempo only shows traces if something is actually sending spans. Metrics being present does not guarantee traces are being ingested.
+
+**This repo behavior**
+- Tempo OTLP ingest is enabled (service ports 4317/4318).
+- Real tracing is enabled for ingress traffic:
+  - `ingress-nginx` exports spans via OTLP gRPC to the in-cluster collector
+  - `otel-collector` forwards spans to Tempo
+
+**How to verify ingestion**
+1. Generate a few requests through ingress (from inside the cluster):
+   ```bash
+   kubectl run -it --rm curl --image=curlimages/curl --restart=Never -- \
+     curl -sS -H "Host: grafana.canepro.me" http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/ >/dev/null
+   ```
+2. In Grafana Explore (Prometheus), run:
+   ```promql
+   sum(increase(tempo_distributor_spans_received_total[5m]))
+   ```
+   If this is > 0, Tempo is receiving spans.
+3. In Grafana Explore (Tempo), search for service `ingress-nginx`.
+
 ---
 
 ## Prometheus Issues
@@ -182,7 +229,7 @@ These metrics are only present if Prometheus scrapes kubelet `/metrics` (often v
 
 #### Fix (this repo)
 
-Ensure `helm/prometheus-values.yaml` includes the kubelet scrape job under `extraScrapeConfigs`.
+Ensure `helm/prometheus-values.yaml` includes the `kubelet-volume-stats` scrape job under `serverFiles.prometheus.yml.scrape_configs`.
 Then verify in Prometheus (Grafana Explore → Prometheus):
 
 ```promql
@@ -196,6 +243,30 @@ prometheus:
   prometheusSpec:
     enableRemoteWriteReceiver: true
 ```
+
+### Prometheus targets `kubernetes-nodes-cadvisor` / `kubernetes-nodes` are DOWN with `403 Forbidden`
+
+**Symptoms**
+- Kubernetes dashboards show `No data` for container metrics (`container_*`, cAdvisor panels, CPU/memory by container, etc.)
+- Prometheus targets show `kubernetes-nodes` or `kubernetes-nodes-cadvisor` as `DOWN`
+- Target error includes `403 Forbidden`
+
+**Root cause**
+This repo scrapes kubelet/cAdvisor via the apiserver proxy path:
+- `/api/v1/nodes/<node>/proxy/metrics`
+- `/api/v1/nodes/<node>/proxy/metrics/cadvisor`
+
+Prometheus needs RBAC permission for `nodes/proxy`. Prometheus chart v28+ no longer includes that permission by default.
+
+**Fix (this repo)**
+`helm/prometheus-values.yaml` adds an `extraManifests` ClusterRole/Binding granting `nodes/proxy` to the `prometheus-server` ServiceAccount.
+
+**Fast verification**
+In Grafana Explore (Prometheus):
+```promql
+up{job="kubernetes-nodes-cadvisor"}
+```
+Should be `1` for each node.
 
 ---
 
@@ -311,10 +382,28 @@ kubectl -n argocd annotate application grafana argocd.argoproj.io/refresh=hard -
 - The newer pod is stuck in `Init:0/2` with init containers waiting to mount `/var/lib/grafana`
 
 **Root cause**
-Grafana uses a single **ReadWriteOnce** PVC. With the default **RollingUpdate** strategy, Kubernetes may try to start a new pod before terminating the old pod, and the PVC cannot be mounted by both.
+This depends on whether Grafana persistence is enabled:
+- **E1 (this repo default)**: Grafana uses `emptyDir` (`persistence.enabled: false`). A second pod is usually just a rollout/scheduling pressure issue on small nodes, not a PVC deadlock.
+- **When persistence is enabled**: Grafana typically uses a single **ReadWriteOnce** PVC. With a RollingUpdate and `maxSurge > 0`, Kubernetes may try to start a new pod before terminating the old pod, and the PVC cannot be mounted by both.
 
 **Fix (recommended)**
-Configure Grafana rollout to avoid creating a second pod while using an RWO PVC. In `helm/grafana-values.yaml`, use `type: RollingUpdate` with `maxSurge: 0` (and `maxUnavailable: 1`) so the old pod is terminated before the new one starts (brief downtime during rollout).
+Keep `maxSurge: 0` in `helm/grafana-values.yaml` so rollouts do not create an extra Grafana pod:
+- avoids PVC attach contention if you later enable persistence
+- reduces resource spikes on Always Free nodes
+
+### Image pull error: "short-name mode enforcing" / ImageInspectError
+
+**Symptoms**
+- Pod fails to start with errors mentioning short-name enforcement or image inspection failures.
+
+**Root cause**
+Some container runtimes enforce fully-qualified image names (registry required). Charts that default to `image: otel/opentelemetry-collector-contrib:...` (no registry) can fail.
+
+**Fix**
+Use fully-qualified image names, for example:
+- `docker.io/otel/opentelemetry-collector-contrib:0.145.0`
+
+This repo already does this for the OTEL collector in `helm/otel-collector-values.yaml`.
 
 ### Immutable Field Error (StatefulSet)
 
