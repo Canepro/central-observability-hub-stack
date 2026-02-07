@@ -463,6 +463,8 @@ EOF
                 # Update VERSION-TRACKING.md with today's date
                 TODAY=$(date +%Y-%m-%d)
                 sed -i "s/\\*\\*Last Updated\\*\\*: [0-9-]*/\\*\\*Last Updated\\*\\*: ${TODAY}/" VERSION-TRACKING.md || true
+                # Keep footer timestamp aligned (avoids doc drift across automated PRs)
+                sed -i "s/\\*\\*Document Last Updated\\*\\*: [0-9-]*/\\*\\*Document Last Updated\\*\\*: ${TODAY}/" VERSION-TRACKING.md || true
                 
                 # Stage changes
                 git add argocd/applications/*.yaml VERSION-TRACKING.md 2>/dev/null || true
@@ -490,7 +492,27 @@ EOF
                 
                 # Re-enable fail-fast so git push failures surface
                 set -e
-                git push origin "${BRANCH_NAME}"
+                # Push can fail if another run updates the same branch concurrently (non-fast-forward).
+                # Retry a few times with rebase to avoid creating noisy CI failure issues.
+                push_with_retry() {
+                  local branch="$1"
+                  local attempts=3
+                  local i=1
+                  while [ "$i" -le "$attempts" ]; do
+                    if git push origin "$branch"; then
+                      return 0
+                    fi
+                    echo "WARN: git push failed (attempt ${i}/${attempts}); retrying after rebase..." >&2
+                    git fetch origin "$branch" 2>/dev/null || true
+                    if ! git rebase "origin/$branch"; then
+                      git rebase --abort >/dev/null 2>&1 || true
+                      return 1
+                    fi
+                    i=$((i+1))
+                  done
+                  return 1
+                }
+                push_with_retry "${BRANCH_NAME}"
                 
                 # Create PR if it doesn't exist, or add comment if it does
                 UPDATES_SUMMARY=$(jq -r '.[] | "- \\(.component): \\(.current) → \\(.latest)"' chart-updates.json | tr '\\n' ' ')
