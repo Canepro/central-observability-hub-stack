@@ -109,6 +109,17 @@ extraInitContainers:
           sed -i 's/"uid": "liz0yRCZz"/"uid": "loki-quick-search"/' "$f" || true
         fi
 
+        # Loki dashboards assume `instance` == pod, but our promtail labels use `pod`.
+        # Patch the dashboards to match our label set.
+        f="/var/lib/grafana/dashboards/default/loki-dashboard.json"
+        if [ -f "$f" ]; then
+          sed -i 's/instance=~\\\"$pod\\\"/pod=~\\\"$pod\\\"/g' "$f" || true
+        fi
+        f="/var/lib/grafana/dashboards/default/loki-quick-search.json"
+        if [ -f "$f" ]; then
+          sed -i 's/instance=~\\\"$pod\\\"/pod=~\\\"$pod\\\"/g' "$f" || true
+        fi
+
         # StarsL k8s dashboard (gnet 13105) ships with:
         # - a VictoriaMetrics-specific datasource UID placeholder
         # - `origin_prometheus=~"$origin_prometheus"` label matchers
@@ -123,6 +134,13 @@ extraInitContainers:
             -e 's/,origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
             -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
             "$f" || true
+        fi
+
+        # Tempo gnet dashboard uses `${DS_PROMETHEUS}` placeholders (works via UI import prompts,
+        # but not with file provisioning). Replace with our fixed Prometheus datasource uid.
+        f="/var/lib/grafana/dashboards/default/opentelemetry-tempo.json"
+        if [ -f "$f" ]; then
+          sed -i 's/"uid": "${DS_PROMETHEUS}"/"uid": "prometheus"/g' "$f" || true
         fi
     securityContext:
       allowPrivilegeEscalation: false
