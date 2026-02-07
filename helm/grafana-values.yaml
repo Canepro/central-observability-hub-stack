@@ -115,8 +115,10 @@ extraInitContainers:
         # Our stack is Prometheus-backed and doesn't have the `origin_prometheus` label.
         f="/var/lib/grafana/dashboards/default/k8s-dashboard-cn-20240513-starsl.json"
         if [ -f "$f" ]; then
+          # BusyBox `sed -E` treats `\\{...\\}` as repetition, so do the UID replacement
+          # with basic regex (unescaped `{}` are literals).
+          sed -i 's/"uid": "${DS__VICTORIAMETRICS-PROD-ALL}"/"uid": "prometheus"/g' "$f" || true
           sed -E -i \
-            -e 's/"uid": "\\$\\{DS__VICTORIAMETRICS-PROD-ALL\\}"/"uid": "prometheus"/g' \
             -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\",//g' \
             -e 's/,origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
             -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
