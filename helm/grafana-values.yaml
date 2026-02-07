@@ -116,7 +116,7 @@ extraInitContainers:
         f="/var/lib/grafana/dashboards/default/k8s-dashboard-cn-20240513-starsl.json"
         if [ -f "$f" ]; then
           sed -E -i \
-            -e 's/\"uid\": \"\\$\\{DS__VICTORIAMETRICS-PROD-ALL\\}\"/\"uid\": \"prometheus\"/g' \
+            -e 's/"uid": "\\$\\{DS__VICTORIAMETRICS-PROD-ALL\\}"/"uid": "prometheus"/g' \
             -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\",//g' \
             -e 's/,origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
             -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
