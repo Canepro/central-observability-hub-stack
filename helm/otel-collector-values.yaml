@@ -6,7 +6,7 @@ mode: deployment
 fullnameOverride: otel-collector
 
 image:
-  repository: otel/opentelemetry-collector-contrib
+  repository: docker.io/otel/opentelemetry-collector-contrib
   tag: 0.145.0
 
 ports:
