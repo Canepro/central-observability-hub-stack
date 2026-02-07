@@ -63,6 +63,14 @@ extraManifests:
         name: prometheus-server
         namespace: monitoring
 
+# Compatibility labels for third-party dashboards.
+server:
+  global:
+    external_labels:
+      # Some gnet dashboards (for example StarsL 13105) filter on `origin_prometheus`.
+      # Add a stable value so these dashboards work without JSON patching.
+      origin_prometheus: oke-hub
+
 serverFiles:
   # Custom Prometheus config with cluster label relabeling for all scrape jobs.
   # This ensures hub metrics are queryable with cluster="oke-hub" in dashboards.
