@@ -55,6 +55,10 @@ securityContext:
 
 service:
   type: ClusterIP
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3200"
+    prometheus.io/path: /metrics
   ports:
     - name: tempo-prom-metrics
       port: 3200

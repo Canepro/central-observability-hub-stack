@@ -55,8 +55,9 @@ Beyond your current list, consider adding these for observability-stack and plat
 | **Prometheus overview** | **3662** | Prometheus 2.0 Overview | Prometheus | Scrape health, retention, query performance. |
 | **Prometheus stats** | **3663** | Prometheus Stats | Prometheus | TSDB, rules, targets. |
 | **Loki / logs** | **12019** | Loki Dashboard | Loki | Log volume, query performance; useful if you use Loki. |
-| **Loki datasource** | **13639** | Loki & Prometheus | Loki + Prometheus | Combined logs + metrics. |
-| **Tempo / traces** | **14253** | Tempo | Tempo | Trace overview; useful if you use Tempo. |
+| **Loki dashboard (alt)** | **13186** | Loki Dashboard | Loki | This repo provisions **13186** + **12019** by default. (These two currently collide on UID upstream; see troubleshooting below.) |
+| **Loki datasource (optional)** | **13639** | Loki & Prometheus | Loki + Prometheus | Combined logs + metrics (optional). |
+| **Tempo / traces** | **23242** | OpenTelemetry + Tempo | Tempo | This repo provisions **23242** by default (patched for file provisioning). |
 | **NGINX Ingress** | **9614** | NGINX Ingress controller | Prometheus | Request rate, latency, errors; matches your Hub ingress. |
 | **NGINX Ingress (alt)** | **14314** | NGINX Ingress Controller (Prometheus) | Prometheus | Alternative; very popular. |
 | **ArgoCD** | **14583** | Argo CD - Application metrics | Prometheus | App sync status, health; if you scrape ArgoCD metrics. |
@@ -65,7 +66,7 @@ Beyond your current list, consider adding these for observability-stack and plat
 | **Kubernetes API server** | **15762** | Kubernetes / Views / API server | Prometheus | API server latency, errors (dotdc set). |
 | **etcd** | **3070** | etcd | Prometheus | If you scrape etcd metrics. |
 
-**Best practice:** Start with Prometheus (3662 or 3663), NGINX Ingress (9614 or 14314), and — if you use them — Loki (12019), Tempo (14253), ArgoCD (14583/14584). Add others as needed.
+**Best practice:** Start with Prometheus (3662 or 3663), NGINX Ingress (9614 or 14314), and — if you use them — Loki (13186/12019), Tempo (23242), ArgoCD (14583/14584). Add others as needed.
 
 ---
 
@@ -121,7 +122,25 @@ Optional (add if you use them):
 
 ---
 
-## 6. Quick reference: Grafana.com IDs and URLs
+## 6. Troubleshooting dashboard provisioning (common)
+
+### Error: "the same UID is used more than once"
+
+Some Grafana.com dashboards ship with the same `"uid"` value across multiple dashboards. When file-provisioning sees duplicate UIDs, Grafana will reject one (or both) and the whole provider can behave badly.
+
+**This repo fix:** `helm/grafana-values.yaml` includes an initContainer (`fix-dashboard-uids`) that patches the downloaded JSON on startup to enforce unique UIDs.
+
+### Loki dashboard error: `parse error ... unexpected IDENTIFIER`
+
+If a Loki dashboard panel/variable is accidentally using **Prometheus-style templating** (PromQL) while the datasource is **Loki**, Grafana sends the wrong query to Loki and you’ll see:
+
+`parse error at line 1, col 1: syntax error: unexpected IDENTIFIER`
+
+**This repo fix:** `helm/grafana-values.yaml` initContainer rewrites the affected Loki dashboards so variables use Loki `label_values(...)` semantics and filters use `pod=...` instead of `instance=...` (matching our promtail labels).
+
+---
+
+## 7. Quick reference: Grafana.com IDs and URLs
 
 | ID | Dashboard name | URL |
 |----|----------------|-----|
@@ -143,8 +162,9 @@ Optional (add if you use them):
 | 8010 | Alertmanager | https://grafana.com/grafana/dashboards/8010 |
 | 9614 | NGINX Ingress controller | https://grafana.com/grafana/dashboards/9614 |
 | 12019 | Loki Dashboard | https://grafana.com/grafana/dashboards/12019 |
+| 13186 | Loki Dashboard (alt) | https://grafana.com/grafana/dashboards/13186 |
 | 13639 | Loki & Prometheus | https://grafana.com/grafana/dashboards/13639 |
-| 14253 | Tempo | https://grafana.com/grafana/dashboards/14253 |
+| 23242 | OpenTelemetry + Tempo | https://grafana.com/grafana/dashboards/23242 |
 | 14314 | NGINX Ingress Controller (Prometheus) | https://grafana.com/grafana/dashboards/14314 |
 | 14583 | Argo CD - Application metrics | https://grafana.com/grafana/dashboards/14583 |
 | 14584 | Argo CD - Overview | https://grafana.com/grafana/dashboards/14584 |
@@ -153,4 +173,4 @@ Optional (add if you use them):
 
 ---
 
-*Document version: 1.1 — E1 default dashboards; Windows 10467; AKS Maintenance Jobs in-repo; cool/best-practice dashboards added.*
+*Document version: 1.2 — E1 default dashboards; updated Loki/Tempo gnet IDs to match `helm/grafana-values.yaml`; added provisioning troubleshooting for UID collisions and Loki parse errors.*

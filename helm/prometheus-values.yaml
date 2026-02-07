@@ -29,6 +29,40 @@ scrapeConfigs:
   prometheus-pushgateway:
     enabled: false
 
+# The prometheus chart (28.x) ClusterRole no longer includes `nodes/proxy`.
+# Our custom scrape job `kubernetes-nodes-cadvisor` uses the apiserver proxy path
+# `/api/v1/nodes/<node>/proxy/metrics/cadvisor`, which requires this permission.
+# Without it, targets go `DOWN` with `403 Forbidden` and container/cAdvisor metrics are missing.
+extraManifests:
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: prometheus-server-node-proxy
+      labels:
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/component: server
+    rules:
+      - apiGroups: [""]
+        resources: ["nodes/proxy"]
+        verbs: ["get"]
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: prometheus-server-node-proxy
+      labels:
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/component: server
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: prometheus-server-node-proxy
+    subjects:
+      - kind: ServiceAccount
+        name: prometheus-server
+        namespace: monitoring
+
 serverFiles:
   # Custom Prometheus config with cluster label relabeling for all scrape jobs.
   # This ensures hub metrics are queryable with cluster="oke-hub" in dashboards.
@@ -53,6 +87,8 @@ serverFiles:
               - __meta_kubernetes_endpoint_port_name
           - target_label: cluster
             replacement: oke-hub
+          - target_label: origin_prometheus
+            replacement: oke-hub
         scheme: https
         tls_config:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -71,10 +107,16 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
+          # Compatibility label: many k8s dashboards expect `node=...` on kubelet/cAdvisor series.
+          - source_labels:
+              - __meta_kubernetes_node_name
+            target_label: node
           - source_labels:
               - __meta_kubernetes_node_name
             target_label: service
           - target_label: cluster
+            replacement: oke-hub
+          - target_label: origin_prometheus
             replacement: oke-hub
         scheme: https
         tls_config:
@@ -94,10 +136,16 @@ serverFiles:
             source_labels:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
+          # Compatibility label: many k8s dashboards expect `node=...` on kubelet/cAdvisor series.
+          - source_labels:
+              - __meta_kubernetes_node_name
+            target_label: node
           - source_labels:
               - __meta_kubernetes_node_name
             target_label: service
           - target_label: cluster
+            replacement: oke-hub
+          - target_label: origin_prometheus
             replacement: oke-hub
         scheme: https
         tls_config:
@@ -118,6 +166,8 @@ serverFiles:
             target_label: service
           - target_label: cluster
             replacement: oke-hub
+          - target_label: origin_prometheus
+            replacement: oke-hub
 
       # Kube State Metrics (Prometheus chart)
       - job_name: kube-state-metrics
@@ -130,6 +180,8 @@ serverFiles:
               - __meta_kubernetes_service_name
             regex: monitoring;prometheus-kube-state-metrics
           - target_label: cluster
+            replacement: oke-hub
+          - target_label: origin_prometheus
             replacement: oke-hub
 
       - job_name: kubernetes-service-endpoints
@@ -515,6 +567,8 @@ server:
       environment: production
       workspace: hub
       domain: observability.canepro.me
+      # Some gnet dashboards (for example StarsL 13105) filter on `origin_prometheus`.
+      origin_prometheus: oke-hub
 
 # Alertmanager configuration
 alertmanager:

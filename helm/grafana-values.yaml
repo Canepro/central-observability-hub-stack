@@ -36,11 +36,11 @@ service:
 # Resource limits for Always Free tier
 resources:
   requests:
-    cpu: 200m
-    memory: 512Mi
+    cpu: 50m
+    memory: 256Mi
   limits:
-    cpu: 1
-    memory: 1Gi
+    cpu: 500m
+    memory: 768Mi
 
 # Health probe configuration to handle slow startup on free-tier nodes
 readinessProbe:
@@ -108,6 +108,52 @@ extraInitContainers:
           # Grafana.com dashboards 13186 and 12019 currently share uid=liz0yRCZz.
           sed -i 's/"uid": "liz0yRCZz"/"uid": "loki-quick-search"/' "$f" || true
         fi
+
+        # Loki dashboards assume `instance` == pod, but our promtail labels use `pod`.
+        # Patch the dashboards to match our label set.
+        f="/var/lib/grafana/dashboards/default/loki-dashboard.json"
+        if [ -f "$f" ]; then
+          sed -i 's/instance=~\\\"$pod\\\"/pod=~\\\"$pod\\\"/g' "$f" || true
+
+          # These dashboards ship with Prometheus templating queries but mark the datasource as Loki,
+          # which makes Grafana send `label_values(...)` PromQL to Loki and results in:
+          # "parse error at line 1, col 1: syntax error: unexpected IDENTIFIER".
+          # Rewrite variables to use Loki label_values semantics.
+          sed -i 's/label_values(kube_pod_info, namespace)/label_values(namespace)/g' "$f" || true
+          sed -i 's/label_values(mixin_pod_workload{namespace=\\\"$namespace\\\"}, workload)/label_values({namespace=\\\"$namespace\\\"}, app)/g' "$f" || true
+          sed -i 's/label_values(mixin_pod_workload{namespace=\\\"$namespace\\\", workload=\\\"$workload\\\"}, pod)/label_values({namespace=\\\"$namespace\\\", app=\\\"$workload\\\"}, pod)/g' "$f" || true
+        fi
+        f="/var/lib/grafana/dashboards/default/loki-quick-search.json"
+        if [ -f "$f" ]; then
+          sed -i 's/instance=~\\\"$pod\\\"/pod=~\\\"$pod\\\"/g' "$f" || true
+
+          # Same issue as above: variable queries are Prometheus-flavored but datasource is Loki.
+          sed -i 's/label_values(kube_pod_info, namespace)/label_values(namespace)/g' "$f" || true
+          sed -i 's/label_values(container_network_receive_bytes_total{namespace=~\\\"$namespace\\\"},pod)/label_values({namespace=~\\\"$namespace\\\"}, pod)/g' "$f" || true
+        fi
+
+        # StarsL k8s dashboard (gnet 13105) ships with:
+        # - a VictoriaMetrics-specific datasource UID placeholder
+        # - `origin_prometheus=~"$origin_prometheus"` label matchers
+        # Our stack is Prometheus-backed and doesn't have the `origin_prometheus` label.
+        f="/var/lib/grafana/dashboards/default/k8s-dashboard-cn-20240513-starsl.json"
+        if [ -f "$f" ]; then
+          # BusyBox `sed -E` treats `\\{...\\}` as repetition, so do the UID replacement
+          # with basic regex (unescaped `{}` are literals).
+          sed -i 's/"uid": "${DS__VICTORIAMETRICS-PROD-ALL}"/"uid": "prometheus"/g' "$f" || true
+          sed -E -i \
+            -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\",//g' \
+            -e 's/,origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
+            -e 's/origin_prometheus=~\\\\\"\\$origin_prometheus\\\\\"//g' \
+            "$f" || true
+        fi
+
+        # Tempo gnet dashboard uses `${DS_PROMETHEUS}` placeholders (works via UI import prompts,
+        # but not with file provisioning). Replace with our fixed Prometheus datasource uid.
+        f="/var/lib/grafana/dashboards/default/opentelemetry-tempo.json"
+        if [ -f "$f" ]; then
+          sed -i 's/"uid": "${DS_PROMETHEUS}"/"uid": "prometheus"/g' "$f" || true
+        fi
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -143,17 +189,20 @@ datasources:
     apiVersion: 1
     datasources:
       - name: Prometheus
+        uid: prometheus
         type: prometheus
         access: proxy
         url: http://prometheus-server.monitoring.svc.cluster.local:80
         isDefault: true
         editable: true
       - name: Loki
+        uid: loki
         type: loki
         access: proxy
         url: http://loki-gateway.monitoring.svc.cluster.local
         editable: true
       - name: Tempo
+        uid: tempo
         type: tempo
         access: proxy
         url: http://tempo.monitoring.svc.cluster.local:3200

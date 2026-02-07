@@ -25,7 +25,7 @@ OCI Always Free Tier provides 200GB of total storage. Our current usage:
 ### OCI Block Volumes: minimum size and quota
 OCI Block Volumes have a **minimum size of 50GB**. Even if we request 10GB in Helm, OCI provisions 50GB.
 
-Because our Hub uses 194GB (nodes + Prometheus + Grafana), we have **exhausted our 200GB Always Free quota**.
+Because our Hub uses ~194GB (nodes + Prometheus + Jenkins when Phase 1 is enabled; Grafana is E1/emptyDir), we have effectively **exhausted our 200GB Always Free quota**.
 
 Any new volume (e.g. Jenkins) will be a **paid resource** on our PAYG plan, costing approximately **$0.025 per GB** for the portion over 200GB.
 
@@ -85,6 +85,7 @@ While Loki and Tempo handle their own retention, it is a best practice to config
 | **Tempo Query** | 3200 | Grafana Datasource |
 | **Tempo OTLP (gRPC)** | 4317 | High-performance trace ingestion |
 | **Tempo OTLP (HTTP)** | 4318 | Standard web trace ingestion |
+| **OTel Collector (gRPC/HTTP)** | 4317 / 4318 | Receives OTLP spans (e.g., from ingress-nginx) and forwards to Tempo |
 
 ## 🤖 "Who Monitors the Monitor?"
 While this Hub monitors the Spokes, ArgoCD's own health is tracked via:
@@ -210,7 +211,7 @@ The “Master Health Dashboard” includes a PVC usage panel. Live “% full” 
 - `kubelet_volume_stats_used_bytes`
 - `kubelet_volume_stats_capacity_bytes`
 
-In this repo those are enabled via `extraScrapeConfigs` in `helm/prometheus-values.yaml` (scraping kubelet via the API server proxy).
+In this repo those are enabled via `serverFiles.prometheus.yml.scrape_configs` in `helm/prometheus-values.yaml` (scraping kubelet via the API server proxy).
 If the PVC panel shows `No data`, check whether these metrics exist in Prometheus Explore first.
 Scrapes use the service account CA for TLS verification (no `insecure_skip_verify`).
 
@@ -230,8 +231,11 @@ POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o j
 kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
 ```
 
-## 🧩 Grafana Rollouts (RWO PVC Pitfall)
-Grafana uses a single **ReadWriteOnce** (RWO) PVC for `/var/lib/grafana`. If the Deployment allows creating a *new* pod while the *old* one is still running (e.g., RollingUpdate with `maxSurge > 0`), the rollout can deadlock because the PVC can only be mounted by one pod.
+## 🧩 Grafana Rollouts (E1 vs PVC)
+
+**E1 (current default in this repo):** Grafana uses `emptyDir` (`persistence.enabled: false`). There is no PVC attach deadlock, but creating an extra Grafana pod during rollouts can still cause avoidable scheduling pressure on Always Free nodes.
+
+**When persistence is enabled:** Grafana typically uses a single **ReadWriteOnce** (RWO) PVC for `/var/lib/grafana`. If the Deployment allows creating a *new* pod while the *old* one is still running (e.g., RollingUpdate with `maxSurge > 0`), the rollout can deadlock because the PVC can only be mounted by one pod.
 
 **Symptoms**
 - ArgoCD shows `grafana` as **Degraded/Progressing**
@@ -239,8 +243,6 @@ Grafana uses a single **ReadWriteOnce** (RWO) PVC for `/var/lib/grafana`. If the
 - `kubectl describe pod <pending>` shows init containers waiting with `/var/lib/grafana from storage (rw)`
 
 **Fix (recommended)**
-- Keep `type: RollingUpdate`, but set `maxSurge: 0` (and `maxUnavailable: 1`) so Kubernetes terminates the old pod *before* creating the new one (brief downtime during rollout, but no deadlock).
-
-**One-time remediation**
-If you’re already stuck mid-rollout, once `Recreate` is applied, the pending pod should be cleaned up and the new pod will mount the PVC cleanly.
+- Keep `type: RollingUpdate`, but set `maxSurge: 0` (and `maxUnavailable: 1`) so Kubernetes terminates the old pod *before* creating the new one.
+  - This is what this repo uses in `helm/grafana-values.yaml`.
 

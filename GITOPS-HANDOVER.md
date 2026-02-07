@@ -37,7 +37,9 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 ## 🛠️ 4. Maintenance & "Day 2" Operations
 
 ### 🔄 How to Perform an Upgrade
-1. **Plan**: Identify whether the component is stateless or uses a PVC. For PVC-backed components (Grafana/Prometheus), take a snapshot/backup first.
+1. **Plan**: Identify whether the component is stateless or uses a PVC.
+   - **Prometheus** is PVC-backed (snapshot/backup before risky upgrades).
+   - **Grafana** is **E1/emptyDir** in this repo by default (no PVC). If you re-enable persistence later, treat it as PVC-backed and snapshot first.
 2. **Modify**: Update the pinned chart version (`argocd/applications/*.yaml` → `targetRevision`) and/or image tag (`helm/*.yaml`).
 3. **Commit**: Commit the change in Git.
 4. **Push**: `git push origin main` (ArgoCD follows `main` in this environment).
