@@ -15,5 +15,5 @@ configMapGenerator:
     files:
       - aks-maintenance-jobs.json
       - master-health-backup.json
+      - rocketchat-mongodb-single-node.json
       - unified-world-tree.json
-

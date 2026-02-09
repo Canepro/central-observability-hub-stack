@@ -91,6 +91,11 @@ extraConfigmapMounts:
     mountPath: /var/lib/grafana/dashboards/default/aks-maintenance-jobs.json
     subPath: aks-maintenance-jobs.json
     readOnly: true
+  - name: repo-dashboard-rocketchat-mongodb-single-node
+    configMap: grafana-dashboards-repo
+    mountPath: /var/lib/grafana/dashboards/default/rocketchat-mongodb-single-node.json
+    subPath: rocketchat-mongodb-single-node.json
+    readOnly: true
 
 # Some upstream dashboards share the same UID, which breaks provisioning ("the
 # same UID is used more than once") and disables DB writes for the provider.
@@ -251,10 +256,6 @@ dashboards:
       datasource: Prometheus
     rocketchat-microservices:
       gnetId: 23427
-      revision: latest
-      datasource: Prometheus
-    rocketchat-mongodb-single-node:
-      gnetId: 23712
       revision: latest
       datasource: Prometheus
     windows-exporter-starsl-20230531:
