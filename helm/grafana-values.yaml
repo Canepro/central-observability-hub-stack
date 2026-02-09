@@ -72,29 +72,18 @@ envValueFrom:
       name: grafana-smtp-credentials
       key: from_address
 
-# Mount in-repo dashboards (dashboards/*.json) into the provisioning path.
+# Mount in-repo dashboards (dashboards/*.json) into the pod.
 # These are packaged by the `grafana-dashboards` ArgoCD app into:
 # ConfigMap `grafana-dashboards-repo` (see dashboards/kustomization.yaml).
+#
+# We mount the whole ConfigMap into a staging directory and then copy files into
+# the provisioning directory in the `fix-dashboard-uids` initContainer. This is
+# more robust than subPath-mounting individual files (which can occasionally end
+# up as directories on some clusters/CSIs).
 extraConfigmapMounts:
-  - name: repo-dashboard-unified-world-tree
+  - name: repo-dashboards
     configMap: grafana-dashboards-repo
-    mountPath: /var/lib/grafana/dashboards/default/unified-world-tree.json
-    subPath: unified-world-tree.json
-    readOnly: true
-  - name: repo-dashboard-master-health
-    configMap: grafana-dashboards-repo
-    mountPath: /var/lib/grafana/dashboards/default/master-health.json
-    subPath: master-health-backup.json
-    readOnly: true
-  - name: repo-dashboard-aks-maintenance-jobs
-    configMap: grafana-dashboards-repo
-    mountPath: /var/lib/grafana/dashboards/default/aks-maintenance-jobs.json
-    subPath: aks-maintenance-jobs.json
-    readOnly: true
-  - name: repo-dashboard-rocketchat-mongodb-single-node
-    configMap: grafana-dashboards-repo
-    mountPath: /var/lib/grafana/dashboards/default/rocketchat-mongodb-single-node.json
-    subPath: rocketchat-mongodb-single-node.json
+    mountPath: /repo-dashboards
     readOnly: true
 
 # Some upstream dashboards share the same UID, which breaks provisioning ("the
@@ -108,6 +97,20 @@ extraInitContainers:
     args:
       - |
         set -euf
+        # Copy in-repo dashboards from the git-provisioned ConfigMap into Grafana's
+        # provisioning directory. (The dashboards are mounted at /repo-dashboards.)
+        d="/var/lib/grafana/dashboards/default"
+        mkdir -p "$d"
+
+        # Ensure any accidental dir mount points don't break provisioning.
+        rm -rf "$d/aks-maintenance-jobs.json" "$d/master-health.json" "$d/unified-world-tree.json" "$d/rocketchat-mongodb-single-node.json" || true
+
+        # Copy from the repo dashboard ConfigMap (git).
+        cp -f /repo-dashboards/aks-maintenance-jobs.json "$d/aks-maintenance-jobs.json"
+        cp -f /repo-dashboards/master-health-backup.json "$d/master-health.json"
+        cp -f /repo-dashboards/unified-world-tree.json "$d/unified-world-tree.json"
+        cp -f /repo-dashboards/rocketchat-mongodb-single-node.json "$d/rocketchat-mongodb-single-node.json"
+
         f="/var/lib/grafana/dashboards/default/loki-quick-search.json"
         if [ -f "$f" ]; then
           # Grafana.com dashboards 13186 and 12019 currently share uid=liz0yRCZz.
@@ -168,6 +171,8 @@ extraInitContainers:
     volumeMounts:
       - name: storage
         mountPath: /var/lib/grafana
+      - name: repo-dashboards
+        mountPath: /repo-dashboards
 
 # Grafana configuration
 grafana.ini:
@@ -236,6 +241,10 @@ dashboards:
     # Grafana.com dashboards (gnet). Pin revisions as needed.
     node-exporter-full:
       gnetId: 1860
+      revision: latest
+      datasource: Prometheus
+    argocd-dashboard:
+      gnetId: 14584
       revision: latest
       datasource: Prometheus
     k8s-views-global:

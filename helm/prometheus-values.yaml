@@ -184,6 +184,36 @@ serverFiles:
           - target_label: origin_prometheus
             replacement: oke-hub
 
+      # Argo CD metrics (Helm chart installs several *-metrics services).
+      # Scrape these explicitly (they are not guaranteed to be annotated).
+      - job_name: argocd-metrics
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: [argocd]
+        relabel_configs:
+          - action: keep
+            source_labels: [__meta_kubernetes_service_name]
+            regex: argocd-.*-metrics
+          - action: keep
+            source_labels: [__meta_kubernetes_endpoint_port_name]
+            regex: http-metrics
+          - action: replace
+            source_labels: [__meta_kubernetes_service_name]
+            target_label: job
+            replacement: $1
+          - action: replace
+            source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+            replacement: $1
+          - action: replace
+            source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - target_label: cluster
+            replacement: oke-hub
+          - target_label: origin_prometheus
+            replacement: oke-hub
+
       - job_name: kubernetes-service-endpoints
         honor_labels: true
         kubernetes_sd_configs:
@@ -202,6 +232,14 @@ serverFiles:
             regex: prometheus-kube-state-metrics
             target_label: job
             replacement: kube-state-metrics
+          # Expose Argo CD metrics with job=<service_name> so gnet dashboards and
+          # alert rules can match `job="argocd-*-metrics"`.
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_service_name
+            regex: (argocd-.*-metrics)
+            target_label: job
+            replacement: $1
           - action: keep
             regex: true
             source_labels:
