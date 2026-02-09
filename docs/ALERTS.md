@@ -7,6 +7,12 @@ This document defines the alerting strategy for this repo (OKE hub + connected s
 **Source of truth**: `helm/prometheus-values.yaml` (`serverFiles.alerting_rules.yml`).
 Docs summarize intent and best practices, but the YAML is authoritative.
 
+### How To See What Alerts Exist (Fast)
+
+- **Prometheus rules** (source of truth): `helm/prometheus-values.yaml` under `serverFiles.alerting_rules.yml`.
+- **In Grafana**: *Alerting* -> *Alert rules* shows what Prometheus has loaded (data source-managed rules).
+- **In Prometheus**: query `ALERTS` (only exists when alerts are pending/firing).
+
 ## 2. Notification Channel: Secure SMTP
 
 All critical alerts are routed via Gmail SMTP.
@@ -31,14 +37,63 @@ All critical alerts are routed via Gmail SMTP.
 |---------------------|--------------------------------------------------------------------|----------|-----------------------------------------------------------------------------|
 | OKE Storage Warning | `(kubelet_volume_stats_available_bytes{cluster="oke-hub"} / kubelet_volume_stats_capacity_bytes{cluster="oke-hub"}) * 100 < 15` | Warning  | Alerting on OCI Block Volume usage. Critical for staying under the 200GB Always Free limit. |
 
-### Hub node / workload health (recommended)
+### Hub Node / Workload Health (Implemented)
 
-This repo also includes hub health alerts (node CPU/memory/disk, NotReady; crashloops/OOM/pending in `monitoring` + `argocd`; workload replicas mismatch; and core observability components down). See the groups:
+This repo includes hub health alerts for:
+- node CPU/memory/disk and NotReady state
+- crashloops/OOM/pending pods in `monitoring` + `argocd`
+- workload replicas mismatch (Deployment/StatefulSet/DaemonSet)
+- core observability components down (Prometheus/Grafana/Loki/Tempo/Alertmanager)
+- scrape health for a few high-signal targets (cAdvisor and kubelet volume stats)
+
+The alert rules are grouped (in `helm/prometheus-values.yaml`) as:
 - `HubNodeAlerts`
 - `HubPodAlerts`
 - `HubWorkloadAlerts`
 - `HubMonitoringStackHealth`
 - `HubPrometheusScrapeHealth`
+
+#### HubNodeAlerts (oke-hub)
+
+| Alert | Severity | `for:` | When it fires |
+|---|---|---|---|
+| `HubNodeHighCPU` | warning | 10m | Node CPU usage > 85% sustained. |
+| `HubNodeHighMemory` | warning | 10m | Node memory usage > 85% sustained. |
+| `HubNodeDiskPressure` | warning | 10m | Root filesystem usage > 85% sustained (mountpoint `/`). |
+| `HubNodeNotReady` | critical | 5m | Node Ready condition is not true. |
+
+#### HubPodAlerts (monitoring/argocd, oke-hub)
+
+| Alert | Severity | `for:` | When it fires |
+|---|---|---|---|
+| `HubPodCrashLooping` | warning | 10m | > 3 restarts in 15m (CrashLoop pattern) in `monitoring|argocd`. |
+| `HubContainerOOMKilled` | warning | 0m | A container was last terminated due to `OOMKilled`. |
+| `HubPodStuckPending` | warning | 15m | Pod phase `Pending` for > 15m. |
+
+#### HubWorkloadAlerts (monitoring/argocd and a few core namespaces, oke-hub)
+
+| Alert | Severity | `for:` | When it fires |
+|---|---|---|---|
+| `HubDeploymentReplicasMismatch` | warning | 15m | `available != desired` for Deployments in `monitoring|argocd`. |
+| `HubStatefulSetReplicasMismatch` | warning | 15m | `ready != desired` for StatefulSets in `monitoring|argocd`. |
+| `HubDaemonSetMissScheduled` | warning | 10m | DaemonSet desired > current scheduled in `monitoring|argocd|ingress-nginx|kube-system`. |
+
+#### HubMonitoringStackHealth (oke-hub)
+
+| Alert | Severity | `for:` | When it fires |
+|---|---|---|---|
+| `PrometheusServerUnavailable` | critical | 5m | `monitoring/prometheus-server` has 0 available replicas. |
+| `GrafanaUnavailable` | critical | 5m | `monitoring/grafana` has 0 available replicas. |
+| `LokiUnavailable` | critical | 10m | `monitoring/loki` StatefulSet has 0 ready replicas. |
+| `TempoUnavailable` | critical | 10m | `monitoring/tempo` StatefulSet has 0 ready replicas. |
+| `AlertmanagerUnavailable` | critical | 10m | `monitoring/prometheus-alertmanager` StatefulSet has 0 ready replicas. |
+
+#### HubPrometheusScrapeHealth (oke-hub)
+
+| Alert | Severity | `for:` | When it fires |
+|---|---|---|---|
+| `HubCadvisorScrapeDown` | critical | 5m | `up{job="kubernetes-nodes-cadvisor",cluster="oke-hub"} == 0` (any node). |
+| `HubKubeletVolumeStatsScrapeDown` | warning | 5m | `up{job="kubelet-volume-stats",cluster="oke-hub"} == 0` (any node). |
 
 ## 5. Tier 3: GitOps & World Tree (Logical Infrastructure)
 
@@ -94,6 +149,18 @@ AKS alert rules are implemented under groups in `helm/prometheus-values.yaml` (f
 ## 7. Grafana dashboards for alerting
 
 Grafana provisions an Alerts dashboard (gnet **9578**) via `helm/grafana-values.yaml`. Note that many alerting dashboards show `No data` when there are **no active alerts**, because Prometheus only emits `ALERTS` time series when an alert is pending/firing.
+
+### 9578 dashboard: what “No data” means
+
+- **Expected**: If nothing is `pending` or `firing`, the 9578 dashboard can look empty.
+- **Verify quickly** (Grafana Explore, Prometheus):
+  - `ALERTS{alertstate="firing"}`
+  - `ALERTS{alertstate="pending"}`
+- If those return nothing, the dashboard is behaving normally (no active alerts to display).
+
+### Runbooks for common firing alerts
+
+When you see an alert firing in Grafana (*Alerting* -> *Alert rules*), use `docs/TROUBLESHOOTING.md` under **Alerting (Runbooks)** for the actionable checks and next steps.
 
 ## 8. Maintenance & Secret Restoration
 
