@@ -76,6 +76,13 @@ envValueFrom:
       name: grafana-smtp-credentials
       key: from_address
 
+# Admin credentials are managed by ExternalSecrets (OCI Vault) into Secret `grafana`.
+# Tell the chart to use that existing secret and not generate/overwrite one.
+admin:
+  existingSecret: grafana
+  userKey: admin-user
+  passwordKey: admin-password
+
 # Mount in-repo dashboards (dashboards/*.json) into the pod.
 # These are packaged by the `grafana-dashboards` ArgoCD app into:
 # ConfigMap `grafana-dashboards-repo` (see dashboards/kustomization.yaml).
