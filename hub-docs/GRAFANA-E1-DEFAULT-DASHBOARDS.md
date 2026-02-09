@@ -63,6 +63,7 @@ Beyond your current list, consider adding these for observability-stack and plat
 | **ArgoCD** | **14583** | Argo CD - Application metrics | Prometheus | App sync status, health; if you scrape ArgoCD metrics. |
 | **ArgoCD (alt)** | **14584** | Argo CD - Overview | Prometheus | Overview of Argo CD. |
 | **Alertmanager** | **8010** | Alertmanager | Prometheus | Firing alerts, silences; if you use Alertmanager. |
+| **Alerts overview** | **9578** | Alerts | Prometheus | Useful once Prometheus alert rules exist (uses `ALERTS` / rule metrics). |
 | **Kubernetes API server** | **15762** | Kubernetes / Views / API server | Prometheus | API server latency, errors (dotdc set). |
 | **etcd** | **3070** | etcd | Prometheus | If you scrape etcd metrics. |
 
@@ -160,6 +161,7 @@ If a Loki dashboard panel/variable is accidentally using **Prometheus-style temp
 | 3662 | Prometheus 2.0 Overview | https://grafana.com/grafana/dashboards/3662 |
 | 3663 | Prometheus Stats | https://grafana.com/grafana/dashboards/3663 |
 | 8010 | Alertmanager | https://grafana.com/grafana/dashboards/8010 |
+| 9578 | Alerts | https://grafana.com/grafana/dashboards/9578 |
 | 9614 | NGINX Ingress controller | https://grafana.com/grafana/dashboards/9614 |
 | 12019 | Loki Dashboard | https://grafana.com/grafana/dashboards/12019 |
 | 13186 | Loki Dashboard (alt) | https://grafana.com/grafana/dashboards/13186 |
