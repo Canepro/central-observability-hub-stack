@@ -8,6 +8,10 @@ assertNoLeakedSecrets: true
 
 # Deployment configuration
 replicas: 1
+annotations:
+  # Work around occasional SSA/list-merge weirdness when changing volumeMount lists.
+  # Replace makes ArgoCD recreate the Deployment instead of patching it.
+  argocd.argoproj.io/sync-options: Replace=true
 deploymentStrategy:
   # E1: no PVC (emptyDir); maxSurge=0 still safe for clean rollouts.
   type: RollingUpdate
@@ -84,6 +88,7 @@ extraConfigmapMounts:
   - name: repo-dashboards
     configMap: grafana-dashboards-repo
     mountPath: /repo-dashboards
+    subPath: ""
     readOnly: true
 
 # Some upstream dashboards share the same UID, which breaks provisioning ("the
