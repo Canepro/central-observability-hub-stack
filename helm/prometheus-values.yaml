@@ -524,6 +524,297 @@ serverFiles:
               summary: "GitOps Application Degraded"
               description: "Application {{ $labels.name }} in project {{ $labels.project }} is in a failed state."
 
+      # ──────────────────────────────────────────────
+      # Tier 4: AKS Spoke Cluster (aks-canepro)
+      # Metrics arrive via remote-write; filter with cluster="aks-canepro"
+      # ──────────────────────────────────────────────
+      - name: AKSSpokeNodeAlerts
+        rules:
+          # Node CPU sustained high
+          - alert: AKSNodeHighCPU
+            expr: |
+              (
+                1 - avg by (instance, cluster) (rate(node_cpu_seconds_total{mode="idle", cluster="aks-canepro"}[5m]))
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS node CPU > 85% for 10m"
+              description: "Node {{ $labels.instance }} CPU usage is {{ $value | printf \"%.1f\" }}%."
+
+          # Node memory pressure
+          - alert: AKSNodeHighMemory
+            expr: |
+              (
+                1 - (node_memory_MemAvailable_bytes{cluster="aks-canepro"} / node_memory_MemTotal_bytes{cluster="aks-canepro"})
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS node memory > 85% for 10m"
+              description: "Node {{ $labels.instance }} memory usage is {{ $value | printf \"%.1f\" }}%."
+
+          # Node disk pressure (root filesystem)
+          - alert: AKSNodeDiskPressure
+            expr: |
+              (
+                1 - (node_filesystem_avail_bytes{cluster="aks-canepro", mountpoint="/", fstype!="tmpfs"} / node_filesystem_size_bytes{cluster="aks-canepro", mountpoint="/", fstype!="tmpfs"})
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS node disk > 85% full"
+              description: "Node {{ $labels.instance }} root disk usage is {{ $value | printf \"%.1f\" }}%."
+
+          # Node not ready
+          - alert: AKSNodeNotReady
+            expr: kube_node_status_condition{condition="Ready", status="true", cluster="aks-canepro"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS node not ready"
+              description: "Node {{ $labels.node }} has been NotReady for 5 minutes."
+
+      - name: AKSSpokePodAlerts
+        rules:
+          # Pod CrashLoopBackOff
+          - alert: AKSPodCrashLooping
+            expr: |
+              rate(kube_pod_container_status_restarts_total{cluster="aks-canepro"}[15m]) * 60 * 15 > 3
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "Pod crash-looping on AKS"
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) restarted {{ $value | printf \"%.0f\" }} times in 15m."
+
+          # Container OOMKilled
+          - alert: AKSContainerOOMKilled
+            expr: |
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="aks-canepro"} == 1
+            for: 0m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "Container OOMKilled on AKS"
+              description: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} was OOMKilled."
+
+          # Pods stuck in Pending
+          - alert: AKSPodStuckPending
+            expr: |
+              kube_pod_status_phase{phase="Pending", cluster="aks-canepro"} == 1
+            for: 15m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "Pod stuck Pending on AKS"
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been Pending for > 15m."
+
+          # Many stale pods (Evicted/Failed/Unknown)
+          - alert: AKSManyStalePods
+            expr: |
+              (
+                count(kube_pod_status_phase{phase="Failed", cluster="aks-canepro"}) or vector(0)
+              ) + (
+                count(kube_pod_status_phase{phase="Unknown", cluster="aks-canepro"}) or vector(0)
+              ) + (
+                count(kube_pod_status_phase{phase="Succeeded", cluster="aks-canepro"}) or vector(0)
+              ) > 15
+            for: 30m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "More than 15 stale pods on AKS"
+              description: "{{ $value }} pods in terminal states. Check aks-stale-pod-cleanup CronJob."
+
+      - name: AKSSpokeWorkloadAlerts
+        rules:
+          # Deployment replicas mismatch
+          - alert: AKSDeploymentReplicasMismatch
+            expr: |
+              kube_deployment_status_replicas_available{cluster="aks-canepro"}
+                != kube_deployment_spec_replicas{cluster="aks-canepro"}
+            for: 15m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS Deployment replicas mismatch"
+              description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} available vs desired."
+
+          # StatefulSet replicas mismatch
+          - alert: AKSStatefulSetReplicasMismatch
+            expr: |
+              kube_statefulset_status_replicas_ready{cluster="aks-canepro"}
+                != kube_statefulset_replicas{cluster="aks-canepro"}
+            for: 15m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS StatefulSet replicas mismatch"
+              description: "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has {{ $value }} ready vs desired."
+
+          # DaemonSet not scheduled on all nodes
+          - alert: AKSDaemonSetMissScheduled
+            expr: |
+              kube_daemonset_status_desired_number_scheduled{cluster="aks-canepro"}
+                - kube_daemonset_status_current_number_scheduled{cluster="aks-canepro"} > 0
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS DaemonSet not fully scheduled"
+              description: "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} is missing pods on some nodes."
+
+      - name: AKSSpokeApplicationAlerts
+        rules:
+          # Rocket.Chat main app down
+          - alert: AKSRocketChatDown
+            expr: |
+              kube_deployment_status_replicas_available{deployment="rocketchat-rocketchat", namespace="rocketchat", cluster="aks-canepro"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "Rocket.Chat is down on AKS"
+              description: "No available replicas for rocketchat-rocketchat deployment."
+
+          # MongoDB down
+          - alert: AKSMongoDBDown
+            expr: |
+              kube_statefulset_status_replicas_ready{statefulset="mongodb", namespace="rocketchat", cluster="aks-canepro"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "MongoDB is down on AKS"
+              description: "MongoDB StatefulSet has 0 ready replicas."
+
+          # NATS down
+          - alert: AKSNATSDown
+            expr: |
+              kube_statefulset_status_replicas_ready{statefulset="rocketchat-nats", namespace="rocketchat", cluster="aks-canepro"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "NATS is down on AKS"
+              description: "NATS StatefulSet has 0 ready replicas. Rocket.Chat microservices cannot communicate."
+
+          # Jenkins controller down
+          - alert: AKSJenkinsDown
+            expr: |
+              kube_statefulset_status_replicas_ready{statefulset="jenkins", namespace="jenkins", cluster="aks-canepro"} == 0
+            for: 5m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "Jenkins is down on AKS"
+              description: "Jenkins StatefulSet has 0 ready replicas."
+
+      - name: AKSSpokeStorageAlerts
+        rules:
+          # PVC usage high
+          - alert: AKSPVCUsageHigh
+            expr: |
+              (
+                kubelet_volume_stats_used_bytes{cluster="aks-canepro"}
+                / kubelet_volume_stats_capacity_bytes{cluster="aks-canepro"}
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS PVC usage > 85%"
+              description: "PVC {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} is {{ $value | printf \"%.1f\" }}% full."
+
+          # PVC usage critical
+          - alert: AKSPVCUsageCritical
+            expr: |
+              (
+                kubelet_volume_stats_used_bytes{cluster="aks-canepro"}
+                / kubelet_volume_stats_capacity_bytes{cluster="aks-canepro"}
+              ) * 100 > 95
+            for: 5m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS PVC usage > 95%"
+              description: "PVC {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} is {{ $value | printf \"%.1f\" }}% full. Immediate action needed."
+
+      - name: AKSSpokeObservabilityAlerts
+        rules:
+          # Prometheus remote-write failures
+          - alert: AKSPrometheusRemoteWriteFailing
+            expr: |
+              rate(prometheus_remote_storage_failed_samples_total{cluster="aks-canepro"}[5m]) > 0
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "AKS Prometheus remote-write failing"
+              description: "Prometheus Agent on AKS is failing to send samples to the hub. Metrics may be delayed or lost."
+
+          # Promtail not running on all nodes
+          - alert: AKSPromtailDown
+            expr: |
+              kube_daemonset_status_number_ready{daemonset="promtail", namespace="monitoring", cluster="aks-canepro"}
+                < kube_daemonset_status_desired_number_scheduled{daemonset="promtail", namespace="monitoring", cluster="aks-canepro"}
+            for: 10m
+            labels:
+              severity: warning
+              cluster: aks-canepro
+            annotations:
+              summary: "Promtail not running on all AKS nodes"
+              description: "{{ $value }} Promtail pods are missing. Log collection is incomplete."
+
+          # Kube-state-metrics down
+          - alert: AKSKubeStateMetricsDown
+            expr: |
+              kube_deployment_status_replicas_available{deployment="kube-state-metrics", namespace="monitoring", cluster="aks-canepro"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "kube-state-metrics is down on AKS"
+              description: "Kubernetes object metrics are unavailable. Most cluster alerts will stop firing."
+
+      - name: AKSSpokeNetworkAlerts
+        rules:
+          # CoreDNS down
+          - alert: AKSCoreDNSDown
+            expr: |
+              kube_deployment_status_replicas_available{deployment="coredns", namespace="kube-system", cluster="aks-canepro"} == 0
+            for: 2m
+            labels:
+              severity: critical
+              cluster: aks-canepro
+            annotations:
+              summary: "CoreDNS is down on AKS"
+              description: "All CoreDNS replicas are unavailable. DNS resolution will fail cluster-wide."
+
 configmapReload:
   prometheus:
     enabled: true

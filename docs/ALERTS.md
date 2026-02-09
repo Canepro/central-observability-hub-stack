@@ -37,7 +37,67 @@ All critical alerts are routed via Gmail SMTP.
 | Argo CD Controller Down  | `up{job="argocd-application-controller-metrics"} == 0` | Critical | Triggered if the Argo CD metrics service (enabled via Terraform) stops reporting. |
 | Argo CD App Degraded     | `argocd_app_info{health_status="Degraded"} == 1`    | Critical | Notifies if a GitOps application (e.g., RocketChat) fails its health check or crashes. |
 
-## 6. Maintenance & Secret Restoration
+## 6. Tier 4: AKS Spoke Cluster (aks-canepro)
+
+**Goal**: Monitor the production Rocket.Chat workloads running on AKS. Metrics arrive at the hub via remote-write and are filtered by `cluster="aks-canepro"`.
+
+### Node Health
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS Node High CPU | `avg(rate(node_cpu_seconds_total{mode="idle"})) > 85%` | Warning | Node CPU sustained above 85% for 10m |
+| AKS Node High Memory | `node_memory_MemAvailable / Total < 15%` | Warning | Node memory above 85% for 10m |
+| AKS Node Disk Pressure | `node_filesystem_avail / size < 15%` | Warning | Root disk above 85% for 10m |
+| AKS Node Not Ready | `kube_node_status_condition{Ready} == 0` | Critical | Node NotReady for 5m |
+
+### Pod Health
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS Pod Crash Looping | `rate(restarts_total[15m]) > 3` | Warning | Pod restarted >3 times in 15m |
+| AKS Container OOM Killed | `last_terminated_reason=OOMKilled` | Warning | Container killed by OOM |
+| AKS Pod Stuck Pending | `phase=Pending for 15m` | Warning | Pod cannot be scheduled |
+| AKS Many Stale Pods | `Failed+Unknown+Succeeded > 15` | Warning | Cleanup CronJob may not be working |
+
+### Workload Availability
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS Deployment Replicas Mismatch | `available != desired` | Warning | Deployment under-replicated for 15m |
+| AKS StatefulSet Replicas Mismatch | `ready != desired` | Warning | StatefulSet under-replicated for 15m |
+| AKS DaemonSet Miss Scheduled | `desired - scheduled > 0` | Warning | DaemonSet missing pods on nodes |
+
+### Application Health
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS Rocket.Chat Down | `rocketchat-rocketchat available == 0` | Critical | No Rocket.Chat replicas |
+| AKS MongoDB Down | `mongodb ready == 0` | Critical | MongoDB StatefulSet down |
+| AKS NATS Down | `rocketchat-nats ready == 0` | Critical | NATS messaging down |
+| AKS Jenkins Down | `jenkins ready == 0` | Warning | Jenkins CI down |
+
+### Storage
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS PVC Usage High | `used / capacity > 85%` | Warning | PVC nearing capacity |
+| AKS PVC Usage Critical | `used / capacity > 95%` | Critical | PVC almost full |
+
+### Observability Pipeline
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS Prometheus Remote Write Failing | `rate(failed_samples) > 0` | Warning | Metrics not reaching hub |
+| AKS Promtail Down | `ready < desired` | Warning | Log collection incomplete |
+| AKS Kube State Metrics Down | `available == 0` | Critical | All cluster alerts will stop firing |
+
+### Network
+
+| Alert Name | Logic (PromQL) | Severity | Description |
+|---|---|---|---|
+| AKS CoreDNS Down | `coredns available == 0` | Critical | Cluster-wide DNS failure |
+
+## 7. Maintenance & Secret Restoration
 
 In the event of a cluster rebuild, the SMTP secret must be restored manually to re-enable notifications:
 
@@ -91,7 +151,7 @@ Restart Grafana to re-read env vars:
 kubectl -n monitoring rollout restart deploy/grafana
 ```
 
-## 7. Benefits and Achievements
+## 8. Benefits and Achievements
 
 1. Infrastructure as Code (IaC): Alerts are version-controlled in prometheus-values.yaml.
 2. Automated Discovery: Metrics services are automatically managed via Terraform argocd.tf.
