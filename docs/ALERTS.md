@@ -2,7 +2,10 @@
 
 ## 1. Overview
 
-This document defines the alerting strategy for the Project. We monitor three distinct layers of the infrastructure to ensure high availability and rapid disaster recovery.
+This document defines the alerting strategy for this repo (OKE hub + connected spokes).
+
+**Source of truth**: `helm/prometheus-values.yaml` (`serverFiles.alerting_rules.yml`).
+Docs summarize intent and best practices, but the YAML is authoritative.
 
 ## 2. Notification Channel: Secure SMTP
 
@@ -26,7 +29,16 @@ All critical alerts are routed via Gmail SMTP.
 
 | Alert Name          | Logic (PromQL)                                                     | Severity | Description                                                                 |
 |---------------------|--------------------------------------------------------------------|----------|-----------------------------------------------------------------------------|
-| OKE Storage Warning | `(kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) * 100 < 15` | Warning  | Alerting on OCI Block Volume usage. Critical for staying under the 200GB Always Free limit. |
+| OKE Storage Warning | `(kubelet_volume_stats_available_bytes{cluster="oke-hub"} / kubelet_volume_stats_capacity_bytes{cluster="oke-hub"}) * 100 < 15` | Warning  | Alerting on OCI Block Volume usage. Critical for staying under the 200GB Always Free limit. |
+
+### Hub node / workload health (recommended)
+
+This repo also includes hub health alerts (node CPU/memory/disk, NotReady; crashloops/OOM/pending in `monitoring` + `argocd`; workload replicas mismatch; and core observability components down). See the groups:
+- `HubNodeAlerts`
+- `HubPodAlerts`
+- `HubWorkloadAlerts`
+- `HubMonitoringStackHealth`
+- `HubPrometheusScrapeHealth`
 
 ## 5. Tier 3: GitOps & World Tree (Logical Infrastructure)
 
@@ -34,8 +46,8 @@ All critical alerts are routed via Gmail SMTP.
 
 | Alert Name               | Logic (PromQL)                                      | Severity | Description                                                                 |
 |--------------------------|-----------------------------------------------------|----------|-----------------------------------------------------------------------------|
-| Argo CD Controller Down  | `up{job="argocd-application-controller-metrics"} == 0` | Critical | Triggered if the Argo CD metrics service (enabled via Terraform) stops reporting. |
-| Argo CD App Degraded     | `argocd_app_info{health_status="Degraded"} == 1`    | Critical | Notifies if a GitOps application (e.g., RocketChat) fails its health check or crashes. |
+| Argo CD Controller Down  | `kube_statefulset_status_replicas_ready{namespace="argocd",statefulset="argocd-application-controller"} < 1` | Critical | Triggered if the ArgoCD application-controller becomes NotReady. |
+| Argo CD App Degraded     | `argocd_app_info{health_status="Degraded"} == 1`    | Critical | Notifies if a GitOps application is Degraded (requires ArgoCD metrics scraping). |
 
 ## 6. Tier 4: AKS Spoke Cluster (aks-canepro)
 
@@ -47,7 +59,13 @@ The AKS cluster is scheduled to run on weekdays from **16:00 to 23:00** and is s
 
 This is implemented via `alertmanager.config.time_intervals` + `mute_time_intervals` in `helm/prometheus-values.yaml`. The config currently assumes `UTC`; if your shutdown schedule is in a different time zone, update the `location` field there.
 
-### Node Health
+### What is actually implemented
+
+AKS alert rules are implemented under groups in `helm/prometheus-values.yaml` (for example `AKSSpokeNodeAlerts`, `AKSSpokePodAlerts`, `AKSSpokeWorkloadAlerts`). The patterns follow best practices:
+- Filter by `cluster="aks-canepro"` to avoid mixing hub and spoke metrics.
+- Use `for:` on noisy conditions (CPU/mem/disk/replicas mismatch) to avoid flapping.
+
+### Node Health (examples)
 
 | Alert Name | Logic (PromQL) | Severity | Description |
 |---|---|---|---|
@@ -73,37 +91,11 @@ This is implemented via `alertmanager.config.time_intervals` + `mute_time_interv
 | AKS StatefulSet Replicas Mismatch | `ready != desired` | Warning | StatefulSet under-replicated for 15m |
 | AKS DaemonSet Miss Scheduled | `desired - scheduled > 0` | Warning | DaemonSet missing pods on nodes |
 
-### Application Health
+## 7. Grafana dashboards for alerting
 
-| Alert Name | Logic (PromQL) | Severity | Description |
-|---|---|---|---|
-| AKS Rocket.Chat Down | `rocketchat-rocketchat available == 0` | Critical | No Rocket.Chat replicas |
-| AKS MongoDB Down | `mongodb ready == 0` | Critical | MongoDB StatefulSet down |
-| AKS NATS Down | `rocketchat-nats ready == 0` | Critical | NATS messaging down |
-| AKS Jenkins Down | `jenkins ready == 0` | Warning | Jenkins CI down |
+Grafana provisions an Alerts dashboard (gnet **9578**) via `helm/grafana-values.yaml`. Note that many alerting dashboards show `No data` when there are **no active alerts**, because Prometheus only emits `ALERTS` time series when an alert is pending/firing.
 
-### Storage
-
-| Alert Name | Logic (PromQL) | Severity | Description |
-|---|---|---|---|
-| AKS PVC Usage High | `used / capacity > 85%` | Warning | PVC nearing capacity |
-| AKS PVC Usage Critical | `used / capacity > 95%` | Critical | PVC almost full |
-
-### Observability Pipeline
-
-| Alert Name | Logic (PromQL) | Severity | Description |
-|---|---|---|---|
-| AKS Prometheus Remote Write Failing | `rate(failed_samples) > 0` | Warning | Metrics not reaching hub |
-| AKS Promtail Down | `ready < desired` | Warning | Log collection incomplete |
-| AKS Kube State Metrics Down | `available == 0` | Critical | All cluster alerts will stop firing |
-
-### Network
-
-| Alert Name | Logic (PromQL) | Severity | Description |
-|---|---|---|---|
-| AKS CoreDNS Down | `coredns available == 0` | Critical | Cluster-wide DNS failure |
-
-## 7. Maintenance & Secret Restoration
+## 8. Maintenance & Secret Restoration
 
 In the event of a cluster rebuild, the SMTP secret must be restored manually to re-enable notifications:
 
@@ -157,7 +149,7 @@ Restart Grafana to re-read env vars:
 kubectl -n monitoring rollout restart deploy/grafana
 ```
 
-## 8. Benefits and Achievements
+## 9. Benefits and Achievements
 
 1. Infrastructure as Code (IaC): Alerts are version-controlled in prometheus-values.yaml.
 2. Automated Discovery: Metrics services are automatically managed via Terraform argocd.tf.

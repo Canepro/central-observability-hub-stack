@@ -534,7 +534,7 @@ serverFiles:
 
           # 2. Hub Infrastructure: OKE Storage
           - alert: OKEStorageWarning
-            expr: (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) * 100 < 15
+            expr: (kubelet_volume_stats_available_bytes{cluster="oke-hub"} / kubelet_volume_stats_capacity_bytes{cluster="oke-hub"}) * 100 < 15
             for: 5m
             labels:
               severity: warning
@@ -544,23 +544,226 @@ serverFiles:
 
           # 3. GitOps Heartbeat: Argo CD Controller
           - alert: ArgoCDControllerDown
-            expr: up{job="argocd-application-controller-metrics"} == 0
+            # Prefer kube-state-metrics over scrape-target job labels (more stable across scrape config changes)
+            expr: kube_statefulset_status_replicas_ready{namespace="argocd",statefulset="argocd-application-controller",cluster="oke-hub"} < 1
             for: 2m
             labels:
               severity: critical
             annotations:
               summary: "ArgoCD Monitoring Down"
-              description: "The ArgoCD application-controller is not reporting metrics."
+              description: "ArgoCD application-controller is not Ready (StatefulSet argocd/argocd-application-controller)."
 
           # 4. GitOps Health: Application Status
           - alert: ArgoCDApplicationDegraded
-            expr: argocd_app_info{health_status="Degraded"} == 1
+            expr: argocd_app_info{health_status="Degraded",cluster="oke-hub"} == 1
             for: 5m
             labels:
               severity: critical
             annotations:
               summary: "GitOps Application Degraded"
               description: "Application {{ $labels.name }} in project {{ $labels.project }} is in a failed state."
+
+      # ──────────────────────────────────────────────
+      # Tier 1: OKE Hub Cluster (oke-hub)
+      # Metrics are scraped locally; filter with cluster="oke-hub"
+      # ──────────────────────────────────────────────
+      - name: HubNodeAlerts
+        rules:
+          - alert: HubNodeHighCPU
+            expr: |
+              (
+                1 - avg by (service, cluster) (rate(node_cpu_seconds_total{mode="idle", cluster="oke-hub"}[5m]))
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub node CPU > 85% for 10m"
+              description: "Node {{ $labels.service }} CPU usage is {{ $value | printf \"%.1f\" }}%."
+
+          - alert: HubNodeHighMemory
+            expr: |
+              (
+                1 - (node_memory_MemAvailable_bytes{cluster="oke-hub"} / node_memory_MemTotal_bytes{cluster="oke-hub"})
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub node memory > 85% for 10m"
+              description: "Node {{ $labels.service }} memory usage is {{ $value | printf \"%.1f\" }}%."
+
+          - alert: HubNodeDiskPressure
+            expr: |
+              (
+                1 - (node_filesystem_avail_bytes{cluster="oke-hub", mountpoint="/", fstype!="tmpfs"} / node_filesystem_size_bytes{cluster="oke-hub", mountpoint="/", fstype!="tmpfs"})
+              ) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub node disk > 85% full"
+              description: "Node {{ $labels.service }} root disk usage is {{ $value | printf \"%.1f\" }}%."
+
+          - alert: HubNodeNotReady
+            expr: kube_node_status_condition{condition="Ready", status="true", cluster="oke-hub"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub node not ready"
+              description: "Node {{ $labels.node }} has been NotReady for 5 minutes."
+
+      - name: HubPodAlerts
+        rules:
+          - alert: HubPodCrashLooping
+            expr: |
+              rate(kube_pod_container_status_restarts_total{cluster="oke-hub", namespace=~"monitoring|argocd"}[15m]) * 60 * 15 > 3
+            for: 10m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "Pod crash-looping on OKE hub"
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) restarted {{ $value | printf \"%.0f\" }} times in 15m."
+
+          - alert: HubContainerOOMKilled
+            expr: |
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="oke-hub", namespace=~"monitoring|argocd"} == 1
+            for: 0m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "Container OOMKilled on OKE hub"
+              description: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} was OOMKilled."
+
+          - alert: HubPodStuckPending
+            expr: |
+              kube_pod_status_phase{phase="Pending", cluster="oke-hub", namespace=~"monitoring|argocd"} == 1
+            for: 15m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "Pod stuck Pending on OKE hub"
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been Pending for > 15m."
+
+      - name: HubWorkloadAlerts
+        rules:
+          - alert: HubDeploymentReplicasMismatch
+            expr: |
+              kube_deployment_status_replicas_available{cluster="oke-hub", namespace=~"monitoring|argocd"}
+                != kube_deployment_spec_replicas{cluster="oke-hub", namespace=~"monitoring|argocd"}
+            for: 15m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub Deployment replicas mismatch"
+              description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} available vs desired."
+
+          - alert: HubStatefulSetReplicasMismatch
+            expr: |
+              kube_statefulset_status_replicas_ready{cluster="oke-hub", namespace=~"monitoring|argocd"}
+                != kube_statefulset_replicas{cluster="oke-hub", namespace=~"monitoring|argocd"}
+            for: 15m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub StatefulSet replicas mismatch"
+              description: "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has {{ $value }} ready vs desired."
+
+          - alert: HubDaemonSetMissScheduled
+            expr: |
+              kube_daemonset_status_desired_number_scheduled{cluster="oke-hub", namespace=~"monitoring|argocd|ingress-nginx|kube-system"}
+                - kube_daemonset_status_current_number_scheduled{cluster="oke-hub", namespace=~"monitoring|argocd|ingress-nginx|kube-system"} > 0
+            for: 10m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "OKE hub DaemonSet not fully scheduled"
+              description: "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} is missing pods on some nodes."
+
+      - name: HubMonitoringStackHealth
+        rules:
+          - alert: PrometheusServerUnavailable
+            expr: kube_deployment_status_replicas_available{deployment="prometheus-server", namespace="monitoring", cluster="oke-hub"} < 1
+            for: 5m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "Prometheus server unavailable"
+              description: "Deployment monitoring/prometheus-server has 0 available replicas."
+
+          - alert: GrafanaUnavailable
+            expr: kube_deployment_status_replicas_available{deployment="grafana", namespace="monitoring", cluster="oke-hub"} < 1
+            for: 5m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "Grafana unavailable"
+              description: "Deployment monitoring/grafana has 0 available replicas."
+
+          - alert: LokiUnavailable
+            expr: kube_statefulset_status_replicas_ready{statefulset="loki", namespace="monitoring", cluster="oke-hub"} < 1
+            for: 10m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "Loki unavailable"
+              description: "StatefulSet monitoring/loki has 0 ready replicas."
+
+          - alert: TempoUnavailable
+            expr: kube_statefulset_status_replicas_ready{statefulset="tempo", namespace="monitoring", cluster="oke-hub"} < 1
+            for: 10m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "Tempo unavailable"
+              description: "StatefulSet monitoring/tempo has 0 ready replicas."
+
+          - alert: AlertmanagerUnavailable
+            expr: kube_statefulset_status_replicas_ready{statefulset="prometheus-alertmanager", namespace="monitoring", cluster="oke-hub"} < 1
+            for: 10m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "Alertmanager unavailable"
+              description: "StatefulSet monitoring/prometheus-alertmanager has 0 ready replicas."
+
+      - name: HubPrometheusScrapeHealth
+        rules:
+          - alert: HubCadvisorScrapeDown
+            expr: up{job="kubernetes-nodes-cadvisor", cluster="oke-hub"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              cluster: oke-hub
+            annotations:
+              summary: "cAdvisor scrape down"
+              description: "Prometheus cannot scrape cAdvisor for node {{ $labels.service }} (job kubernetes-nodes-cadvisor)."
+
+          - alert: HubKubeletVolumeStatsScrapeDown
+            expr: up{job="kubelet-volume-stats", cluster="oke-hub"} == 0
+            for: 5m
+            labels:
+              severity: warning
+              cluster: oke-hub
+            annotations:
+              summary: "kubelet volume stats scrape down"
+              description: "Prometheus cannot scrape kubelet volume stats for node {{ $labels.instance }} (job kubelet-volume-stats)."
 
       # ──────────────────────────────────────────────
       # Tier 4: AKS Spoke Cluster (aks-canepro)
