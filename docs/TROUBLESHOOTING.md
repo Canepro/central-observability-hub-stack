@@ -304,6 +304,7 @@ It should be > 0.
 - The Kubernetes Secret `monitoring/grafana-smtp-credentials` exists, but the values are not accepted by Gmail SMTP.
   - Most commonly: the `password` is not a **Gmail App Password** (required when 2FA is enabled), or the password was rotated/invalidated.
   - Less commonly: the `user` is not the full email address.
+- Another common cause: Alertmanager is not expanding `${SMTP_*}` placeholders because it was not started with `--config.expand-env`, or the SMTP env vars were not injected into the pod.
 
 **Fix**
 1. Generate a new **Gmail App Password** for the account used to send alerts.
@@ -324,6 +325,18 @@ kubectl -n monitoring rollout restart statefulset/prometheus-alertmanager
 ```bash
 kubectl -n monitoring rollout restart deploy/grafana
 ```
+
+**If it still fails after rotating the Secret**
+1. Confirm the env vars are present in the Alertmanager container (do not paste secrets):
+```bash
+kubectl -n monitoring exec prometheus-alertmanager-0 -- sh -c 'env | rg \"^SMTP_\" | sed -E \"s/=(.*)$/=<redacted>/\"'
+```
+2. Confirm the pod args include `--config.expand-env`:
+```bash
+kubectl -n monitoring get pod prometheus-alertmanager-0 -o jsonpath='{.spec.containers[0].args}' | rg -- '--config\\.expand-env'
+```
+3. If either is missing, ensure the repo is synced:
+- SMTP env var injection and `--config.expand-env` are configured in Git under `helm/prometheus-values.yaml` (`alertmanager.extraEnv` + `alertmanager.extraArgs`).
 
 **Verification**
 - In Alertmanager logs, you should stop seeing the 535 retries:

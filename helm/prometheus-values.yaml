@@ -1111,6 +1111,10 @@ server:
 # Alertmanager configuration
 alertmanager:
   enabled: true
+  # Alertmanager config uses ${SMTP_*} placeholders. The upstream Alertmanager
+  # binary only expands env vars when `--config.expand-env` is enabled.
+  extraArgs:
+    config.expand-env: "true"
   service:
     annotations:
       prometheus.io/scrape: "true"
@@ -1126,7 +1130,8 @@ alertmanager:
       cpu: 500m
       memory: 512Mi
 
-  extraEnvVars:
+  # NOTE: This chart uses `extraEnv` (not `extraEnvVars`).
+  extraEnv:
     - name: SMTP_PASSWORD
       valueFrom:
         secretKeyRef:
