@@ -270,6 +270,29 @@ Should be `1` for each node.
 
 ---
 
+## Alertmanager Issues
+
+### Grafana Alertmanager dashboard shows `N/A` for all stats
+
+**Symptoms**
+- The Alertmanager dashboard panels show `N/A` for instance count, cluster size, active alerts, silences, etc.
+
+**Root cause**
+Prometheus is not scraping Alertmanager's own `/metrics`. This repo relies on service annotations for `kubernetes-service-endpoints` discovery. If the `prometheus-alertmanager` service is missing `prometheus.io/scrape=true`, the series `alertmanager_*` will not exist, and the dashboard has nothing to render.
+
+**Fix (this repo)**
+`helm/prometheus-values.yaml` adds scrape annotations on the Alertmanager service:
+- `prometheus.io/scrape: "true"`
+- `prometheus.io/port: "9093"`
+- `prometheus.io/path: /metrics`
+
+**Quick verification**
+In Grafana Explore (Prometheus), run:
+```promql
+count(alertmanager_build_info)
+```
+It should be > 0.
+
 ## Ingress & Network Issues
 
 ### NGINX Default Backend Crash (ARM64)
