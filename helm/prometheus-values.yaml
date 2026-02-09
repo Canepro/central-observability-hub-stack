@@ -905,12 +905,38 @@ alertmanager:
       smtp_auth_password: '${SMTP_PASSWORD}'
       smtp_require_tls: true
 
+    # NOTE: If a time zone is not specified, times are interpreted as UTC.
+    # Update `location` below if your AKS auto-start/stop schedule uses a different zone.
+    time_intervals:
+      - name: 'aks-canepro-down-hours'
+        time_intervals:
+          # AKS is expected to be OFF during these times.
+          - weekdays: ['monday:friday']
+            times:
+              - start_time: '00:00'
+                end_time: '16:00'
+              - start_time: '23:00'
+                end_time: '24:00'
+            location: 'UTC'
+          - weekdays: ['saturday', 'sunday']
+            times:
+              - start_time: '00:00'
+                end_time: '24:00'
+            location: 'UTC'
+
     route:
       group_by: ['alertname', 'cluster', 'severity']
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
       receiver: 'gmail-notifications'
+      routes:
+        # Avoid false positives during the scheduled AKS shutdown window.
+        - receiver: 'gmail-notifications'
+          matchers:
+            - 'cluster="aks-canepro"'
+          mute_time_intervals:
+            - 'aks-canepro-down-hours'
 
     receivers:
       - name: 'gmail-notifications'

@@ -41,6 +41,12 @@ All critical alerts are routed via Gmail SMTP.
 
 **Goal**: Monitor the production Rocket.Chat workloads running on AKS. Metrics arrive at the hub via remote-write and are filtered by `cluster="aks-canepro"`.
 
+### Scheduled Shutdown Window
+
+The AKS cluster is scheduled to run on weekdays from **16:00 to 23:00** and is shut down outside that window (and on weekends). To avoid false positives, Alertmanager mutes notifications for `cluster="aks-canepro"` during the expected downtime window.
+
+This is implemented via `alertmanager.config.time_intervals` + `mute_time_intervals` in `helm/prometheus-values.yaml`. The config currently assumes `UTC`; if your shutdown schedule is in a different time zone, update the `location` field there.
+
 ### Node Health
 
 | Alert Name | Logic (PromQL) | Severity | Description |
