@@ -293,6 +293,99 @@ count(alertmanager_build_info)
 ```
 It should be > 0.
 
+---
+
+## Alerting (Runbooks)
+
+This repo defines Prometheus alert rules in `helm/prometheus-values.yaml` under `serverFiles.alerting_rules.yml`.
+
+### `ArgoCDApplicationDegraded` is firing
+
+**Meaning**
+- Argo CD is reporting one or more Applications with `health_status="Degraded"` on the hub cluster (`cluster="oke-hub"`).
+- The rule uses a `for: 5m` hold-down, so it must stay degraded for 5 minutes to fire.
+
+**Common causes**
+- A workload is unhealthy (CrashLoopBackOff, image pull error, failing readiness probe).
+- Argo CD can sync, but the resulting resources are unhealthy.
+- Argo CD can't reach a repo or chart registry, so an Application is stuck in a bad state (often shows up as Degraded/Unknown depending on the case).
+
+**Fast verification**
+In Grafana Explore (Prometheus):
+```promql
+argocd_app_info{health_status="Degraded",cluster="oke-hub"}
+```
+Look at the returned labels (especially `name` and `project`) to identify the affected application.
+
+**What to check next (GitOps-first)**
+```bash
+# (Hub cluster) list degraded apps and the status fields
+kubectl -n argocd get applications.argoproj.io
+
+# describe a specific app for health/sync details
+kubectl -n argocd describe application <app-name>
+```
+Then fix by changing Git (values/manifest) and letting ArgoCD reconcile.
+
+### `HubContainerOOMKilled` is firing
+
+**Meaning**
+- A container in `monitoring` or `argocd` on the hub cluster has `last_terminated_reason=OOMKilled`.
+- The rule has `for: 0m` (it fires immediately).
+
+**Important behavior note**
+- This alert is based on `kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}` which can remain `1` until the container terminates again for a different reason. If you only want "recent OOMKills", change the rule to a time-window based expression.
+
+**Fast verification**
+In Grafana Explore (Prometheus):
+```promql
+kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"} == 1
+```
+
+**What to check next**
+```bash
+kubectl -n monitoring get pods
+kubectl -n monitoring describe pod <pod>
+kubectl -n monitoring logs <pod> -c <container> --previous
+```
+Then adjust resources (requests/limits) in Git, or fix the workload's memory leak/peak usage.
+
+### `AKSManyStalePods` is firing
+
+**Meaning**
+- On the AKS cluster (`cluster="aks-canepro"`), the count of pods in terminal phases is > 15 for 30 minutes:
+  - `Failed` + `Unknown` + `Succeeded`
+
+**Why this happens**
+- CronJobs/Jobs create lots of `Succeeded` pods and keep history.
+- `Failed` pods accumulate when workloads repeatedly fail and aren’t cleaned up.
+- `Unknown` often indicates node/agent issues or API reporting problems.
+
+**Fast verification**
+In Grafana Explore (Prometheus):
+```promql
+count(kube_pod_status_phase{phase="Failed",cluster="aks-canepro"}) or vector(0)
+```
+```promql
+count(kube_pod_status_phase{phase="Unknown",cluster="aks-canepro"}) or vector(0)
+```
+```promql
+count(kube_pod_status_phase{phase="Succeeded",cluster="aks-canepro"}) or vector(0)
+```
+
+**What to check next**
+```bash
+# (AKS cluster context) identify which namespaces/pods are piling up
+kubectl get pods -A --field-selector=status.phase=Succeeded
+kubectl get pods -A --field-selector=status.phase=Failed
+kubectl get pods -A --field-selector=status.phase=Unknown
+```
+
+**Mitigations (best practice)**
+- Set `successfulJobsHistoryLimit` / `failedJobsHistoryLimit` on CronJobs.
+- Prefer `ttlSecondsAfterFinished` on Jobs where supported/appropriate.
+- If you intentionally rely on a cleanup job (for example a `aks-stale-pod-cleanup` CronJob), ensure it is deployed via GitOps and is running successfully.
+
 ## Ingress & Network Issues
 
 ### NGINX Default Backend Crash (ARM64)
