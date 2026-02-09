@@ -295,3 +295,8 @@ dashboards:
       gnetId: 23242
       revision: latest
       datasource: Tempo
+    alerts-dashboard:
+      # Alerting overview dashboard (requires Prometheus alerts/rules to be present).
+      gnetId: 9578
+      revision: latest
+      datasource: Prometheus
