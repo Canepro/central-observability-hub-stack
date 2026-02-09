@@ -232,6 +232,12 @@ serverFiles:
             regex: prometheus-kube-state-metrics
             target_label: job
             replacement: kube-state-metrics
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_service_name
+            regex: prometheus-alertmanager
+            target_label: job
+            replacement: alertmanager
           # Expose Argo CD metrics with job=<service_name> so gnet dashboards and
           # alert rules can match `job="argocd-*-metrics"`.
           - action: replace
@@ -1105,6 +1111,11 @@ server:
 # Alertmanager configuration
 alertmanager:
   enabled: true
+  service:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9093"
+      prometheus.io/path: /metrics
   persistence:
     enabled: false
   resources:
