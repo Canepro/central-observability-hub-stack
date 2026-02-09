@@ -293,6 +293,48 @@ count(alertmanager_build_info)
 ```
 It should be > 0.
 
+### Alertmanager email notifications fail with Gmail `535 5.7.8 Username and Password not accepted`
+
+**Symptoms**
+- Alertmanager logs show repeated retries and eventual failure, for example:
+  - `*email.loginAuth auth: 535 5.7.8 Username and Password not accepted ... BadCredentials`
+- You have firing alerts, but no email arrives.
+
+**Root cause**
+- The Kubernetes Secret `monitoring/grafana-smtp-credentials` exists, but the values are not accepted by Gmail SMTP.
+  - Most commonly: the `password` is not a **Gmail App Password** (required when 2FA is enabled), or the password was rotated/invalidated.
+  - Less commonly: the `user` is not the full email address.
+
+**Fix**
+1. Generate a new **Gmail App Password** for the account used to send alerts.
+2. Update the Secret (safe upsert, no delete):
+```bash
+kubectl -n monitoring create secret generic grafana-smtp-credentials \
+  --from-literal=password='NEW_GMAIL_APP_PASSWORD' \
+  --from-literal=user='your-email@gmail.com' \
+  --from-literal=from_address='your-email@gmail.com' \
+  --from-literal=to_address='alerts-recipient@gmail.com' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+3. Restart Alertmanager (pods do not reload env vars automatically):
+```bash
+kubectl -n monitoring rollout restart statefulset/prometheus-alertmanager
+```
+4. If you also use Grafana email (Grafana-managed alerting/contact points), restart Grafana too:
+```bash
+kubectl -n monitoring rollout restart deploy/grafana
+```
+
+**Verification**
+- In Alertmanager logs, you should stop seeing the 535 retries:
+```bash
+kubectl -n monitoring logs statefulset/prometheus-alertmanager | rg -i \"smtp|email|notify|error|fail\"
+```
+- In Prometheus (Grafana Explore):
+```promql
+sum(increase(alertmanager_notifications_total{integration=\"email\"}[30m]))
+```
+
 ---
 
 ## Alerting (Runbooks)
