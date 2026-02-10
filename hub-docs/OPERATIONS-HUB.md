@@ -206,6 +206,70 @@ kubectl get pods -n kube-system -l app.kubernetes.io/name=metrics-server
 kubectl top nodes
 ```
 
+## 🔍 OOM diagnosis and remediation procedure
+
+When **HubContainerOOMKilled** (or any container OOM) fires, follow this procedure before increasing the affected pod’s memory. Always check cluster headroom first so you don’t over-commit.
+
+### 1. Identify the OOM’d workload
+
+From the alert labels or manually:
+
+```bash
+kubectl -n argocd get pods
+kubectl -n monitoring get pods
+kubectl describe pod <pod-name> -n <namespace>
+```
+
+In the pod description, check **Last State: Terminated**, **Reason: OOMKilled**, and **Containers:** **Limits:** memory. Optionally check logs from the previous run:
+
+```bash
+kubectl logs <pod> -c <container> -n <namespace> --previous
+```
+
+### 2. Check node capacity and actual usage
+
+See **hub-docs/CLUSTER-INFO.md** (section 6) for the snapshot and commands. Run:
+
+```bash
+kubectl get nodes -o wide
+kubectl describe nodes | grep -A 5 "Allocated resources"
+kubectl top nodes
+```
+
+Interpret:
+
+- **Memory** is usually the constraint on small hubs (e.g. 2 × ~9.2 Gi allocatable). If both nodes are already at **>80% actual usage**, adding more limits without freeing elsewhere can cause more OOMs or node pressure.
+- **CPU** limits are often overcommitted (200–300%); actual usage is what matters. Low actual CPU is fine.
+
+### 3. Compare pod limits vs actual usage
+
+List which workloads use a lot of memory vs their limits:
+
+```bash
+kubectl top pods -A --containers | head -60
+kubectl get pods -A -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,MEM_REQ:.spec.containers[*].resources.requests.memory,MEM_LIM:.spec.containers[*].resources.limits.memory
+```
+
+Identify:
+
+- **OOM’d pod**: needs more headroom (increase limit, or reduce load).
+- **Others with high limit, low actual**: candidates to trim limits to free schedulable memory (e.g. Grafana 768Mi → 512Mi, Alertmanager 512Mi → 256Mi, Argo CD server 512Mi → 256Mi, nginx-ingress 512Mi → 256Mi).
+
+### 4. Decide remediation
+
+| Situation | Action |
+|-----------|--------|
+| Node memory &lt; ~80% and only one pod OOM’d | **Small bump**: increase the OOM’d container limit (e.g. 512Mi → 768Mi). Prefer 768Mi if headroom is tight. |
+| Node memory already high (e.g. ≥80%) | **Trim first**: reduce limits on under-used workloads (in this repo: `helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`). Then increase the OOM’d workload (e.g. to 1Gi). |
+| Argo CD application-controller OOM | Controller resources **are** defined in this repo via `terraform/argocd.tf` (`helm_release.argocd`, Helm values `controller.resources`). Increase `controller.resources.limits.memory` (e.g. `768Mi` or `1Gi`). |
+
+### 5. Apply changes (GitOps)
+
+- **This repo**: edit the relevant `helm/*-values.yaml`, commit, push. Argo CD will sync.
+- **Argo CD install (this repo)**: change `controller.resources` (and/or `server.resources`) in `terraform/argocd.tf`, then run `terraform apply` so the Helm release updates.
+
+After changes, re-check `kubectl top nodes` and that the previously OOM’d pod is stable. See **docs/TROUBLESHOOTING.md** (HubContainerOOMKilled) for alert details and verification queries.
+
 ## 💾 Live PVC usage (% full) in Grafana
 The “Master Health Dashboard” includes a PVC usage panel. Live “% full” requires kubelet volume stats metrics:
 - `kubelet_volume_stats_used_bytes`
@@ -245,4 +309,3 @@ kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password a
 **Fix (recommended)**
 - Keep `type: RollingUpdate`, but set `maxSurge: 0` (and `maxUnavailable: 1`) so Kubernetes terminates the old pod *before* creating the new one.
   - This is what this repo uses in `helm/grafana-values.yaml`.
-
