@@ -416,7 +416,7 @@ Do **not** increase the pod’s memory limit until you have checked node headroo
 
 4. **Decide and apply**
    - **Tight cluster**: Trim limits on under-used workloads in this repo (`helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`), then increase the OOM’d workload.
-   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` in `terraform/argocd.tf` (`helm_release.argocd`).
+   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` (requests + limits) in `terraform/argocd.tf` (`helm_release.argocd`), then run `terraform apply`.
 
 **What to check next (per-pod)**
 ```bash

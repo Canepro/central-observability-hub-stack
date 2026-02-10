@@ -23,10 +23,10 @@ data:
     global:
       scrape_interval: 30s
       external_labels:
-        cluster: rocketchat-k3s
+        cluster: aks-canepro
         environment: production
         workspace: production
-        domain: rocketchat.local
+        domain: k8.canepro.me
 
     remote_write:
       - url: https://observability.canepro.me/api/v1/write
@@ -174,4 +174,3 @@ subjects:
 - kind: ServiceAccount
   name: prometheus-agent
   namespace: monitoring
-
