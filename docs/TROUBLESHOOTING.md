@@ -304,7 +304,7 @@ It should be > 0.
 - The Kubernetes Secret `monitoring/grafana-smtp-credentials` exists, but the values are not accepted by Gmail SMTP.
   - Most commonly: the `password` is not a **Gmail App Password** (required when 2FA is enabled), or the password was rotated/invalidated.
   - Less commonly: the `user` is not the full email address.
-- Another common cause: Alertmanager is not expanding `${SMTP_*}` placeholders because it was not started with `--config.expand-env`, or the SMTP env vars were not injected into the pod.
+- Another common cause: Alertmanager is not actually using the secret values because the `${SMTP_*}` placeholders were not rendered before startup (the config file is mounted read-only from a ConfigMap).
 
 **Fix**
 1. Generate a new **Gmail App Password** for the account used to send alerts.
@@ -331,12 +331,16 @@ kubectl -n monitoring rollout restart deploy/grafana
 ```bash
 kubectl -n monitoring exec prometheus-alertmanager-0 -- sh -c 'env | rg \"^SMTP_\" | sed -E \"s/=(.*)$/=<redacted>/\"'
 ```
-2. Confirm the pod args include `--config.expand-env`:
+2. Confirm Alertmanager is using the rendered config file:
 ```bash
-kubectl -n monitoring get pod prometheus-alertmanager-0 -o jsonpath='{.spec.containers[0].args}' | rg -- '--config\\.expand-env'
+kubectl -n monitoring get pod prometheus-alertmanager-0 -o jsonpath='{.spec.containers[0].args}' | rg -- '--config\\.file=/etc/alertmanager-generated/alertmanager\\.yml'
 ```
-3. If either is missing, ensure the repo is synced:
-- SMTP env var injection and `--config.expand-env` are configured in Git under `helm/prometheus-values.yaml` (`alertmanager.extraEnv` + `alertmanager.extraArgs`).
+3. Confirm placeholders were rendered (should print nothing):
+```bash
+kubectl -n monitoring exec prometheus-alertmanager-0 -- sh -c 'rg \"\\$\\{SMTP_\" /etc/alertmanager-generated/alertmanager.yml || true'
+```
+4. If any of these are missing, ensure the repo is synced:
+- SMTP env var injection and config rendering are configured in Git under `helm/prometheus-values.yaml` (`alertmanager.extraEnv` + `alertmanager.extraInitContainers` + `alertmanager.extraArgs`).
 
 **Verification**
 - In Alertmanager logs, you should stop seeing the 535 retries:
