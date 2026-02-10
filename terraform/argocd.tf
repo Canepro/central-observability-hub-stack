@@ -41,7 +41,8 @@ resource "helm_release" "argocd" {
         metrics   = { enabled = true }
         resources = {
           limits   = { cpu = "500m", memory = "768Mi" }
-          requests = { cpu = "500m", memory = "512Mi" }
+          # Keep controller QoS as Guaranteed (requests == limits) to reduce eviction risk.
+          requests = { cpu = "500m", memory = "768Mi" }
         }
       }
       repoServer = {
