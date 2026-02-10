@@ -7,7 +7,7 @@ This document serves as the final operational map for the entire Multi-Cluster e
 | Component | Cluster Type | Role | Environment |
 |-----------|--------------|------|-------------|
 | **OKE Hub** | Oracle Cloud (Managed) | The "Brain": Hosts ArgoCD & Central Observability | Always Free Tier |
-| **K3s Spoke** | Ubuntu VM (Self-managed) | The "Muscle": Hosts RocketChat microservices | Lab / Production |
+| **AKS App Cluster** | Azure Kubernetes Service (Managed) | Hosts Rocket.Chat | Auto-shutdown on schedule |
 
 ## 🌐 2. Access Points & External URLs
 
@@ -15,8 +15,8 @@ This document serves as the final operational map for the entire Multi-Cluster e
 |---------|-----|---------|
 | **ArgoCD UI** | https://argocd.canepro.me | Single Source of Truth & Deployment Control |
 | **Grafana** | https://grafana.canepro.me | Centralized Logs (Loki) & Metrics (Prometheus) |
-| **RocketChat** | https://k8.canepro.me | The Main Application Front-End |
-| **K8s API** | https://k8.canepro.me:6443 | Direct kubectl access to the Spoke cluster |
+| **RocketChat** | https://k8.canepro.me | Rocket.Chat Front-End |
+| **K8s API** | https://k8.canepro.me:6443 | Direct kubectl access to the AKS cluster (may be offline during auto-shutdown windows) |
 
 ### 🔑 ArgoCD Initial Access
 To retrieve the initial `admin` password:
@@ -86,4 +86,3 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 ---
 **Status**: ✅ Platform Fully Operational & Managed via GitOps
-

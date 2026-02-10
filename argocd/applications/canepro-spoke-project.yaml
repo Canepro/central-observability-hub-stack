@@ -4,7 +4,7 @@ metadata:
   name: canepro-spoke
   namespace: argocd
 spec:
-  description: "Management for the k8.canepro.me K3s Spoke cluster"
+  description: "Management for the k8.canepro.me AKS cluster (may be auto-shutdown on a schedule)"
   sourceRepos:
     - "https://github.com/Canepro/rocketchat-k8s.git"
     - "https://rocketchat.github.io/helm-charts"
