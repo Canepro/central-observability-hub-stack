@@ -44,7 +44,7 @@ resources:
     memory: 256Mi
   limits:
     cpu: 500m
-    memory: 768Mi
+    memory: 512Mi
 
 # Health probe configuration to handle slow startup on free-tier nodes
 readinessProbe:
