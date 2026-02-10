@@ -352,7 +352,13 @@ Apply: `kubectl apply -f k8s/alerting-rules.yaml`
 
 ### Configure Alertmanager Notifications
 
-Edit `k8s/alertmanager-config.yaml` and apply.
+Do not hand-edit Alertmanager configs in-cluster.
+
+This repo manages Alertmanager configuration via Helm values:
+- Alertmanager routing + email receiver: `helm/prometheus-values.yaml` under `alertmanager.config`
+- SMTP credentials (kept out of Git): Kubernetes Secret `monitoring/grafana-smtp-credentials`
+
+If you need to change routing/receivers, change Git and let ArgoCD reconcile.
 
 ---
 
