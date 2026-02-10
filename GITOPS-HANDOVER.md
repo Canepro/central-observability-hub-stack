@@ -1,6 +1,6 @@
 # Multi-Cluster GitOps Handover
 
-This document serves as the final operational map for the entire Multi-Cluster ecosystem. It consolidates the management of the OKE Hub, the K3s Spoke, and the application stacks into a single source of truth.
+This document serves as the final operational map for the entire Multi-Cluster ecosystem. It consolidates the management of the OKE Hub, the AKS app cluster (`k8.canepro.me`), and the application stacks into a single source of truth.
 
 ## 🗺️ 1. Core Infrastructure Map
 
@@ -17,6 +17,10 @@ This document serves as the final operational map for the entire Multi-Cluster e
 | **Grafana** | https://grafana.canepro.me | Centralized Logs (Loki) & Metrics (Prometheus) |
 | **RocketChat** | https://k8.canepro.me | Rocket.Chat Front-End |
 | **K8s API** | https://k8.canepro.me:6443 | Direct kubectl access to the AKS cluster (may be offline during auto-shutdown windows) |
+
+Notes:
+- `k8.canepro.me` is the current AKS Rocket.Chat cluster and may be offline weekdays 4pm-11pm due to auto-shutdown.
+- The old cluster `k8-canepro-rocketchat` has been retired/deleted.
 
 ### 🔑 ArgoCD Initial Access
 To retrieve the initial `admin` password:
@@ -80,7 +84,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 | Symptom | Primary Cause | First Action |
 |---------|---------------|--------------|
 | **App is "OutOfSync"** | Manual change on cluster or new Git push | Check Diff in ArgoCD UI, then click Sync. |
-| **Pods stuck "Creating"** | Potential Disk Pressure (>85%) | Run `sudo k3s crictl rmi --prune` on the Spoke node. |
+| **Pods stuck "Creating"** | Disk pressure or image pull / registry issues | `kubectl describe pod <pod> -n <ns>` and check Events for `DiskPressure`, `ImagePullBackOff`, or CNI/storage errors. On managed clusters (AKS/OKE), recycle/replace nodes if disk pressure persists. |
 | **"Handshake Error" in logs** | Prometheus Agent protocol mismatch | Verify `scheme: https` in the agent config. |
 | **DNS Resolution Failure** | Missing A-Record or restart delay | Check `nslookup k8.canepro.me` or update `/etc/hosts`. |
 
