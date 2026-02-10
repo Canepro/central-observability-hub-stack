@@ -1154,10 +1154,13 @@ alertmanager:
             '{
               # BusyBox awk treats `\{` as an interval operator; match braces
               # using character classes for portability.
-              gsub(/\\$[{]SMTP_FROM[}]/, from);
-              gsub(/\\$[{]SMTP_TO[}]/, to);
-              gsub(/\\$[{]SMTP_USER[}]/, user);
-              gsub(/\\$[{]SMTP_PASSWORD[}]/, pass);
+              # Avoid backslashes entirely here: this awk program is single-quoted
+              # in the shell script, so backslashes would be passed through and
+              # could prevent matching the literal `${SMTP_*}` strings.
+              gsub(/[$][{]SMTP_FROM[}]/, from);
+              gsub(/[$][{]SMTP_TO[}]/, to);
+              gsub(/[$][{]SMTP_USER[}]/, user);
+              gsub(/[$][{]SMTP_PASSWORD[}]/, pass);
               print;
             }' "$src" > "$dst"
       env:
