@@ -401,13 +401,31 @@ In Grafana Explore (Prometheus):
 kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"} == 1
 ```
 
-**What to check next**
+**Remediation flow (check cluster capacity first)**
+
+Do **not** increase the pod’s memory limit until you have checked node headroom and, if needed, trimmed other workloads. Full procedure: **hub-docs/OPERATIONS-HUB.md** (section “OOM diagnosis and remediation procedure”). Summary:
+
+1. **Identify the OOM’d pod**  
+   From alert labels or `kubectl -n argocd get pods` / `kubectl -n monitoring get pods`, then `kubectl describe pod <pod> -n <namespace>`. Confirm **Last State: Terminated**, **Reason: OOMKilled** and the container’s memory **Limits**.
+
+2. **Check node capacity and usage**  
+   Run `kubectl describe nodes | grep -A 5 "Allocated resources"` and `kubectl top nodes`. If node memory is already high (e.g. >80% actual usage), see **hub-docs/CLUSTER-INFO.md** (section 6) for snapshot and refresh commands.
+
+3. **Compare limits vs actual usage**  
+   Run `kubectl top pods -A --containers` and the custom-columns command in OPERATIONS-HUB.md. Find the OOM’d workload and others with high limits but low actual usage (candidates to trim).
+
+4. **Decide and apply**
+   - **Tight cluster**: Trim limits on under-used workloads in this repo (`helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`), then increase the OOM’d workload.
+   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` in `terraform/argocd.tf` (`helm_release.argocd`).
+
+**What to check next (per-pod)**
 ```bash
+kubectl -n argocd get pods
 kubectl -n monitoring get pods
-kubectl -n monitoring describe pod <pod>
-kubectl -n monitoring logs <pod> -c <container> --previous
+kubectl describe pod <pod> -n <namespace>
+kubectl logs <pod> -c <container> -n <namespace> --previous
 ```
-Then adjust resources (requests/limits) in Git, or fix the workload's memory leak/peak usage.
+Then adjust resources (requests/limits) in Git per the procedure above, or fix the workload’s memory leak/peak usage.
 
 ### `AKSManyStalePods` is firing
 
