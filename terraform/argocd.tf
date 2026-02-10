@@ -38,9 +38,9 @@ resource "helm_release" "argocd" {
         }
       }
       controller = {
-        metrics   = { enabled = true }
+        metrics = { enabled = true }
         resources = {
-          limits   = { cpu = "500m", memory = "768Mi" }
+          limits = { cpu = "500m", memory = "768Mi" }
           # Keep controller QoS as Guaranteed (requests == limits) to reduce eviction risk.
           requests = { cpu = "500m", memory = "768Mi" }
         }
