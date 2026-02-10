@@ -188,6 +188,20 @@ Same snapshot date. **Actual** = `kubectl top pods -A --containers`; **Request/L
 
 *— = not set in pod spec.*
 
+### Post-OOM remediation (desired limits in Git)
+
+To reduce OOM risk and free headroom on the Always Free nodes, the following limit trims were made in this repo (2026-02-10):
+
+| Workload | File | Old limit | New limit |
+|---|---|---:|---:|
+| Grafana | `helm/grafana-values.yaml` | 768Mi | 512Mi |
+| Prometheus Alertmanager | `helm/prometheus-values.yaml` | 512Mi | 256Mi |
+| ingress-nginx controller | `helm/nginx-ingress-values.yaml` | 512Mi | 256Mi |
+
+Argo CD is installed by Terraform in this repo. To address `argocd-application-controller` OOMs, bump the controller to **Guaranteed** QoS by setting `controller.resources.requests.memory == controller.resources.limits.memory` (e.g. `768Mi`) in `terraform/argocd.tf`, then run `terraform apply`.
+
+Note: The snapshot tables above reflect whatever was running at capture time. After applying Git changes (Argo CD sync and/or `terraform apply`), re-run the commands below and refresh this snapshot.
+
 **Takeaway:** Memory is the constraining resource. Keep node memory usage under ~85% to avoid pressure and OOM risk; see `docs/TROUBLESHOOTING.md` (HubContainerOOMKilled) and `hub-docs/OPERATIONS-HUB.md` (OOM diagnosis procedure).
 
 ### Commands to refresh this snapshot

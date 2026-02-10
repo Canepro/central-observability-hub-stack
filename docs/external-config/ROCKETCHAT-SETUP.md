@@ -1,6 +1,6 @@
 # Rocket.Chat Cluster Observability Setup
 
-Use these instructions to configure the `rocketchat-k8s` cluster (or any remote cluster) to send telemetry to the central **Canepro Observability Hub**.
+Use these instructions to configure the `rocketchat-k8s` cluster (AKS, `k8.canepro.me`) or any remote cluster to send telemetry to the central **Canepro Observability Hub**.
 
 ## 1. Credentials
 
@@ -82,4 +82,4 @@ helm upgrade --install promtail grafana/promtail -f values-monitoring.yaml -n mo
 2.  **Check Central Grafana**:
     -   Go to https://grafana.canepro.me
     -   Explore -> Prometheus
-    -   Query: `{cluster="rocketchat-k3s"}` (or whatever `external_labels.cluster` you set)
+    -   Query: `{cluster="aks-canepro"}` (or whatever `external_labels.cluster` you set)

@@ -6,7 +6,7 @@ This diagram visualizes how data flows from various Spoke clusters and external 
 
 ```mermaid
 graph LR
-    subgraph spokes ["Spoke Clusters (K3s, Podman, etc.)"]
+    subgraph spokes ["Spoke Clusters (AKS, kind, Podman, etc.)"]
         PromAgent[Prometheus Agent]
         LokiAgent[Promtail / FluentBit]
         AppTraces[OTEL SDK / Collector]
@@ -56,4 +56,3 @@ graph LR
 2. **Persistence**: The Hub components store high-velocity data (metrics) on Block Volumes and high-volume data (logs/traces) on OCI Object Storage.
 3. **Visualization**: Grafana queries the backend services internally within the cluster.
 4. **Management**: ArgoCD monitors the repository and applies updates to the Hub cluster itself via Server-Side Apply.
-
