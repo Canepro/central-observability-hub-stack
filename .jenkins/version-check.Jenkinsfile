@@ -354,10 +354,12 @@ EOF
                 git config user.name "Jenkins Version Bot"
                 git config user.email "jenkins@canepro.me"
                 
-                # Check out existing remote branch if it exists
-                git fetch origin "${BRANCH_NAME}" 2>/dev/null || true
-                if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH_NAME}"; then
-                  git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
+                # Check out existing remote branch if it exists.
+                # NOTE: `git fetch origin <branch>` updates only FETCH_HEAD and does NOT create
+                # `refs/remotes/origin/<branch>`. Use an explicit refspec so we can reliably
+                # rebase/push-update an existing PR branch without non-fast-forward failures.
+                if git fetch origin "refs/heads/${BRANCH_NAME}:refs/remotes/origin/${BRANCH_NAME}" 2>/dev/null; then
+                  git checkout -B "${BRANCH_NAME}" "refs/remotes/origin/${BRANCH_NAME}"
                 else
                   git checkout -b "${BRANCH_NAME}"
                 fi
@@ -503,8 +505,11 @@ EOF
                       return 0
                     fi
                     echo "WARN: git push failed (attempt ${i}/${attempts}); retrying after rebase..." >&2
-                    git fetch origin "$branch" 2>/dev/null || true
-                    if ! git rebase "origin/$branch"; then
+                    if ! git fetch origin "refs/heads/${branch}:refs/remotes/origin/${branch}" 2>/dev/null; then
+                      echo "ERROR: failed to fetch origin branch ${branch} for rebase" >&2
+                      return 1
+                    fi
+                    if ! git rebase "refs/remotes/origin/${branch}"; then
                       git rebase --abort >/dev/null 2>&1 || true
                       return 1
                     fi
