@@ -253,7 +253,7 @@ kubectl get pods -A -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.na
 Identify:
 
 - **OOM’d pod**: needs more headroom (increase limit, or reduce load).
-- **Others with high limit, low actual**: candidates to trim limits to free schedulable memory (e.g. Grafana 768Mi → 512Mi, Alertmanager 512Mi → 256Mi, Argo CD server 512Mi → 256Mi, nginx-ingress 512Mi → 256Mi).
+- **Others with high limit, low actual**: candidates to trim limits to free schedulable memory (e.g. Grafana 768Mi → 512Mi, Alertmanager 512Mi → 256Mi, nginx-ingress 512Mi → 256Mi).
 
 ### 4. Decide remediation
 
@@ -261,7 +261,7 @@ Identify:
 |-----------|--------|
 | Node memory &lt; ~80% and only one pod OOM’d | **Small bump**: increase the OOM’d container limit (e.g. 512Mi → 768Mi). Prefer 768Mi if headroom is tight. |
 | Node memory already high (e.g. ≥80%) | **Trim first**: reduce limits on under-used workloads (in this repo: `helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`). Then increase the OOM’d workload (e.g. to 1Gi). |
-| Argo CD application-controller OOM | Controller resources **are** defined in this repo via `terraform/argocd.tf` (`helm_release.argocd`, Helm values `controller.resources`). Increase `controller.resources.limits.memory` (e.g. `768Mi` or `1Gi`). |
+| Argo CD application-controller OOM | Controller resources **are** defined in this repo via `terraform/argocd.tf` (`helm_release.argocd`, Helm values `controller.resources`). Increase **both** `controller.resources.requests.memory` and `controller.resources.limits.memory` together (e.g. `768Mi` or `1Gi`) to keep QoS **Guaranteed**, then run `terraform apply`. |
 
 ### 5. Apply changes (GitOps)
 
