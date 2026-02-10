@@ -1141,17 +1141,23 @@ alertmanager:
           dst="/etc/alertmanager-generated/alertmanager.yml"
 
           mkdir -p /etc/alertmanager-generated
-          cp "$src" "$dst"
-
-          # Escape for sed replacement (delimiter is '|').
-          esc() { printf '%s' "$1" | sed -e 's/[\\/&|]/\\\\&/g'; }
-
-          sed -i \
-            -e "s|\\${SMTP_FROM}|$(esc "${SMTP_FROM}")|g" \
-            -e "s|\\${SMTP_TO}|$(esc "${SMTP_TO}")|g" \
-            -e "s|\\${SMTP_USER}|$(esc "${SMTP_USER}")|g" \
-            -e "s|\\${SMTP_PASSWORD}|$(esc "${SMTP_PASSWORD}")|g" \
-            "$dst"
+          # Replace ${SMTP_*} placeholders with env var values. Avoid `sed` here,
+          # as shell interpolation can easily break the literal ${...} match.
+          #
+          # Gmail App Passwords are alphanumeric, and typical email addresses
+          # don't contain '&' or backslashes, so awk replacement is safe.
+          awk \
+            -v from="${SMTP_FROM}" \
+            -v to="${SMTP_TO}" \
+            -v user="${SMTP_USER}" \
+            -v pass="${SMTP_PASSWORD}" \
+            '{
+              gsub(/\\$\\{SMTP_FROM\\}/, from);
+              gsub(/\\$\\{SMTP_TO\\}/, to);
+              gsub(/\\$\\{SMTP_USER\\}/, user);
+              gsub(/\\$\\{SMTP_PASSWORD\\}/, pass);
+              print;
+            }' "$src" > "$dst"
       env:
         - name: SMTP_PASSWORD
           valueFrom:
