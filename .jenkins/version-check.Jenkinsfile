@@ -287,8 +287,10 @@ EOF
                     echo "Existing open issue #${EXISTING_ISSUE_NUMBER} found; adding comment instead of creating duplicate."
                     printf "%s" "${UPDATE_LIST}" > update-list.md
                     TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-                    COMMENT_JSON=$(jq -n --rawfile updates update-list.md --arg ts "$TS" --arg build "${BUILD_URL:-}" \
-                      '{body:("## New version updates detected\n\nTime: " + $ts + ( ($build|length)>0 ? ("\nBuild: " + $build) : "" ) + "\n\n**Updates:**\n" + $updates + "\n\n### Notes\n- Major version updates can be breaking\n- Review release notes and test in staging")}')
+                    BUILD_LINE=""
+                    [ -n "${BUILD_URL:-}" ] && BUILD_LINE="\nBuild: ${BUILD_URL}"
+                    COMMENT_JSON=$(jq -n --rawfile updates update-list.md --arg ts "$TS" --arg buildline "$BUILD_LINE" \
+                      '{body:("## New version updates detected\n\nTime: " + $ts + $buildline + "\n\n**Updates:**\n" + $updates + "\n\n### Notes\n- Major version updates can be breaking\n- Review release notes and test in staging")}')
                     curl -X POST \
                       -H "Authorization: token ${GITHUB_TOKEN}" \
                       -H "Accept: application/vnd.github.v3+json" \
@@ -300,11 +302,13 @@ EOF
                   
                   # Build JSON with jq so newlines are escaped correctly
                   printf "%s" "${UPDATE_LIST}" > update-list.md
+                  BUILD_LINE=""
+                  [ -n "${BUILD_URL:-}" ] && BUILD_LINE="\n\nBuild: ${BUILD_URL}"
                   ISSUE_BODY_JSON=$(jq -n \
                     --arg title "${ISSUE_TITLE}" \
                     --rawfile updates update-list.md \
-                    --arg build "${BUILD_URL:-}" \
-                    '{title:$title, body:("## Version Update Alert\n\n**Risk Level:** HIGH (Major Version Updates)\n\n**Updates:**\n" + $updates + ( ($build|length)>0 ? ("\n\nBuild: " + $build) : "" ) + "\n\n## Action Required\n\nMajor version updates detected. These may include breaking changes and require careful testing.\n\n## Next Steps\n\n1. Review release notes for each component\n2. Check for breaking changes and migration guides\n3. Test in staging environment if available\n4. Update VERSION-TRACKING.md after upgrade\n\n---\n*This issue was automatically created by Jenkins version check pipeline.*"), labels:["dependencies","helm","automated","upgrade"]}')
+                    --arg buildline "$BUILD_LINE" \
+                    '{title:$title, body:("## Version Update Alert\n\n**Risk Level:** HIGH (Major Version Updates)\n\n**Updates:**\n" + $updates + $buildline + "\n\n## Action Required\n\nMajor version updates detected. These may include breaking changes and require careful testing.\n\n## Next Steps\n\n1. Review release notes for each component\n2. Check for breaking changes and migration guides\n3. Test in staging environment if available\n4. Update VERSION-TRACKING.md after upgrade\n\n---\n*This issue was automatically created by Jenkins version check pipeline.*"), labels:["dependencies","helm","automated","upgrade"]}')
                   echo "$ISSUE_BODY_JSON" > issue-body.json
                   
                   curl -X POST \
@@ -468,14 +472,25 @@ EOF
                 # Keep footer timestamp aligned (avoids doc drift across automated PRs)
                 sed -i "s/\\*\\*Document Last Updated\\*\\*: [0-9-]*/\\*\\*Document Last Updated\\*\\*: ${TODAY}/" VERSION-TRACKING.md || true
                 
-                # Stage changes
+                # Stage only manifest and doc changes (ignore untracked pipeline artifacts)
                 git add argocd/applications/*.yaml VERSION-TRACKING.md 2>/dev/null || true
                 
-                # Check if there are changes to commit
-                if [ -z "$(git status --porcelain)" ]; then
-                  echo "No changes to commit"
+                # Decide based on staged changes only (best practice: untracked files must not trigger commit)
+                if git diff --staged --quiet 2>/dev/null; then
+                  echo "No staged changes to commit (branch may already be up to date)."
                   if [ -n "${EXISTING_PR_NUMBER}" ]; then
-                    echo "No new changes; existing PR #${EXISTING_PR_NUMBER} is up to date."
+                    UPDATES_SUMMARY=$(jq -r '.[] | "- \\(.component): \\(.current) → \\(.latest)"' chart-updates.json 2>/dev/null | tr '\n' ' ' || true)
+                    TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+                    BUILD_LINE=""
+                    [ -n "${BUILD_URL:-}" ] && BUILD_LINE="\nBuild: ${BUILD_URL}"
+                    COMMENT_JSON=$(jq -n --arg ts "$TS" --arg buildline "$BUILD_LINE" --arg summary "$UPDATES_SUMMARY" \
+                      '{body:("## Version check run (no new changes)\n\nTime: " + $ts + $buildline + "\n\nCurrent updates on this PR:\n" + $summary + "\n\nBranch is already up to date.")}')
+                    curl -fsSL -X POST \
+                      -H "Authorization: token ${GITHUB_TOKEN}" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${GITHUB_REPO}/issues/${EXISTING_PR_NUMBER}/comments" \
+                      -d "$COMMENT_JSON" >/dev/null 2>&1 || true
+                    echo "Posted run summary to existing PR #${EXISTING_PR_NUMBER} (no new changes)."
                   fi
                   exit 0
                 fi
@@ -523,8 +538,10 @@ EOF
                 UPDATES_SUMMARY=$(jq -r '.[] | "- \\(.component): \\(.current) → \\(.latest)"' chart-updates.json | tr '\\n' ' ')
                 if [ -n "${EXISTING_PR_NUMBER}" ]; then
                   TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-                  COMMENT_JSON=$(jq -n --arg ts "$TS" --arg build "${BUILD_URL:-}" --arg summary "$UPDATES_SUMMARY" \
-                    '{body:("## PR updated by Jenkins\n\nTime: " + $ts + ( ($build|length)>0 ? ("\nBuild: " + $build) : "" ) + "\n\nUpdates:\n" + $summary)}')
+                  BUILD_LINE=""
+                  [ -n "${BUILD_URL:-}" ] && BUILD_LINE="\nBuild: ${BUILD_URL}"
+                  COMMENT_JSON=$(jq -n --arg ts "$TS" --arg buildline "$BUILD_LINE" --arg summary "$UPDATES_SUMMARY" \
+                    '{body:("## PR updated by Jenkins\n\nTime: " + $ts + $buildline + "\n\nUpdates:\n" + $summary)}')
                   curl -fsSL -X POST \
                     -H "Authorization: token ${GITHUB_TOKEN}" \
                     -H "Accept: application/vnd.github.v3+json" \
