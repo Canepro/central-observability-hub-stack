@@ -1152,10 +1152,12 @@ alertmanager:
             -v user="${SMTP_USER}" \
             -v pass="${SMTP_PASSWORD}" \
             '{
-              gsub(/\\$\\{SMTP_FROM\\}/, from);
-              gsub(/\\$\\{SMTP_TO\\}/, to);
-              gsub(/\\$\\{SMTP_USER\\}/, user);
-              gsub(/\\$\\{SMTP_PASSWORD\\}/, pass);
+              # BusyBox awk treats `\{` as an interval operator; match braces
+              # using character classes for portability.
+              gsub(/\\$[{]SMTP_FROM[}]/, from);
+              gsub(/\\$[{]SMTP_TO[}]/, to);
+              gsub(/\\$[{]SMTP_USER[}]/, user);
+              gsub(/\\$[{]SMTP_PASSWORD[}]/, pass);
               print;
             }' "$src" > "$dst"
       env:
