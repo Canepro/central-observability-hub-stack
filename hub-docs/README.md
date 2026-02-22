@@ -46,6 +46,7 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 - [CLUSTER-INFO.md](CLUSTER-INFO.md) - OKE cluster details and access commands
 - [OPERATIONS-HUB.md](OPERATIONS-HUB.md) - Retention policies and maintenance
 - [TRACING-ROLLOUT-CHECKLIST.md](TRACING-ROLLOUT-CHECKLIST.md) - Phased tracing rollout gates for useful service graphs and drilldown
+- [TRACING-SERVICE-ONBOARDING-TEMPLATE.md](TRACING-SERVICE-ONBOARDING-TEMPLATE.md) - Copy/paste checklist for onboarding one service to tracing
 - [ARGOCD-RUNBOOK.md](ARGOCD-RUNBOOK.md) - ArgoCD operations and troubleshooting
 - [INGRESS-SETUP.md](INGRESS-SETUP.md) - NGINX Ingress and SSL/TLS configuration
 - [SECURITY-RECOMMENDATIONS.md](SECURITY-RECOMMENDATIONS.md) - Security best practices
