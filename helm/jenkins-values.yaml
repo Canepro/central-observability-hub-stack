@@ -3,7 +3,7 @@
 # Purpose: 24/7 controller on OKE; uses freed 50GB PVC (E1). AKS static agent connects via WebSocket (Phase 2).
 #
 # Version/plugins: Align with AKS Jenkins (ops repo jenkins-values.yaml). Image tag must exist on Docker Hub
-# (e.g. 2.541.1-jdk17, lts-jdk17). Copy controller.installPlugins from AKS for exact parity.
+# (e.g. 2.541.2-jdk17, lts-jdk17). Copy controller.installPlugins from AKS for exact parity.
 
 # Release / naming
 fullnameOverride: jenkins
@@ -13,7 +13,7 @@ controller:
   componentName: jenkins-controller
   image:
     repository: jenkins/jenkins
-    tag: "2.541.1-jdk17"
+    tag: "2.541.2-jdk17"
     pullPolicy: IfNotPresent
 
   numExecutors: 0
@@ -87,6 +87,7 @@ controller:
     - JNLP2-connect
 
   # Plugins: use latest versions for all plugins (security + features)
+  # GitOps policy: manage plugin changes here and via ArgoCD sync; avoid UI plugin install/uninstall to prevent drift.
   installPlugins:
     - configuration-as-code:latest
     - credentials-binding:latest
