@@ -38,23 +38,38 @@ service:
   port: 80
 
 # Resource limits for Always Free tier
+# 2026-02-21 incident follow-up:
+# - Grafana repeatedly failed /api/health liveness checks and was restarted by kubelet
+#   (exit 137) while running close to the 512Mi cap.
+# - Keep requests conservative for scheduling, but raise limit headroom to reduce
+#   health-check stalls during plugin/provisioning/background work.
 resources:
   requests:
-    cpu: 50m
+    cpu: 100m
     memory: 256Mi
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 1
+    memory: 768Mi
 
-# Health probe configuration to handle slow startup on free-tier nodes
+# Health probe configuration tuned for free-tier ARM nodes.
+# Startup probe prevents premature liveness checks while Grafana initializes.
+startupProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 60
 readinessProbe:
   initialDelaySeconds: 60
   periodSeconds: 10
-  failureThreshold: 5
+  timeoutSeconds: 5
+  failureThreshold: 6
 livenessProbe:
   initialDelaySeconds: 120
   periodSeconds: 20
-  failureThreshold: 3
+  timeoutSeconds: 30
+  failureThreshold: 6
 
 # Injecting SMTP Credentials via Environment Variables from Secret
 # This keeps sensitive credentials (password, email) out of the public GitHub repo.
