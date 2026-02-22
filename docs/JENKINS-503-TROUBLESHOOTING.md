@@ -88,6 +88,30 @@ For deprecated plugin banners:
 2. If it is listed, remove it in Git, then sync/redeploy.
 3. If it is not listed, it is usually a legacy plugin left in `$JENKINS_HOME/plugins`; clean it during a controlled maintenance window (do not click UI uninstall as your source of truth).
 
+### 3.2 Plugin maintenance (GitOps-first)
+
+Use this flow for plugin updates without UI drift:
+
+1. Update `controller.installPlugins` in `helm/jenkins-values.yaml` (add/remove/pin as needed), commit, and push.
+2. Wait for ArgoCD to reconcile:
+   ```bash
+   kubectl -n argocd get application jenkins
+   kubectl -n jenkins get configmap jenkins -o jsonpath='{.data.plugins\.txt}'
+   ```
+3. If Jenkins still shows old plugin versions, refresh only the affected plugin files in `$JENKINS_HOME/plugins`:
+   - Move `<plugin>.jpi` and related marker files (`.pinned`, `.version_from_image`, optional extracted dir) to a timestamped backup under `/var/jenkins_home/plugin-backups/<ts>/`.
+   - Restart Jenkins (`kubectl -n jenkins rollout restart sts/jenkins`).
+4. Verify post-restart:
+   ```bash
+   kubectl -n jenkins rollout status sts/jenkins --timeout=900s
+   kubectl -n argocd get application jenkins
+   kubectl -n jenkins logs jenkins-0 -c jenkins --tail=50
+   ```
+
+Notes:
+- This repo intentionally avoids plugin install/uninstall from UI as source of truth.
+- `JENKINS_HOME/plugins` can preserve older plugin artifacts on PVC; cleanup is sometimes required after code-managed plugin changes.
+
 ---
 
 ## 4. After a restart: clean stale agents first
