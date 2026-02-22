@@ -201,7 +201,7 @@ Tempo only shows traces if something is actually sending spans. Metrics being pr
 Tempo was ingesting traces, but service-graph metrics were not being generated and remote-written to Prometheus.
 
 **Fix (this repo)**
-- Enable Tempo `metrics_generator`.
+- Enable Tempo metrics generator with chart key `tempo.metricsGenerator` (Tempo chart `1.24.4`).
 - Enable `service-graphs` and `span-metrics` processors in Tempo overrides.
 - Remote write generated metrics to Prometheus (`/api/v1/write`).
 - Pin Grafana Tempo datasource `serviceMap.datasourceUid=prometheus` in GitOps so UI edits are not lost.
