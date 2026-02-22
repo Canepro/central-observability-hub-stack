@@ -67,6 +67,27 @@ kubectl get pods -n jenkins -l app.kubernetes.io/component=jenkins-controller -w
 
 - **`No hudson.slaves.Cloud implementation found for kubernetes`:** JCasC is applying a kubernetes cloud from the chart default, but the plugin isn’t ready at init. Fix: set `jenkins.clouds: []` in JCasC so no dynamic cloud is configured (you only use the static aks-agent). Add a configScript in `controller.JCasC.configScripts` (e.g. `no-kubernetes-cloud`) with `jenkins: clouds: []`, then redeploy.
 
+### 3.1 Admin warnings in UI (GitOps-safe response)
+
+If **Manage Jenkins -> System** shows security/deprecation banners:
+
+- Treat the UI as **signal only**. In this repo, Jenkins is managed by ArgoCD + `helm/jenkins-values.yaml`.
+- Safe actions: open linked changelog/release notes and run read-only checks.
+- Avoid drift actions: UI core upgrade, UI plugin install/uninstall/upgrade, or warning-filter persistence changes.
+
+For the core security banner:
+1. Bump `controller.image.tag` in `helm/jenkins-values.yaml`.
+2. Commit/push and let ArgoCD sync the `jenkins` application.
+3. Verify running image:
+   ```bash
+   kubectl -n jenkins get sts jenkins -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+   ```
+
+For deprecated plugin banners:
+1. Check whether the plugin is declared in `controller.installPlugins` in `helm/jenkins-values.yaml`.
+2. If it is listed, remove it in Git, then sync/redeploy.
+3. If it is not listed, it is usually a legacy plugin left in `$JENKINS_HOME/plugins`; clean it during a controlled maintenance window (do not click UI uninstall as your source of truth).
+
 ---
 
 ## 4. After a restart: clean stale agents first

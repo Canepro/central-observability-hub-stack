@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-02-07
+**Last Updated**: 2026-02-22
 
 ## Upgrade Status Legend
 
@@ -32,6 +32,9 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 **Just updated (2026-02-07)**:
 - OpenTelemetry Collector added (chart 0.145.0)
 - Prometheus 28.8.1 → 28.9.0 (patch; chart dependency updates)
+
+**Just updated (2026-02-22)**:
+- Jenkins controller image 2.541.1-jdk17 → 2.541.2-jdk17 (security patch)
 
 **Previously updated (2026-02-02)**:
 - Prometheus 28.7.0 → 28.8.0 (patch)
@@ -112,6 +115,15 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **NGINX Ingress Controller** | `4.14.3` | `4.14.3` | 🔄 **Just updated** (2026-02-05) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
 | **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
+
+---
+
+## CI/CD Components
+
+| Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
+|-----------|----------------|----------------|----------------|----------|---------------|
+| **Jenkins Helm Chart** | `5.8.0` | ⚠️ **Check latest** | 🔍 **Needs investigation** | `argocd/applications/jenkins.yaml` | [Jenkins Helm Chart Releases](https://github.com/jenkinsci/helm-charts/releases) |
+| **Jenkins Controller Image** | `2.541.2-jdk17` | `2.541.2-jdk17` | 🔄 **Just updated** (2026-02-22) | `helm/jenkins-values.yaml` | [Jenkins Docker Tags](https://hub.docker.com/r/jenkins/jenkins/tags) |
 
 ---
 
@@ -333,6 +345,7 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo add jenkins https://charts.jenkins.io
 helm repo add rocketchat https://rocketchat.github.io/helm-charts
 helm repo update
 
@@ -345,6 +358,7 @@ helm search repo grafana/tempo --versions | head -5
 helm search repo prometheus-community/prometheus --versions | head -5
 helm search repo ingress-nginx/ingress-nginx --versions | head -5
 helm search repo metrics-server/metrics-server --versions | head -5
+helm search repo jenkins/jenkins --versions | head -5
 helm search repo rocketchat/rocketchat --versions | head -5
 ```
 
@@ -392,6 +406,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-02-07  
-**Next Scheduled Review**: 2026-02-18  
+**Document Last Updated**: 2026-02-22  
+**Next Scheduled Review**: 2026-03-22  
 **Maintained By**: Infrastructure Team
