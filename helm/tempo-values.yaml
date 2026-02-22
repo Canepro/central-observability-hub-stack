@@ -49,15 +49,19 @@ tempo:
       block_retention: 168h
 
   # Generate RED/service graph metrics from traces and remote-write to Prometheus.
-  metrics_generator:
+  # NOTE: Helm chart 1.24.4 expects `metricsGenerator` (camelCase) values.
+  metricsGenerator:
+    enabled: true
     registry:
       external_labels:
         cluster: oke-hub
     storage:
-      path: /tmp/tempo/generator/wal
+      path: /tmp/tempo/generator
       remote_write:
         - url: http://prometheus-server.monitoring.svc.cluster.local:80/api/v1/write
           send_exemplars: true
+    traces_storage:
+      path: /tmp/tempo/generator/traces
 
   overrides:
     defaults:
