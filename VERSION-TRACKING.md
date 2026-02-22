@@ -35,6 +35,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 **Just updated (2026-02-22)**:
 - Jenkins controller image 2.541.1-jdk17 → 2.541.2-jdk17 (security patch)
+- Jenkins plugin baseline now GitOps-manages `sshd` and `pipeline-graph-view`
 
 **Previously updated (2026-02-02)**:
 - Prometheus 28.7.0 → 28.8.0 (patch)

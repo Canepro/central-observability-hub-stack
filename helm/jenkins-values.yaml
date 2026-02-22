@@ -95,9 +95,11 @@ controller:
     - workflow-aggregator:latest
     - kubernetes:latest
     - pipeline-model-definition:latest
+    - pipeline-graph-view:latest
     - pipeline-stage-view:latest
     - github-branch-source:latest
     - job-dsl:latest
+    - sshd:latest
     - ws-cleanup:latest
   installLatestPlugins: true
   overwritePluginsFromImage: true
