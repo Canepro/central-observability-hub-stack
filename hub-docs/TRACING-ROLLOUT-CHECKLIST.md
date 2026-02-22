@@ -11,6 +11,8 @@ Use this as an operational gate, not just a reference.
 
 Companion template:
 - `hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md`
+- Example instance:
+- `hub-docs/TRACING-ONBOARDING-argocd-server.md`
 
 ## Prerequisites (Hub)
 
