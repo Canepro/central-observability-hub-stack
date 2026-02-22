@@ -190,6 +190,32 @@ Tempo only shows traces if something is actually sending spans. Metrics being pr
    If this is > 0, Tempo is receiving spans.
 3. In Grafana Explore (Tempo), search for service `ingress-nginx`.
 
+### Tempo Service Graph / Node Graph shows no data
+
+**Symptoms**
+- Grafana Tempo datasource is healthy.
+- Node Graph panel with Tempo `Service Graph` query type shows `No data`.
+- Prometheus query `sum by (client, server) (rate(traces_service_graph_request_total[5m]))` is empty.
+
+**Root cause**
+Tempo was ingesting traces, but service-graph metrics were not being generated and remote-written to Prometheus.
+
+**Fix (this repo)**
+- Enable Tempo `metrics_generator`.
+- Enable `service-graphs` and `span-metrics` processors in Tempo overrides.
+- Remote write generated metrics to Prometheus (`/api/v1/write`).
+- Pin Grafana Tempo datasource `serviceMap.datasourceUid=prometheus` in GitOps so UI edits are not lost.
+
+**How to verify**
+1. ArgoCD sync `tempo` and `grafana`.
+2. Generate traffic through ingress.
+3. In Prometheus Explore:
+   ```promql
+   sum by (client, server) (rate(traces_service_graph_request_total[5m]))
+   ```
+   This should return series.
+4. In Grafana panel, use Tempo datasource + `Service Graph` query type.
+
 ---
 
 ## Prometheus Issues

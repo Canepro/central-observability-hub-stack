@@ -243,6 +243,9 @@ datasources:
         type: tempo
         access: proxy
         url: http://tempo.monitoring.svc.cluster.local:3200
+        jsonData:
+          serviceMap:
+            datasourceUid: prometheus
         editable: true
 
 # Dashboard provisioning

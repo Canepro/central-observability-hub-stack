@@ -48,6 +48,25 @@ tempo:
     compaction:
       block_retention: 168h
 
+  # Generate RED/service graph metrics from traces and remote-write to Prometheus.
+  metrics_generator:
+    registry:
+      external_labels:
+        cluster: oke-hub
+    storage:
+      path: /tmp/tempo/generator/wal
+      remote_write:
+        - url: http://prometheus-server.monitoring.svc.cluster.local:80/api/v1/write
+          send_exemplars: true
+
+  overrides:
+    defaults:
+      metrics_generator:
+        processors:
+          - service-graphs
+          - span-metrics
+    per_tenant_override_config: /conf/overrides.yaml
+
 securityContext:
   runAsUser: 1000
   runAsGroup: 1000
