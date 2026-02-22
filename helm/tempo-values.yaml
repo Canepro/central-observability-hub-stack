@@ -52,6 +52,12 @@ tempo:
   # NOTE: Helm chart 1.24.4 expects `metricsGenerator` (camelCase) values.
   metricsGenerator:
     enabled: true
+    processor:
+      # Required for Grafana Traces Drilldown TraceQL metrics mode.
+      local_blocks:
+        flush_to_storage: true
+        filter_server_spans: false
+        max_block_duration: 1m
     registry:
       external_labels:
         cluster: oke-hub
@@ -69,6 +75,7 @@ tempo:
         processors:
           - service-graphs
           - span-metrics
+          - local-blocks
     per_tenant_override_config: /conf/overrides.yaml
 
 securityContext:
