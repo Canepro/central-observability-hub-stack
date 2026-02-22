@@ -545,26 +545,46 @@ This is usually caused by the latency of the OCI CLI exec-plugin (`oci ce cluste
 
 ## Pod Issues
 
-### Grafana Readiness probe failed: "connect: connection refused"
+### Grafana /api/health probe failures (timeout/reset, exit 137)
 
 **Symptoms**
-- Grafana Deployment keeps rolling pods (new ReplicaSet every few minutes)
-- Events show:
-  - `Readiness probe failed: Get "http://<pod-ip>:3000/api/health": ... connect: connection refused`
-- ArgoCD may show `grafana` as `Progressing` while it continually restarts
+- `kubectl get pods -n monitoring` shows the same Grafana pod with increasing `RESTARTS`
+- Events include probe failures on `/api/health`, for example:
+  - `context deadline exceeded (Client.Timeout exceeded while awaiting headers)`
+  - `read: connection reset by peer`
+- Pod status shows `Last State: Terminated`, `Exit Code: 137`
 
 **Root cause**
-Grafana can be **slow to start** on OCI Always Free ARM nodes (DB migrations, plugin init, dashboard provisioning). If CPU/memory is too tight or the probes are too aggressive, the pod is marked unready and/or restarted before it finishes booting.
+On OCI Always Free ARM nodes, Grafana can intermittently become slow/unresponsive on
+`/api/health` during startup and background work (plugins/provisioning/update checks).
+If liveness probes are too aggressive and memory headroom is too tight, kubelet restarts
+the container.
+
+In this repo we observed this exact pattern on 2026-02-21:
+- kubelet: `Container grafana failed liveness probe, will be restarted`
+- kubelet: `Killing container with a grace period`
+- PLEG: `container finished ... exitCode=137`
+- `container_oom_events_total` stayed `0` (restart was liveness-driven, not OOM-killed)
 
 **Fix (GitOps)**
 Tune resources and probes in `helm/grafana-values.yaml`:
-- Increase `resources.requests` (CPU/memory)
-- Add/extend `readinessProbe` and `livenessProbe` delays so Grafana has time to come up
+- Raise Grafana memory limit (`512Mi -> 768Mi`) to reduce health-endpoint stalls under load
+- Add a `startupProbe` so liveness/readiness checks wait for full startup
+- Increase readiness tolerance (`timeoutSeconds: 5`, `failureThreshold: 6`)
+- Increase liveness tolerance (`timeoutSeconds: 30`, `failureThreshold: 6`)
 
 After committing/pushing, let ArgoCD apply changes. If ArgoCD seems stuck on stale state, force refresh:
 
 ```bash
 kubectl -n argocd annotate application grafana argocd.argoproj.io/refresh=hard --overwrite
+```
+
+For node-level confirmation without direct node SSH, use:
+
+```bash
+kubectl debug node/<node-ip> -n kube-system -it --image=ubuntu --profile=sysadmin -- bash
+chroot /host
+journalctl -u kubelet --since "<start>" --until "<end>" --no-pager | grep -E 'grafana|liveness|readiness|probe|Killing'
 ```
 
 ### Grafana stuck with 2 pods (one in Init:0/2 / PodInitializing)
