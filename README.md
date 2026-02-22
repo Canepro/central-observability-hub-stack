@@ -98,6 +98,7 @@ This stack is managed declaratively via ArgoCD. All changes flow through Git:
 | [hub-docs/README.md](hub-docs/README.md) | Component versions and architecture overview |
 | [hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md) | Retention policies, storage management |
 | [hub-docs/TRACING-ROLLOUT-CHECKLIST.md](hub-docs/TRACING-ROLLOUT-CHECKLIST.md) | GitOps checklist for phased service tracing rollout |
+| [hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md](hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md) | Per-service tracing onboarding template/checklist |
 | [hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md) | ArgoCD operations and troubleshooting |
 | [docs/JENKINS-MIGRATION-SUMMARY.md](docs/JENKINS-MIGRATION-SUMMARY.md) | Jenkins migration to OKE and split-agent summary |
 | [docs/JENKINS-503-TROUBLESHOOTING.md](docs/JENKINS-503-TROUBLESHOOTING.md) | Jenkins (OKE) operational troubleshooting |

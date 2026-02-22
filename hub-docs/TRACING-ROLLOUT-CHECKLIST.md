@@ -9,6 +9,9 @@ Use this as an operational gate, not just a reference.
 - Make Tempo Service Graph and Traces Drilldown actionable for incident response.
 - Keep all changes GitOps-only (no direct `kubectl apply` hotfixes for permanent config).
 
+Companion template:
+- `hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md`
+
 ## Prerequisites (Hub)
 
 - Tempo app synced in ArgoCD and healthy.
