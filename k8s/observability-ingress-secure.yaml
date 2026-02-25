@@ -15,7 +15,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/limit-rps: "5000"
     # Note: CORS removed - this endpoint is for server-to-server communication only
-    # (Prometheus remote_write, Loki push, OTLP traces from external clusters)
+    # (Prometheus remote_write, Loki push/query, OTLP traces from external clusters)
 spec:
   ingressClassName: nginx
   tls:
@@ -34,8 +34,23 @@ spec:
                 name: prometheus-server
                 port:
                   number: 80
-          # Logs
+          # Logs ingest
           - path: /loki/api/v1/push
+            pathType: Prefix
+            backend:
+              service:
+                name: loki-gateway
+                port:
+                  number: 80
+          # Logs query APIs (for server-side readers such as Rocket.Chat Logs Viewer)
+          - path: /loki/api/v1/query
+            pathType: Prefix
+            backend:
+              service:
+                name: loki-gateway
+                port:
+                  number: 80
+          - path: /loki/api/v1/query_range
             pathType: Prefix
             backend:
               service:
