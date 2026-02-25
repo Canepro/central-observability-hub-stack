@@ -63,6 +63,34 @@ nginx.ingress.kubernetes.io/rewrite-target: /$1
 - Promtail must be configured to send this header.
 - **Our Setup**: We set `auth_enabled: false` to simplify (Auth handled by NGINX).
 
+### Loki query endpoint returns 404 (Rocket.Chat Logs Viewer / server-side readers)
+
+**Symptoms**:
+- `query_range` calls return `HTTP 404` via `https://observability.canepro.me`.
+- In-app readers (for example Rocket.Chat Logs Viewer) fail while Promtail ingest still works.
+
+**Root Cause**:
+- Ingress exposes only `/loki/api/v1/push` (ingest) but not read/query routes.
+
+**Solution**:
+1. Ensure `k8s/observability-ingress-secure.yaml` exposes:
+   - `/loki/api/v1/query`
+   - `/loki/api/v1/query_range`
+2. Commit the change and let ArgoCD sync `nginx-ingress` / manifests.
+3. Re-test with Basic Auth:
+
+```bash
+curl -sS -u 'observability-user:YOUR_PASSWORD_HERE' -G \
+  'https://observability.canepro.me/loki/api/v1/query_range' \
+  --data-urlencode 'query={job="rocketchat"}' \
+  --data-urlencode 'limit=1'
+```
+
+**Interpretation**:
+- `200` with JSON: route/auth OK.
+- `401`: auth credentials mismatch.
+- `404`: ingress route still missing or not synced.
+
 ### Loki Pod Crash "Invalid Config"
 
 **Symptoms**: `invalid compactor config: compactor.delete-request-store should be configured`

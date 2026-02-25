@@ -185,6 +185,27 @@ Point Promtail at the authenticated ingestion endpoint:
 - Push URL: `https://observability.canepro.me/loki/api/v1/push`
 - Auth: use the same basic auth credentials as the ingress
 
+#### Loki query endpoints for server-side readers
+
+If you use server-side tools that read logs directly from Loki (for example Rocket.Chat Logs Viewer app), use:
+- Base URL: `https://observability.canepro.me`
+- Query path used by clients: `/loki/api/v1/query_range` (and optionally `/loki/api/v1/query`)
+- Auth: same Basic Auth credentials used for ingress
+
+Example validation from a workstation:
+
+```bash
+curl -sS -u 'observability-user:YOUR_PASSWORD_HERE' -G \
+  'https://observability.canepro.me/loki/api/v1/query_range' \
+  --data-urlencode 'query={job="rocketchat"}' \
+  --data-urlencode 'limit=1'
+```
+
+For Rocket.Chat Logs Viewer app settings:
+- `loki_base_url`: `https://observability.canepro.me`
+- `loki_username`: `observability-user`
+- `loki_token`: ingress password
+
 #### Expose Loki Gateway (Securely)
 **Option A**: Use port-forward for testing:
 ```bash
