@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-ingress
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Canepro/central-observability-hub-stack.git
+    path: k8s
+    targetRevision: main
+    directory:
+      recurse: false
+      include: observability-ingress-secure.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
