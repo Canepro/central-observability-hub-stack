@@ -20,33 +20,47 @@ This repository is the GitOps source of truth for a production-ready observabili
 
 ```mermaid
 flowchart LR
-  subgraph "Spoke Clusters"
-    S1[AKS Spoke (k8.canepro.me)] -->|remote_write| P
-    S2[Dev Spoke (kind)] -->|remote_write| P
-    SN[Other Spokes] -->|remote_write| P
-    S1 -->|logs| L
-    S2 -->|logs| L
-    SN -->|logs| L
-    S1 -->|traces| T
-    S2 -->|traces| T
-    SN -->|traces| T
+  subgraph Spokes["Spoke Clusters"]
+    S1["AKS Spoke (k8.canepro.me)"]
+    S2["Dev Spoke (kind)"]
+    SN["Other Spokes"]
   end
 
-  subgraph "OKE Hub Cluster"
-    A[ArgoCD] -->|GitOps sync| G[Grafana]
-    A -->|GitOps sync| P[Prometheus]
-    A -->|GitOps sync| L[Loki]
-    A -->|GitOps sync| T[Tempo]
-    A -->|GitOps sync| O[OTel Collector]
-    A -->|GitOps sync| I[ingress-nginx]
-    G -->|queries| P
-    G -->|queries| L
-    G -->|queries| T
-    I -->|OTLP spans| O
-    O -->|OTLP spans| T
+  subgraph Hub["OKE Hub Cluster"]
+    A["ArgoCD"]
+    G["Grafana"]
+    P["Prometheus"]
+    L["Loki"]
+    T["Tempo"]
+    O["OTel Collector"]
+    I["ingress-nginx"]
   end
 
-  Git[(Git repo)] -->|manifests/values| A
+  Git[("Git repo")]
+
+  S1 -->|remote_write| P
+  S2 -->|remote_write| P
+  SN -->|remote_write| P
+  S1 -->|logs| L
+  S2 -->|logs| L
+  SN -->|logs| L
+  S1 -->|traces| T
+  S2 -->|traces| T
+  SN -->|traces| T
+
+  A -->|GitOps sync| G
+  A -->|GitOps sync| P
+  A -->|GitOps sync| L
+  A -->|GitOps sync| T
+  A -->|GitOps sync| O
+  A -->|GitOps sync| I
+  G -->|queries| P
+  G -->|queries| L
+  G -->|queries| T
+  I -->|OTLP spans| O
+  O -->|OTLP spans| T
+
+  Git -->|manifests/values| A
 ```
 
 ### Endpoints
