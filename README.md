@@ -20,7 +20,7 @@ This repository is the GitOps source of truth for a production-ready observabili
 
 ```mermaid
 flowchart LR
-  subgraph Spokes[Spoke Clusters]
+  subgraph "Spoke Clusters"
     S1[AKS Spoke (k8.canepro.me)] -->|remote_write| P
     S2[Dev Spoke (kind)] -->|remote_write| P
     SN[Other Spokes] -->|remote_write| P
@@ -32,7 +32,7 @@ flowchart LR
     SN -->|traces| T
   end
 
-  subgraph Hub[OKE Hub Cluster]
+  subgraph "OKE Hub Cluster"
     A[ArgoCD] -->|GitOps sync| G[Grafana]
     A -->|GitOps sync| P[Prometheus]
     A -->|GitOps sync| L[Loki]
