@@ -167,7 +167,7 @@ controller:
                         resourceLimitMemory: "512Mi"
       managed-jobs: |
         jobs:
-          - script: >
+          - script: |
               pipelineJob('version-check-rocketchat-k8s') {
                 description('Automated version checking pipeline for rocketchat-k8s. Runs weekdays at 5 PM and stays aligned with the repo Jenkinsfile.')
                 triggers {
