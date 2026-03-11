@@ -110,22 +110,21 @@ controller:
   JCasC:
     defaultConfig: false
     overwriteConfiguration: false
+    securityRealm: |-
+      local:
+        allowsSignup: false
+        enableCaptcha: false
+        users:
+          - id: "${chart-admin-username}"
+            name: "Jenkins Admin"
+            password: "${chart-admin-password}"
+    authorizationStrategy: |-
+      loggedInUsersCanDoAnything:
+        allowAnonymousRead: false
     configScripts:
       welcome-message: |
         jenkins:
           systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. Connect with -webSocket over 443."
-      rbac-strategy: |
-        jenkins:
-          securityRealm:
-            local:
-              allowsSignup: false
-              users:
-                - id: "${readFile:/run/secrets/additional/chart-admin-username}"
-                  password: "${readFile:/run/secrets/additional/chart-admin-password}"
-          authorizationStrategy:
-            loggedInUsersCanDoAnything:
-              allowAnonymousRead: false
-
       github-config: |
         unclassified:
           gitHubPluginConfig:
