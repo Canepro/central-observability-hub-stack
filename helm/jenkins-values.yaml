@@ -92,8 +92,10 @@ controller:
     - configuration-as-code:latest
     - credentials-binding:latest
     - git:latest
+    - github:latest
     - workflow-aggregator:latest
     - kubernetes:latest
+    - kubernetes-credentials-provider:latest
     - pipeline-model-definition:latest
     - pipeline-graph-view:latest
     - pipeline-stage-view:latest
@@ -112,6 +114,14 @@ controller:
       welcome-message: |
         jenkins:
           systemMessage: "Jenkins on OKE (Split-Agent). AKS agent label: aks-agent. Connect with -webSocket over 443."
+      github-config: |
+        unclassified:
+          gitHubPluginConfig:
+            configs:
+              - name: "GitHub"
+                apiUrl: "https://api.github.com"
+                credentialsId: "github-token"
+                manageHooks: true
       aks-agent-node: |
         jenkins:
           nodes:
@@ -155,6 +165,57 @@ controller:
                         resourceRequestMemory: "256Mi"
                         resourceLimitCpu: "500m"
                         resourceLimitMemory: "512Mi"
+      managed-jobs: |
+        jobs:
+          - script: >
+              pipelineJob('version-check-rocketchat-k8s') {
+                description('Automated version checking pipeline for rocketchat-k8s. Runs weekdays at 5 PM and stays aligned with the repo Jenkinsfile.')
+                triggers {
+                  cron('H 17 * * 1-5')
+                }
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('https://github.com/Canepro/rocketchat-k8s')
+                          credentials('github-token')
+                        }
+                        branch('*/master')
+                        extensions {
+                          cleanBeforeCheckout()
+                        }
+                      }
+                    }
+                    scriptPath('.jenkins/version-check.Jenkinsfile')
+                    lightweight(false)
+                  }
+                }
+              }
+              pipelineJob('security-validation-rocketchat-k8s') {
+                description('Automated security validation pipeline for rocketchat-k8s. Runs weekdays at 6 PM and stays aligned with the repo Jenkinsfile.')
+                triggers {
+                  cron('H 18 * * 1-5')
+                }
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('https://github.com/Canepro/rocketchat-k8s')
+                          credentials('github-token')
+                        }
+                        branch('*/master')
+                        extensions {
+                          cleanBeforeCheckout()
+                        }
+                      }
+                    }
+                    scriptPath('.jenkins/security-validation.Jenkinsfile')
+                    lightweight(false)
+                  }
+                }
+              }
 
   # Sidecar: reload JCasC on config change
   sidecars:
@@ -180,7 +241,7 @@ persistence:
 # RBAC
 rbac:
   create: true
-  readSecrets: false
+  readSecrets: true
 
 serviceAccount:
   create: true
