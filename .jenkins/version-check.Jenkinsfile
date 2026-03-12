@@ -108,17 +108,14 @@ ENSURE_LABEL_EOF
         }
       }
       steps {
-        script {
-          def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-          bridgeEvidence.capture("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt") {
-            sh '''
-              echo "PipelineHealer direct excerpt proof stage"
-              echo "This build is intentionally failing to verify Jenkins bridge log evidence."
-              echo "Synthetic failure marker: PIPELINEHEALER_DIRECT_EXCERPT_PROOF" >&2
-              exit 1
-            '''
-          }
-        }
+        sh '''
+          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          echo "PipelineHealer direct excerpt proof stage"
+          echo "This build is intentionally failing to verify Jenkins bridge log evidence."
+          echo "Synthetic failure marker: PIPELINEHEALER_DIRECT_EXCERPT_PROOF" >&2
+          exit 1
+SCRIPT
+        '''
       }
     }
     
