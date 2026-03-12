@@ -153,7 +153,7 @@ spec:
   }
   
   post {
-    always {
+    cleanup {
       // Only clean workspace when we ran on an agent; otherwise MissingContextVariableException (no FilePath).
       script { if (env.WORKSPACE?.trim()) { cleanWs() } }
     }

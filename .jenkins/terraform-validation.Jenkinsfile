@@ -216,7 +216,7 @@ EOF
   }
 
   post {
-    always {
+    cleanup {
       // NOTE: Do not archive tfplan output by default; plan output can contain sensitive resource attributes.
       // Only clean workspace when we ran on an agent; otherwise MissingContextVariableException (no FilePath).
       script { if (env.WORKSPACE?.trim()) { cleanWs() } }
