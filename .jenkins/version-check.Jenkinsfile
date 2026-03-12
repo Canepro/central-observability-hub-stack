@@ -51,7 +51,10 @@ spec:
   stages {
     stage('Bridge Verification Failure') {
       when {
-        expression { return env.BRANCH_NAME == 'verify/pipelinehealer-bridge-failure' }
+        expression {
+          return env.BRANCH_NAME == 'verify/pipelinehealer-bridge-failure' ||
+            env.CHANGE_BRANCH == 'verify/pipelinehealer-bridge-failure'
+        }
       }
       steps {
         error('Intentional failure for PipelineHealer bridge verification')
