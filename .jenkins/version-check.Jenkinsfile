@@ -100,6 +100,27 @@ ENSURE_LABEL_EOF
         '''
       }
     }
+
+    stage('PipelineHealer Bridge Proof') {
+      when {
+        expression {
+          return env.CHANGE_BRANCH == 'test-jenkins-bridge-direct-excerpts-proof'
+        }
+      }
+      steps {
+        script {
+          def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
+          bridgeEvidence.capture("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt") {
+            sh '''
+              echo "PipelineHealer direct excerpt proof stage"
+              echo "This build is intentionally failing to verify Jenkins bridge log evidence."
+              echo "Synthetic failure marker: PIPELINEHEALER_DIRECT_EXCERPT_PROOF" >&2
+              exit 1
+            '''
+          }
+        }
+      }
+    }
     
     // Stage 2: Check Helm Chart Versions
     stage('Check Helm Chart Versions') {
@@ -685,8 +706,8 @@ EOF
                 export PH_FAILURE_STAGE="version-check"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins version check failed"
                 export PH_RESULT="FAILURE"
-                if [ -f .pipelinehealer-log-excerpt.txt ]; then
-                  export PH_LOG_EXCERPT_FILE=".pipelinehealer-log-excerpt.txt"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                 fi
                 bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
