@@ -49,6 +49,17 @@ spec:
   }
   
   stages {
+    stage('Bridge Verification Failure') {
+      when {
+        expression {
+          return env.BRANCH_NAME == 'verify/pipelinehealer-jenkins-bridge'
+        }
+      }
+      steps {
+        error('Intentional failure for PipelineHealer Jenkins bridge verification')
+      }
+    }
+
     // Stage 1: Install Tools
     stage('Install Tools') {
       when {
