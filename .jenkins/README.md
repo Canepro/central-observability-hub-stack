@@ -161,3 +161,12 @@ Failed Jenkins runs can also be pushed into PipelineHealer through the signed Je
   - `oci-vault` `ClusterSecretStore`
 
 If those credentials are missing, the Jenkinsfiles skip bridge notification and continue with the existing GitHub issue/comment behavior.
+
+### Recommended bridge capture pattern
+
+Use the repo-shipped shell helper `.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh` to wrap failure-prone `sh` steps. It captures the real command output into `${WORKSPACE}/.pipelinehealer-log-excerpt.txt` without relying on Jenkins-specific Pipeline plugins or `currentBuild.rawBuild` access.
+
+For bridge-enabled pipelines:
+- keep workspace cleanup in `post { cleanup { ... } }`, not `post { always { ... } }`, so failure handlers still have access to the checked-out bridge scripts and captured excerpt
+- export `PH_LOG_EXCERPT_FILE` from the failure block when the excerpt file exists
+- keep the existing bridge sender (`send-pipelinehealer-bridge.sh`) as the single signed POST implementation

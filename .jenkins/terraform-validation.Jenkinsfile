@@ -132,9 +132,12 @@ EOF
     // Stage 3: Format Check
     stage('Terraform Format') {
       steps {
-        dir('terraform') {
-          sh 'terraform fmt -check -recursive'
-        }
+        sh '''
+          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          cd terraform
+          terraform fmt -check -recursive
+SCRIPT
+        '''
       }
     }
 
@@ -148,25 +151,27 @@ EOF
               string(credentialsId: 'oci-s3-access-key', variable: 'S3_ACCESS_KEY'),
               string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
             ]) {
-              dir('terraform') {
-                sh '''
-                  terraform init \
-                    -backend-config="access_key=${S3_ACCESS_KEY}" \
-                    -backend-config="secret_key=${S3_SECRET_KEY}"
-                  echo "--- Backend state list (verify Jenkins sees same state as local) ---"
-                  terraform state list || true
-                  terraform validate
-                '''
-              }
-            }
-          } else {
-            dir('terraform') {
               sh '''
-                echo "OCI parameters not set; running init -backend=false and validate (no plan)."
-                terraform init -backend=false
+                cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                cd terraform
+                terraform init \
+                  -backend-config="access_key=${S3_ACCESS_KEY}" \
+                  -backend-config="secret_key=${S3_SECRET_KEY}"
+                echo "--- Backend state list (verify Jenkins sees same state as local) ---"
+                terraform state list || true
                 terraform validate
+SCRIPT
               '''
             }
+          } else {
+            sh '''
+              cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+              cd terraform
+              echo "OCI parameters not set; running init -backend=false and validate (no plan)."
+              terraform init -backend=false
+              terraform validate
+SCRIPT
+            '''
           }
         }
       }
@@ -182,34 +187,28 @@ EOF
           string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY'),
           string(credentialsId: 'oci-ssh-public-key', variable: 'SSH_PUBLIC_KEY')
         ]) {
-          dir('terraform') {
-            sh '''
-              # Export Terraform vars (SSH key doesn't have S3 signature issues)
-              export TF_VAR_ssh_public_key="$SSH_PUBLIC_KEY"
-              
-              # Ensure OCI key is in place
-              cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
-              chmod 600 ~/.oci/oci_api_key.pem
-              
-              # Run terraform plan
-              # Note: Backend already initialized in previous stage with credentials
-              terraform plan \
-                -no-color \
-                -input=false \
-                -out=tfplan \
-                -detailed-exitcode || PLAN_EXIT=$?
-              
-              # Exit codes: 0 = no changes, 1 = error, 2 = changes present
-              if [ "${PLAN_EXIT:-0}" = "1" ]; then
-                echo "Terraform plan failed"
-                exit 1
-              elif [ "${PLAN_EXIT:-0}" = "2" ]; then
-                echo "Changes detected in plan"
-              else
-                echo "No changes detected"
-              fi
-            '''
-          }
+          sh '''
+            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cd terraform
+            export TF_VAR_ssh_public_key="$SSH_PUBLIC_KEY"
+            cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
+            chmod 600 ~/.oci/oci_api_key.pem
+            terraform plan \
+              -no-color \
+              -input=false \
+              -out=tfplan \
+              -detailed-exitcode || PLAN_EXIT=$?
+
+            if [ "${PLAN_EXIT:-0}" = "1" ]; then
+              echo "Terraform plan failed"
+              exit 1
+            elif [ "${PLAN_EXIT:-0}" = "2" ]; then
+              echo "Changes detected in plan"
+            else
+              echo "No changes detected"
+            fi
+SCRIPT
+          '''
         }
       }
     }
@@ -250,6 +249,9 @@ EOF
                 export PH_FAILURE_STAGE="terraform-validation"
                 export PH_FAILURE_SUMMARY="Jenkins Terraform validation failed"
                 export PH_RESULT="FAILURE"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                fi
                 bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
