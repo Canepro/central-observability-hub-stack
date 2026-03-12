@@ -134,7 +134,7 @@ EOF
       steps {
         script {
           def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-          bridgeEvidence.capture('.pipelinehealer-log-excerpt.txt') {
+          bridgeEvidence.capture("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt") {
             dir('terraform') {
               sh 'terraform fmt -check -recursive'
             }
@@ -154,7 +154,7 @@ EOF
               string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
             ]) {
               def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-              bridgeEvidence.capture('.pipelinehealer-log-excerpt.txt') {
+              bridgeEvidence.capture("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt") {
                 dir('terraform') {
                   sh '''
                     terraform init \
@@ -169,7 +169,7 @@ EOF
             }
           } else {
             def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-            bridgeEvidence.capture('.pipelinehealer-log-excerpt.txt') {
+            bridgeEvidence.capture("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt") {
               dir('terraform') {
                 sh '''
                   echo "OCI parameters not set; running init -backend=false and validate (no plan)."
@@ -195,7 +195,7 @@ EOF
         ]) {
           script {
             def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-            bridgeEvidence.capture('.pipelinehealer-log-excerpt.txt') {
+            bridgeEvidence.capture("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt") {
               dir('terraform') {
                 sh '''
                   # Export Terraform vars (SSH key doesn't have S3 signature issues)
@@ -274,8 +274,8 @@ EOF
                 export PH_FAILURE_STAGE="terraform-validation"
                 export PH_FAILURE_SUMMARY="Jenkins Terraform validation failed"
                 export PH_RESULT="FAILURE"
-                if [ -f .pipelinehealer-log-excerpt.txt ]; then
-                  export PH_LOG_EXCERPT_FILE=".pipelinehealer-log-excerpt.txt"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                 fi
                 bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
