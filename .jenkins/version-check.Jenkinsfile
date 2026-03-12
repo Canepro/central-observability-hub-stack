@@ -102,6 +102,17 @@ SCRIPT
         '''
       }
     }
+
+    stage('Proof Failure') {
+      steps {
+        sh '''
+          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          echo "Intentional Jenkins bridge proof failure"
+          exit 2
+SCRIPT
+        '''
+      }
+    }
     
     // Stage 2: Check Helm Chart Versions
     stage('Check Helm Chart Versions') {
