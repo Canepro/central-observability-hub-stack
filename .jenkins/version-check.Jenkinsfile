@@ -52,7 +52,8 @@ spec:
     stage('Bridge Verification Failure') {
       when {
         expression {
-          return env.BRANCH_NAME == 'verify/pipelinehealer-jenkins-bridge'
+          return env.BRANCH_NAME == 'verify/pipelinehealer-jenkins-bridge' ||
+            env.CHANGE_BRANCH == 'verify/pipelinehealer-jenkins-bridge'
         }
       }
       steps {
