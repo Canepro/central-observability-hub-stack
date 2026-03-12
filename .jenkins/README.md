@@ -147,3 +147,17 @@ Configure webhook in repository settings to point at the **active** Jenkins URL 
 - **URL**: `https://jenkins.canepro.me/github-webhook/`
 - **Events**: Pull requests, Pushes
 - **Content type**: `application/json`
+
+## Optional PipelineHealer Bridge Credentials
+
+Failed Jenkins runs can also be pushed into PipelineHealer through the signed Jenkins bridge flow.
+
+- **Credential IDs in Jenkins**:
+  - `pipelinehealer-bridge-url`
+  - `pipelinehealer-bridge-secret`
+- **GitOps source of truth**:
+  - [k8s/external-secrets/jenkins-pipelinehealer-bridge-externalsecret.yaml](../k8s/external-secrets/jenkins-pipelinehealer-bridge-externalsecret.yaml)
+- **Vault backend on OKE**:
+  - `oci-vault` `ClusterSecretStore`
+
+If those credentials are missing, the Jenkinsfiles skip bridge notification and continue with the existing GitHub issue/comment behavior.
