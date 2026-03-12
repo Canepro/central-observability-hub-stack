@@ -536,6 +536,12 @@ Remediation: create PR(s) manually to fix. This issue is updated on each run."
     failure {
       echo '❌ Security validation failed'
       script {
+        sh '''
+          set +e
+          if [ -f .jenkins/scripts/prepare-failure-tooling.sh ]; then
+            sh .jenkins/scripts/prepare-failure-tooling.sh || true
+          fi
+        '''
         withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
           if (!env.GITHUB_TOKEN?.trim()) {
             echo "⚠️ GitHub token is empty; skipping failure notification."
