@@ -213,19 +213,19 @@ OCI Block Volumes (`oci-bv`) can take **2–3 minutes** to move from `Provisioni
 As soon as **jenkins-oke.canepro.me** is reachable, the UI is exposed. Prefer a strong admin password from day one:
 
 - **Option A (manual):** After first sync, log in at `https://jenkins-oke.canepro.me`, go to **Manage Jenkins → Security → Users**, and change the admin password immediately.
-- **Option B (ESO / Vault):** If you use **External Secrets Operator** and a vault-backed `ClusterSecretStore` on OKE:
-  1. Store a strong password (and optionally username) in your vault.
-  2. Create an **ExternalSecret** in namespace `jenkins` that syncs to a Kubernetes secret (for example `jenkins-admin`) with keys that match what the chart expects.
+- **Option B (ESO / OCI Vault):** If you use **External Secrets Operator** and **OCI Vault** on OKE:
+  1. Store a strong password (and optionally username) in OCI Vault.
+  2. Create an **ExternalSecret** in namespace `jenkins` that syncs to a Kubernetes secret (e.g. `jenkins-admin-credentials`) with keys that match what the chart expects.
   3. In `helm/jenkins-values.yaml` set:
      ```yaml
      controller:
        admin:
          createSecret: false
-         existingSecret: "jenkins-admin"
-         userKey: "username"
-         passwordKey: "password"
+         existingSecret: "jenkins-admin-credentials"
+         userKey: "admin-user"    # or the key name you use in the K8s secret
+         passwordKey: "admin-password"
      ```
-     The Jenkins chart default key names are **`admin-user`** and **`admin-password`**; if your ExternalSecret uses different key names, set `userKey` and `passwordKey` to match. Then sync so the controller uses that secret and never exposes a default password.
+     The Jenkins chart default key names are **`admin-user`** and **`admin-password`**; if your ExternalSecret uses different key names (e.g. `user` / `password`), set `userKey` and `passwordKey` to those names. Then sync so the controller uses that secret and never exposes a default password.
 
 **4. Agent secret for Phase 2 (AKS static agent)**  
 After Jenkins is up, you need the **agent connection secret** for the **aks-agent** node (used by the AKS static agent in Phase 2):
