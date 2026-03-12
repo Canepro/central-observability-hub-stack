@@ -244,9 +244,9 @@ SCRIPT
               if (line.contains(':')) {
                 def image = line.trim()
                 sh """
-                  cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                  cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "\${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                   echo "Scanning image: ${image}"
-                  trivy image --format json --output ${WORKSPACE}/trivy-${image.replaceAll('[/: ]', '-')}.json ${image} || true
+                  trivy image --format json --output \${WORKSPACE}/trivy-${image.replaceAll('[/: ]', '-')}.json ${image} || true
                   trivy image ${image} || true
 SCRIPT
                 """
