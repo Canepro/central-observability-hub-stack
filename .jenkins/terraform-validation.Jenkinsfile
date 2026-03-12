@@ -3,6 +3,12 @@
 // Uses OCI API Key authentication for terraform plan.
 // Agent routing (Phase 3): OCI-only — runs on OKE (label terraform-oci). For Azure Terraform use label 'aks-agent'.
 pipeline {
+  environment {
+    GITHUB_REPO = 'Canepro/central-observability-hub-stack'
+    PIPELINEHEALER_BRIDGE_URL_CREDENTIALS = 'pipelinehealer-bridge-url'
+    PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS = 'pipelinehealer-bridge-secret'
+  }
+
   parameters {
     // NOTE: Keep these identifiers OUT of git. Configure them in the Jenkins job (or via shared library).
     // These are identifiers (not secrets), but are still environment-specific and shouldn’t be hardcoded in a public repo.
@@ -220,6 +226,35 @@ EOF
     }
     failure {
       echo '❌ Terraform validation failed'
+      script {
+        try {
+          withCredentials([
+            string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_URL_CREDENTIALS}", variable: 'PH_BRIDGE_URL'),
+            string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS}", variable: 'PH_BRIDGE_SECRET'),
+          ]) {
+            if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
+              sh '''
+                set +e
+                export PH_REPOSITORY="${GITHUB_REPO}"
+                export PH_JOB_NAME="${JOB_NAME}"
+                export PH_JOB_URL="${BUILD_URL}"
+                export PH_BUILD_NUMBER="${BUILD_NUMBER}"
+                export PH_BRANCH="${GIT_BRANCH:-${BRANCH_NAME:-unknown}}"
+                export PH_COMMIT_SHA="${GIT_COMMIT:-}"
+                export PH_FAILURE_STAGE="terraform-validation"
+                export PH_FAILURE_SUMMARY="Jenkins Terraform validation failed"
+                export PH_RESULT="FAILURE"
+                bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
+                  echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
+              '''
+            } else {
+              echo '⚠️ PipelineHealer bridge script unavailable in workspace; skipping bridge notification.'
+            }
+          }
+        } catch (err) {
+          echo "⚠️ PipelineHealer bridge credentials not configured; skipping bridge notification."
+        }
+      }
     }
   }
 }
