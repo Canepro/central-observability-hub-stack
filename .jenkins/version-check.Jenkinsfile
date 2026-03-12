@@ -56,6 +56,7 @@ spec:
       }
       steps {
         sh '''
+          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           # Alpine-based agent: install tools via apk (openssl required for Helm install script checksum)
           apk add --no-cache curl jq git bash yq openssl github-cli || \
             apk add --no-cache curl jq git bash yq openssl
@@ -97,6 +98,7 @@ ensure_label() {
     -d "$LABEL_JSON" >/dev/null 2>&1 || true
 }
 ENSURE_LABEL_EOF
+SCRIPT
         '''
       }
     }
@@ -109,6 +111,7 @@ ENSURE_LABEL_EOF
       steps {
         script {
           sh '''
+            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             # Add Helm repositories
             helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
             helm repo add grafana https://grafana.github.io/helm-charts 2>/dev/null || true
@@ -151,10 +154,12 @@ ENSURE_LABEL_EOF
             echo "METRICS_SERVER_LATEST=$(helm search repo metrics-server/metrics-server --versions 2>/dev/null | grep -v NAME | head -1 | awk '{print $2}' || echo '')" >> versions.env
             
             cat versions.env
+SCRIPT
           '''
           
           // Build update list and reports in shell (avoid Groovy JSON sandbox restrictions)
           sh '''
+            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             set -e
             components="GRAFANA LOKI PROMTAIL TEMPO PROMETHEUS NGINX METRICS_SERVER"
             updates='[]'
@@ -223,6 +228,7 @@ EOF
               --argjson updates "$(cat chart-updates.json)" \
               '{timestamp:$ts, high:$high, medium:$medium, total:$total, updates:$updates}' \
               > "${UPDATE_REPORT}"
+SCRIPT
           '''
         }
       }
@@ -677,6 +683,9 @@ EOF
                 export PH_FAILURE_STAGE="version-check"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins version check failed"
                 export PH_RESULT="FAILURE"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                fi
                 bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
