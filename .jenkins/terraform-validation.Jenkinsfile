@@ -227,6 +227,12 @@ EOF
     failure {
       echo '❌ Terraform validation failed'
       script {
+        sh '''
+          set +e
+          if [ -f .jenkins/scripts/prepare-failure-tooling.sh ]; then
+            sh .jenkins/scripts/prepare-failure-tooling.sh || true
+          fi
+        '''
         try {
           withCredentials([
             string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_URL_CREDENTIALS}", variable: 'PH_BRIDGE_URL'),
