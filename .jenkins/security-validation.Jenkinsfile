@@ -536,6 +536,14 @@ Remediation: create PR(s) manually to fix. This issue is updated on each run."
     failure {
       echo '❌ Security validation failed'
       script {
+        try {
+          if (fileExists('.jenkins/scripts/pipelinehealer-bridge-evidence.groovy')) {
+            def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
+            bridgeEvidence.writeLogExcerpt('.pipelinehealer-log-excerpt.txt')
+          }
+        } catch (err) {
+          echo "⚠️ PipelineHealer bridge evidence capture failed; continuing without log excerpt."
+        }
         sh '''
           set +e
           if [ -f .jenkins/scripts/prepare-failure-tooling.sh ]; then
@@ -628,6 +636,9 @@ EOF
                 export PH_FAILURE_STAGE="security-validation"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins security validation failed"
                 export PH_RESULT="FAILURE"
+                if [ -f .pipelinehealer-log-excerpt.txt ]; then
+                  export PH_LOG_EXCERPT_FILE=".pipelinehealer-log-excerpt.txt"
+                fi
                 bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
