@@ -19,12 +19,12 @@ controller:
   numExecutors: 0
   executorMode: NORMAL
 
-  # Admin: sourced from ExternalSecret/Azure Key Vault so login is reproducible from GitOps.
+  # Admin: sourced from ExternalSecret/OCI Vault so login is reproducible from GitOps.
   admin:
     createSecret: false
-    existingSecret: "jenkins-admin"
-    userKey: "username"
-    passwordKey: "password"
+    existingSecret: "jenkins-admin-credentials"
+    userKey: "admin-user"
+    passwordKey: "admin-password"
 
   # Align with AKS: enough memory and -Xmx so startup does not OOM
   resources:
