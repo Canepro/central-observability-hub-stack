@@ -68,6 +68,7 @@ spec:
       }
       steps {
         sh '''
+          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           # Install required tools
           # Alpine-based agent: install dependencies via apk
           apk add --no-cache \
@@ -123,6 +124,7 @@ spec:
           checkov --version || echo "checkov not installed"
           trivy --version || echo "trivy not installed"
           kube-score version || echo "kube-score not installed"
+SCRIPT
         '''
       }
     }
@@ -135,11 +137,13 @@ spec:
       steps {
         dir('terraform') {
           sh '''
+            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             # Run tfsec scan and output JSON results
             tfsec . --format json --out ${WORKSPACE}/${TFSEC_OUTPUT} || true
             
             # Also output human-readable format for logs
             tfsec . --format default || true
+SCRIPT
           '''
         }
       }
@@ -153,6 +157,7 @@ spec:
       steps {
         dir('terraform') {
           sh '''
+            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             # Remove any existing file or directory so readJSON later sees a file (checkov can create a dir)
             rm -rf "${WORKSPACE}/${CHECKOV_OUTPUT}"
             # Run checkov scan on Terraform files
@@ -168,6 +173,7 @@ spec:
             fi
             # Also output CLI format for logs
             checkov -d . --framework terraform || true
+SCRIPT
           '''
         }
       }
@@ -180,6 +186,7 @@ spec:
       }
       steps {
         sh '''
+          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           # Scan Kubernetes manifests in ops/manifests/
           if [ -d "ops/manifests" ] && command -v kube-score >/dev/null 2>&1; then
             kube-score score ops/manifests/*.yaml --output-format json > kube-score-results.json || true
@@ -192,6 +199,7 @@ spec:
           if [ -f "/tmp/manifests.yaml" ]; then
             kube-score score /tmp/manifests.yaml --output-format json > helm-kube-score-results.json || true
           fi
+SCRIPT
         '''
       }
     }
@@ -236,9 +244,11 @@ spec:
               if (line.contains(':')) {
                 def image = line.trim()
                 sh """
+                  cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "\${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                   echo "Scanning image: ${image}"
-                  trivy image --format json --output ${WORKSPACE}/trivy-${image.replaceAll('[/: ]', '-')}.json ${image} || true
+                  trivy image --format json --output \${WORKSPACE}/trivy-${image.replaceAll('[/: ]', '-')}.json ${image} || true
                   trivy image ${image} || true
+SCRIPT
                 """
               }
             }
@@ -257,6 +267,7 @@ spec:
       steps {
         script {
           sh '''
+            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             python3 - <<'PY'
 import json, os, datetime
 
@@ -346,6 +357,7 @@ with open("risk-counts.env", "w") as f:
 
 print("Risk Assessment:", report)
 PY
+SCRIPT
           '''
 
           // Never fail the build due to findings
@@ -530,15 +542,21 @@ Remediation: create PR(s) manually to fix. This issue is updated on each run."
         }
       }
     }
+    cleanup {
+      script { if (env.WORKSPACE?.trim()) { cleanWs() } }
+    }
     success {
       echo '✅ Security validation completed'
     }
     failure {
       echo '❌ Security validation failed'
       script {
-        def bridgeExcerptPath = "${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt"
-        def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-        bridgeEvidence.writeLogExcerpt(bridgeExcerptPath)
+        sh '''
+          set +e
+          if [ -f .jenkins/scripts/prepare-failure-tooling.sh ]; then
+            sh .jenkins/scripts/prepare-failure-tooling.sh || true
+          fi
+        '''
         withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
           if (!env.GITHUB_TOKEN?.trim()) {
             echo "⚠️ GitHub token is empty; skipping failure notification."
@@ -632,6 +650,9 @@ EOF
                 export PH_FAILURE_STAGE="security-validation"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins security validation failed"
                 export PH_RESULT="FAILURE"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                fi
                 bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
