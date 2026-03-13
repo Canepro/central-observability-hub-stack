@@ -19,9 +19,9 @@ def writeLogExcerpt(String outputPath = '.pipelinehealer-log-excerpt.txt', int m
   echo "PipelineHealer bridge evidence: writeLogExcerpt called (outputPath=${outputPath})"
 
   if (fileExists(outputPath)) {
-    def existing = readFile(outputPath).trim()
-    if (existing) {
-      echo "PipelineHealer bridge evidence: reusing existing excerpt (${existing.length()} chars)"
+    if (sh(returnStatus: true, script: "test -s '${outputPath}'") == 0) {
+      def existingBytes = sh(returnStdout: true, script: "wc -c < '${outputPath}'").trim()
+      echo "PipelineHealer bridge evidence: reusing existing excerpt (${existingBytes} bytes)"
       return true
     }
   }
@@ -29,16 +29,24 @@ def writeLogExcerpt(String outputPath = '.pipelinehealer-log-excerpt.txt', int m
   echo 'PipelineHealer bridge evidence: fetching console text via BUILD_URL API...'
 
   def captured = false
+  def authAttempted = false
   try {
     withCredentials([usernamePassword(
       credentialsId: 'jenkins-api-token',
       usernameVariable: 'JENKINS_API_USER',
       passwordVariable: 'JENKINS_API_TOKEN',
     )]) {
+      authAttempted = true
       captured = fetchConsoleText(outputPath, maxLines, maxChars, '-u "$JENKINS_API_USER:$JENKINS_API_TOKEN"')
     }
   } catch (err) {
-    echo "PipelineHealer bridge evidence: jenkins-api-token credential not configured (${err}); trying unauthenticated..."
+    echo "PipelineHealer bridge evidence: jenkins-api-token credential not configured (${err}); will try unauthenticated..."
+  }
+
+  if (!captured) {
+    if (authAttempted) {
+      echo 'PipelineHealer bridge evidence: authenticated consoleText fetch failed; trying unauthenticated...'
+    }
     captured = fetchConsoleText(outputPath, maxLines, maxChars)
   }
 
