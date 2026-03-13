@@ -3,6 +3,12 @@
 // Purpose: CI validation only - ensures all manifests are valid before GitOps sync.
 // Agent routing (Phase 3): OKE-only — runs on OKE (label helm). For Azure jobs use label 'aks-agent'.
 pipeline {
+  environment {
+    GITHUB_REPO = 'Canepro/central-observability-hub-stack'
+    PIPELINEHEALER_BRIDGE_URL_CREDENTIALS = 'pipelinehealer-bridge-url'
+    PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS = 'pipelinehealer-bridge-secret'
+  }
+
   // Use the 'helm' Kubernetes agent (has Helm, kubeconform). OKE/CRI-O requires fully qualified image names.
   agent {
     kubernetes {
@@ -156,6 +162,39 @@ spec:
     }
     failure {
       echo '❌ Kubernetes manifest validation failed'
+      script {
+        try {
+          withCredentials([
+            string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_URL_CREDENTIALS}", variable: 'PH_BRIDGE_URL'),
+            string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS}", variable: 'PH_BRIDGE_SECRET'),
+          ]) {
+            if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
+              sh '''
+                set +e
+                export PH_REPOSITORY="${GITHUB_REPO}"
+                export PH_JOB_NAME="${JOB_NAME}"
+                export PH_JOB_URL="${BUILD_URL}"
+                export PH_BUILD_NUMBER="${BUILD_NUMBER}"
+                PH_BRANCH_VALUE="${GIT_BRANCH:-}"
+                if [ -z "${PH_BRANCH_VALUE}" ]; then
+                  PH_BRANCH_VALUE="${BRANCH_NAME:-unknown}"
+                fi
+                export PH_BRANCH="${PH_BRANCH_VALUE}"
+                export PH_COMMIT_SHA="${GIT_COMMIT:-}"
+                export PH_FAILURE_STAGE="k8s-manifest-validation"
+                export PH_FAILURE_SUMMARY="Jenkins Kubernetes manifest validation failed"
+                export PH_RESULT="FAILURE"
+                bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
+                  echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
+              '''
+            } else {
+              echo '⚠️ PipelineHealer bridge script unavailable in workspace; skipping bridge notification.'
+            }
+          }
+        } catch (err) {
+          echo "⚠️ PipelineHealer bridge credentials not configured; skipping bridge notification."
+        }
+      }
     }
   }
 }

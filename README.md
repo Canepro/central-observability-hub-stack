@@ -20,33 +20,47 @@ This repository is the GitOps source of truth for a production-ready observabili
 
 ```mermaid
 flowchart LR
-  subgraph Spokes[Spoke Clusters]
-    S1[AKS Spoke] -->|remote_write| P
-    S2[K3s Spoke] -->|remote_write| P
-    SN[Other Spokes] -->|remote_write| P
-    S1 -->|logs| L
-    S2 -->|logs| L
-    SN -->|logs| L
-    S1 -->|traces| T
-    S2 -->|traces| T
-    SN -->|traces| T
+  subgraph Spokes["Spoke Clusters"]
+    S1["AKS Spoke (k8.canepro.me)"]
+    S2["Dev Spoke (kind)"]
+    SN["Other Spokes"]
   end
 
-  subgraph Hub[OKE Hub Cluster]
-    A[ArgoCD] -->|GitOps sync| G[Grafana]
-    A -->|GitOps sync| P[Prometheus]
-    A -->|GitOps sync| L[Loki]
-    A -->|GitOps sync| T[Tempo]
-    A -->|GitOps sync| O[OTel Collector]
-    A -->|GitOps sync| I[ingress-nginx]
-    G -->|queries| P
-    G -->|queries| L
-    G -->|queries| T
-    I -->|OTLP spans| O
-    O -->|OTLP spans| T
+  subgraph Hub["OKE Hub Cluster"]
+    A["ArgoCD"]
+    G["Grafana"]
+    P["Prometheus"]
+    L["Loki"]
+    T["Tempo"]
+    O["OTel Collector"]
+    I["ingress-nginx"]
   end
 
-  Git[(Git repo)] -->|manifests/values| A
+  Git[("Git repo")]
+
+  S1 -->|remote_write| P
+  S2 -->|remote_write| P
+  SN -->|remote_write| P
+  S1 -->|logs| L
+  S2 -->|logs| L
+  SN -->|logs| L
+  S1 -->|traces| T
+  S2 -->|traces| T
+  SN -->|traces| T
+
+  A -->|GitOps sync| G
+  A -->|GitOps sync| P
+  A -->|GitOps sync| L
+  A -->|GitOps sync| T
+  A -->|GitOps sync| O
+  A -->|GitOps sync| I
+  G -->|queries| P
+  G -->|queries| L
+  G -->|queries| T
+  I -->|OTLP spans| O
+  O -->|OTLP spans| T
+
+  Git -->|manifests/values| A
 ```
 
 ### Endpoints
@@ -97,6 +111,8 @@ This stack is managed declaratively via ArgoCD. All changes flow through Git:
 |----------|-------------|
 | [hub-docs/README.md](hub-docs/README.md) | Component versions and architecture overview |
 | [hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md) | Retention policies, storage management |
+| [hub-docs/TRACING-ROLLOUT-CHECKLIST.md](hub-docs/TRACING-ROLLOUT-CHECKLIST.md) | GitOps checklist for phased service tracing rollout |
+| [hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md](hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md) | Per-service tracing onboarding template/checklist |
 | [hub-docs/ARGOCD-RUNBOOK.md](hub-docs/ARGOCD-RUNBOOK.md) | ArgoCD operations and troubleshooting |
 | [docs/JENKINS-MIGRATION-SUMMARY.md](docs/JENKINS-MIGRATION-SUMMARY.md) | Jenkins migration to OKE and split-agent summary |
 | [docs/JENKINS-503-TROUBLESHOOTING.md](docs/JENKINS-503-TROUBLESHOOTING.md) | Jenkins (OKE) operational troubleshooting |

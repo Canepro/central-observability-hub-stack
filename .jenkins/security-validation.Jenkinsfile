@@ -46,6 +46,8 @@ spec:
     // GitHub configuration (from Jenkins credentials)
     GITHUB_REPO = 'Canepro/central-observability-hub-stack'
     GITHUB_TOKEN_CREDENTIALS = 'github-token'
+    PIPELINEHEALER_BRIDGE_URL_CREDENTIALS = 'pipelinehealer-bridge-url'
+    PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS = 'pipelinehealer-bridge-secret'
     
     // Output files for findings
     TFSEC_OUTPUT = 'tfsec-results.json'
@@ -537,71 +539,102 @@ Remediation: create PR(s) manually to fix. This issue is updated on each run."
         withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
           if (!env.GITHUB_TOKEN?.trim()) {
             echo "⚠️ GitHub token is empty; skipping failure notification."
-            return
-          }
-          sh '''
-            set +e
-            WORKDIR="${WORKSPACE:-$(pwd)}"
-            ISSUE_TITLE="CI Failure: ${JOB_NAME}"
-            
-            ensure_label() {
-              LABEL_NAME="$1"
-              LABEL_COLOR="$2"
-              LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
-              curl -fsSL \
+          } else {
+            sh '''
+              set +e
+              WORKDIR="${WORKSPACE:-$(pwd)}"
+              ISSUE_TITLE="CI Failure: ${JOB_NAME}"
+
+              ensure_label() {
+                LABEL_NAME="$1"
+                LABEL_COLOR="$2"
+                LABEL_JSON=$(jq -n --arg name "$LABEL_NAME" --arg color "$LABEL_COLOR" '{name:$name,color:$color}')
+                curl -fsSL \
+                  -H "Authorization: token ${GITHUB_TOKEN}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
+                curl -fsSL -X POST \
+                  -H "Authorization: token ${GITHUB_TOKEN}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${GITHUB_REPO}/labels" \
+                  -d "$LABEL_JSON" >/dev/null 2>&1 || true
+              }
+
+              ensure_label "ci" "6a737d"
+              ensure_label "jenkins" "5319e7"
+              ensure_label "failure" "b60205"
+              ensure_label "automated" "0e8a16"
+
+              ISSUE_LIST_JSON=$(curl -fsSL \
                 -H "Authorization: token ${GITHUB_TOKEN}" \
                 -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/${GITHUB_REPO}/labels/${LABEL_NAME}" >/dev/null 2>&1 && return 0
-              curl -fsSL -X POST \
-                -H "Authorization: token ${GITHUB_TOKEN}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/${GITHUB_REPO}/labels" \
-                -d "$LABEL_JSON" >/dev/null 2>&1 || true
-            }
-            
-            ensure_label "ci" "6a737d"
-            ensure_label "jenkins" "5319e7"
-            ensure_label "failure" "b60205"
-            ensure_label "automated" "0e8a16"
-            
-            ISSUE_LIST_JSON=$(curl -fsSL \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${GITHUB_REPO}/issues?state=open&labels=ci,jenkins,failure,automated&per_page=100" \
-              || echo '[]')
-            
-            ISSUE_NUMBER=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].number // empty' 2>/dev/null || true)
-            ISSUE_URL=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].html_url // empty' 2>/dev/null || true)
-            
-            if [ -n "${ISSUE_NUMBER}" ]; then
-              cat > "${WORKDIR}/issue-comment.json" << EOF
-            {
-              "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\n(Automated update on existing issue.)"
-            }
+                "https://api.github.com/repos/${GITHUB_REPO}/issues?state=open&labels=ci,jenkins,failure,automated&per_page=100" \
+                || echo '[]')
+
+              ISSUE_NUMBER=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].number // empty' 2>/dev/null || true)
+              ISSUE_URL=$(echo "$ISSUE_LIST_JSON" | jq -r --arg t "$ISSUE_TITLE" '[.[] | select(.pull_request == null) | select(.title == $t)][0].html_url // empty' 2>/dev/null || true)
+
+              if [ -n "${ISSUE_NUMBER}" ]; then
+                cat > "${WORKDIR}/issue-comment.json" << EOF
+              {
+                "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\n(Automated update on existing issue.)"
+              }
 EOF
+                curl -X POST \
+                  -H "Authorization: token ${GITHUB_TOKEN}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${GITHUB_REPO}/issues/${ISSUE_NUMBER}/comments" \
+                  -d @"${WORKDIR}/issue-comment.json" >/dev/null 2>&1 || true
+                echo "Updated existing failure issue: ${ISSUE_URL}"
+                exit 0
+              fi
+
+              cat > "${WORKDIR}/issue-body.json" << EOF
+              {
+                "title": "${ISSUE_TITLE}",
+                "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\nPlease check Jenkins logs for details.\\n\\n---\\n*This issue was automatically created by Jenkins.*",
+                "labels": ["ci", "jenkins", "failure", "automated"]
+              }
+EOF
+
               curl -X POST \
                 -H "Authorization: token ${GITHUB_TOKEN}" \
                 -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/${GITHUB_REPO}/issues/${ISSUE_NUMBER}/comments" \
-                -d @"${WORKDIR}/issue-comment.json" >/dev/null 2>&1 || true
-              echo "Updated existing failure issue: ${ISSUE_URL}"
-              exit 0
-            fi
-            
-            cat > "${WORKDIR}/issue-body.json" << EOF
-            {
-              "title": "${ISSUE_TITLE}",
-              "body": "## Jenkins job failed\\n\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_URL}\\nCommit: ${GIT_COMMIT}\\n\\nPlease check Jenkins logs for details.\\n\\n---\\n*This issue was automatically created by Jenkins.*",
-              "labels": ["ci", "jenkins", "failure", "automated"]
+                "https://api.github.com/repos/${GITHUB_REPO}/issues" \
+                -d @"${WORKDIR}/issue-body.json" >/dev/null 2>&1 || true
+            '''
+          }
+        }
+        try {
+          withCredentials([
+            string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_URL_CREDENTIALS}", variable: 'PH_BRIDGE_URL'),
+            string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS}", variable: 'PH_BRIDGE_SECRET'),
+          ]) {
+            if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
+              sh '''
+                set +e
+                export PH_REPOSITORY="${GITHUB_REPO}"
+                export PH_JOB_NAME="${JOB_NAME}"
+                export PH_JOB_URL="${BUILD_URL}"
+                export PH_BUILD_NUMBER="${BUILD_NUMBER}"
+                PH_BRANCH_VALUE="${GIT_BRANCH:-}"
+                if [ -z "${PH_BRANCH_VALUE}" ]; then
+                  PH_BRANCH_VALUE="${BRANCH_NAME:-unknown}"
+                fi
+                export PH_BRANCH="${PH_BRANCH_VALUE}"
+                export PH_COMMIT_SHA="${GIT_COMMIT:-}"
+                export PH_FAILURE_STAGE="security-validation"
+                export PH_FAILURE_SUMMARY="Scheduled Jenkins security validation failed"
+                export PH_RESULT="FAILURE"
+                bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
+                  echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
+              '''
+            } else {
+              echo '⚠️ PipelineHealer bridge script unavailable in workspace; skipping bridge notification.'
             }
-EOF
-            
-            curl -X POST \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${GITHUB_REPO}/issues" \
-              -d @"${WORKDIR}/issue-body.json" >/dev/null 2>&1 || true
-          '''
+          }
+        } catch (err) {
+          echo "⚠️ PipelineHealer bridge credentials not configured; skipping bridge notification."
         }
       }
     }

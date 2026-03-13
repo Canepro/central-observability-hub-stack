@@ -33,6 +33,15 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 - OpenTelemetry Collector added (chart 0.145.0)
 - Prometheus 28.8.1 → 28.9.0 (patch; chart dependency updates)
 
+**Just updated (2026-02-22)**:
+- Jenkins controller image 2.541.1-jdk17 → 2.541.2-jdk17 (security patch)
+- Jenkins plugin baseline now GitOps-manages `sshd` and `pipeline-graph-view`
+
+**Just updated (2026-03-13)**:
+- Loki 6.52.0 → 6.55.0 (minor)
+- Prometheus 28.9.0 → 28.13.0 (minor)
+- NGINX Ingress 4.14.3 → 4.15.0 (minor)
+
 **Previously updated (2026-02-02)**:
 - Prometheus 28.7.0 → 28.8.0 (patch)
 
@@ -87,10 +96,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **Grafana** | `10.5.15` | `10.5.15` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Loki** | `6.52.0` | `6.52.0` | 🔄 **Just updated** (2026-02-05) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Loki** | `6.55.0` | `6.55.0` | 🔄 **Just updated** (2026-03-13) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `28.9.0` | `28.9.0` | 🔄 **Just updated** (2026-02-07) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `28.13.0` | `28.13.0` | 🔄 **Just updated** (2026-03-13) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 | **OpenTelemetry Collector** | `0.145.0` | ⚠️ **Check latest** | 🔄 **Just added** (2026-02-07) | `argocd/applications/otel-collector.yaml` | [OTel Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
@@ -110,8 +119,17 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **NGINX Ingress Controller** | `4.14.3` | `4.14.3` | 🔄 **Just updated** (2026-02-05) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
+| **NGINX Ingress Controller** | `4.15.0` | `4.15.0` | 🔄 **Just updated** (2026-03-13) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
 | **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
+
+---
+
+## CI/CD Components
+
+| Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
+|-----------|----------------|----------------|----------------|----------|---------------|
+| **Jenkins Helm Chart** | `5.8.0` | ⚠️ **Check latest** | 🔍 **Needs investigation** | `argocd/applications/jenkins.yaml` | [Jenkins Helm Chart Releases](https://github.com/jenkinsci/helm-charts/releases) |
+| **Jenkins Controller Image** | `2.541.2-jdk17` | `2.541.2-jdk17` | 🔄 **Just updated** (2026-02-22) | `helm/jenkins-values.yaml` | [Jenkins Docker Tags](https://hub.docker.com/r/jenkins/jenkins/tags) |
 
 ---
 
@@ -333,6 +351,7 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo add jenkins https://charts.jenkins.io
 helm repo add rocketchat https://rocketchat.github.io/helm-charts
 helm repo update
 
@@ -345,6 +364,7 @@ helm search repo grafana/tempo --versions | head -5
 helm search repo prometheus-community/prometheus --versions | head -5
 helm search repo ingress-nginx/ingress-nginx --versions | head -5
 helm search repo metrics-server/metrics-server --versions | head -5
+helm search repo jenkins/jenkins --versions | head -5
 helm search repo rocketchat/rocketchat --versions | head -5
 ```
 
@@ -392,6 +412,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-03-13  
-**Next Scheduled Review**: 2026-02-18  
+**Document Last Updated**: 2026-03-13
+**Next Scheduled Review**: 2026-04-13
 **Maintained By**: Infrastructure Team

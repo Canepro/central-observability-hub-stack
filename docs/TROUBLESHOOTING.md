@@ -63,6 +63,34 @@ nginx.ingress.kubernetes.io/rewrite-target: /$1
 - Promtail must be configured to send this header.
 - **Our Setup**: We set `auth_enabled: false` to simplify (Auth handled by NGINX).
 
+### Loki query endpoint returns 404 (Rocket.Chat Logs Viewer / server-side readers)
+
+**Symptoms**:
+- `query_range` calls return `HTTP 404` via `https://observability.canepro.me`.
+- In-app readers (for example Rocket.Chat Logs Viewer) fail while Promtail ingest still works.
+
+**Root Cause**:
+- Ingress exposes only `/loki/api/v1/push` (ingest) but not read/query routes.
+
+**Solution**:
+1. Ensure `k8s/observability-ingress-secure.yaml` exposes:
+   - `/loki/api/v1/query`
+   - `/loki/api/v1/query_range`
+2. Commit the change and let ArgoCD sync `nginx-ingress` / manifests.
+3. Re-test with Basic Auth:
+
+```bash
+curl -sS -u 'observability-user:YOUR_PASSWORD_HERE' -G \
+  'https://observability.canepro.me/loki/api/v1/query_range' \
+  --data-urlencode 'query={job="rocketchat"}' \
+  --data-urlencode 'limit=1'
+```
+
+**Interpretation**:
+- `200` with JSON: route/auth OK.
+- `401`: auth credentials mismatch.
+- `404`: ingress route still missing or not synced.
+
 ### Loki Pod Crash "Invalid Config"
 
 **Symptoms**: `invalid compactor config: compactor.delete-request-store should be configured`
@@ -189,6 +217,33 @@ Tempo only shows traces if something is actually sending spans. Metrics being pr
    ```
    If this is > 0, Tempo is receiving spans.
 3. In Grafana Explore (Tempo), search for service `ingress-nginx`.
+
+### Tempo Service Graph / Node Graph shows no data
+
+**Symptoms**
+- Grafana Tempo datasource is healthy.
+- Node Graph panel with Tempo `Service Graph` query type shows `No data`.
+- Prometheus query `sum by (client, server) (rate(traces_service_graph_request_total[5m]))` is empty.
+
+**Root cause**
+Tempo was ingesting traces, but service-graph metrics were not being generated and remote-written to Prometheus.
+
+**Fix (this repo)**
+- Enable Tempo metrics generator with chart key `tempo.metricsGenerator` (Tempo chart `1.24.4`).
+- Enable `service-graphs` and `span-metrics` processors in Tempo overrides.
+- Enable `local-blocks` processor as well for Grafana Traces Drilldown TraceQL metrics.
+- Remote write generated metrics to Prometheus (`/api/v1/write`).
+- Pin Grafana Tempo datasource `serviceMap.datasourceUid=prometheus` in GitOps so UI edits are not lost.
+
+**How to verify**
+1. ArgoCD sync `tempo` and `grafana`.
+2. Generate traffic through ingress.
+3. In Prometheus Explore:
+   ```promql
+   sum by (client, server) (rate(traces_service_graph_request_total[5m]))
+   ```
+   This should return series.
+4. In Grafana panel, use Tempo datasource + `Service Graph` query type.
 
 ---
 
@@ -416,7 +471,7 @@ Do **not** increase the pod’s memory limit until you have checked node headroo
 
 4. **Decide and apply**
    - **Tight cluster**: Trim limits on under-used workloads in this repo (`helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`), then increase the OOM’d workload.
-   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` in `terraform/argocd.tf` (`helm_release.argocd`).
+   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` (requests + limits) in `terraform/argocd.tf` (`helm_release.argocd`), then run `terraform apply`.
 
 **What to check next (per-pod)**
 ```bash
@@ -545,26 +600,46 @@ This is usually caused by the latency of the OCI CLI exec-plugin (`oci ce cluste
 
 ## Pod Issues
 
-### Grafana Readiness probe failed: "connect: connection refused"
+### Grafana /api/health probe failures (timeout/reset, exit 137)
 
 **Symptoms**
-- Grafana Deployment keeps rolling pods (new ReplicaSet every few minutes)
-- Events show:
-  - `Readiness probe failed: Get "http://<pod-ip>:3000/api/health": ... connect: connection refused`
-- ArgoCD may show `grafana` as `Progressing` while it continually restarts
+- `kubectl get pods -n monitoring` shows the same Grafana pod with increasing `RESTARTS`
+- Events include probe failures on `/api/health`, for example:
+  - `context deadline exceeded (Client.Timeout exceeded while awaiting headers)`
+  - `read: connection reset by peer`
+- Pod status shows `Last State: Terminated`, `Exit Code: 137`
 
 **Root cause**
-Grafana can be **slow to start** on OCI Always Free ARM nodes (DB migrations, plugin init, dashboard provisioning). If CPU/memory is too tight or the probes are too aggressive, the pod is marked unready and/or restarted before it finishes booting.
+On OCI Always Free ARM nodes, Grafana can intermittently become slow/unresponsive on
+`/api/health` during startup and background work (plugins/provisioning/update checks).
+If liveness probes are too aggressive and memory headroom is too tight, kubelet restarts
+the container.
+
+In this repo we observed this exact pattern on 2026-02-21:
+- kubelet: `Container grafana failed liveness probe, will be restarted`
+- kubelet: `Killing container with a grace period`
+- PLEG: `container finished ... exitCode=137`
+- `container_oom_events_total` stayed `0` (restart was liveness-driven, not OOM-killed)
 
 **Fix (GitOps)**
 Tune resources and probes in `helm/grafana-values.yaml`:
-- Increase `resources.requests` (CPU/memory)
-- Add/extend `readinessProbe` and `livenessProbe` delays so Grafana has time to come up
+- Raise Grafana memory limit (`512Mi -> 768Mi`) to reduce health-endpoint stalls under load
+- Add a `startupProbe` so liveness/readiness checks wait for full startup
+- Increase readiness tolerance (`timeoutSeconds: 5`, `failureThreshold: 6`)
+- Increase liveness tolerance (`timeoutSeconds: 30`, `failureThreshold: 6`)
 
 After committing/pushing, let ArgoCD apply changes. If ArgoCD seems stuck on stale state, force refresh:
 
 ```bash
 kubectl -n argocd annotate application grafana argocd.argoproj.io/refresh=hard --overwrite
+```
+
+For node-level confirmation without direct node SSH, use:
+
+```bash
+kubectl debug node/<node-ip> -n kube-system -it --image=ubuntu --profile=sysadmin -- bash
+chroot /host
+journalctl -u kubelet --since "<start>" --until "<end>" --no-pager | grep -E 'grafana|liveness|readiness|probe|Killing'
 ```
 
 ### Grafana stuck with 2 pods (one in Init:0/2 / PodInitializing)

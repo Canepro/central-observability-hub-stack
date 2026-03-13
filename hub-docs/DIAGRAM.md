@@ -1,29 +1,29 @@
 # Observability Hub Data Flow
 
-[![Rendered diagram](https://img.shields.io/badge/diagram-rendered-brightgreen)](https://mermaid.live/view#pako:dZPBbqMwEIbvPMUoUisiNRut9pbDSoF0t1WIwha0e7D2MCEuWDEY2aaV-vQdmySEqPEBDzOfZ35mTKmxrSB5CYCW6XalfzetOnADbJI5A2LZGcu1gXD9wzxAqvY1Ng_AbfFtOvnvj7qValUvS95Y5ixuK94Z8I6BSdRBDIxFIWEOv2RHnkhccMu2zTUW3LBt_phAtloTFyspeWGV7jne7IOx7qrbkejt-hGeyDrKhjCm7Bqlc17qTSK2jZ9JEu4hQolNwfUQPRvn7DssDlQTWEYSsORwT8e8azjl1kbUQrNwaMICNtxqUZjpGHTNYKF7Lsgur8M5r1vFQr8toG_HBeI-_7bYN2E6lOIDrVANsL-Xr-MyvzW-YoPsuMMKTbVTqPfjUsNodKniFes30lVxiDSK5mood3eUySINV70Ho-sBsxlMXnitLId_WtAzfMrzNJtOKPKTxhKMborH085Uvkdfsufb4tltnqRfYn3eyENzbMX87fv83QnoKT-3ESNJwwlsScExG3lHGEWtL9_H_cCGgqe-OvRPx7U4cUO9m8i51E3iqlg_FY9lXL7ONnSIbmqYZctjL-gfCT4B)
+[![Rendered diagram](https://img.shields.io/badge/diagram-rendered-brightgreen)](https://mermaid.live/view#pako:dZNLj5swFIX3_IorpKmIlDTqNotKCZl2RiGFBtQurC4c4oAVYiMbZtr--l4bwquJF_j1mXs4PmSKljkEBwew6fqY2bku5YVp4samB7-odcWUBm-9i-dw4eI0h0ierlTMgVXpx5n7y543LVLyus6YqIgZsSpntQa70DOBvPCeqSgvYAlfihpXNnzArcsyUTRFJWHyHEC83SHny6JgaSVVwzFxcsbi8_pI3HD3DC_18aYdPB9frmhhFodygw0J_VdURE-woQUVKVP97qvIFNP6W8bFb8KbyUKYWc-ECSs6TSQsmcAFhl-u_ky1mtYNOr1Hml7wK9BtBGnG4AMqsUsDnabt-ZUr4vW-rmCPZXiqZ2PQ-Es881zhOJtuJ-xaSuLZbgWNwwPEOPpY7RvXNS34X1pxKYj7Yzid6P2q6JkKStoetlTnR0nVaVyrv26VSX9Lmg6F5Qw2inIxueinJ3xTRTEw8t0ZRQ4WC3AP7CorBj8Vx6f3kiRRPHNx5zPetTNKn8WjWufWpLtsl0DLhkkQ3cVuutq8ACbtfOap6VOMDXiKYfR0SYWGM6o1GYU2TzNnmrRBrewQ-W2pUc6c_5J3_5C948a2YGORJS358u3T8t3400A2VyOmQItuYIkGtR-LqyMMdyvrzrBY58ft2g36vWaK37i-3kOkK_WQmBRrQmOxmBXnxR4P4a_kxfG6tQIt_wc)
 
 This diagram visualizes how data flows from various Spoke clusters and external applications into the Central OKE Hub.
 
 ```mermaid
 graph LR
-    subgraph spokes ["Spoke Clusters (K3s, Podman, etc.)"]
+    subgraph spokes["Spoke Clusters (AKS, kind, Podman, etc.)"]
         PromAgent[Prometheus Agent]
         LokiAgent[Promtail / FluentBit]
         AppTraces[OTEL SDK / Collector]
     end
 
-    subgraph hub ["OKE Hub Cluster (Central Hub)"]
+    subgraph hub["OKE Hub Cluster (Central Hub)"]
         LB[OCI Load Balancer]
         IngressNginx[ingress-nginx]
         OTelCollector[OpenTelemetry Collector]
         
-        subgraph backend [Storage & Backend]
+        subgraph backend["Storage & Backend"]
             Mimir[(Prometheus: Metrics)]
             Loki[(Loki: Logs)]
             Tempo[(Tempo: Traces)]
         end
         
-        subgraph visualization [Visualization]
+        subgraph visualization["Visualization"]
             Grafana[Grafana Dashboard]
         end
 
@@ -56,4 +56,3 @@ graph LR
 2. **Persistence**: The Hub components store high-velocity data (metrics) on Block Volumes and high-volume data (logs/traces) on OCI Object Storage.
 3. **Visualization**: Grafana queries the backend services internally within the cluster.
 4. **Management**: ArgoCD monitors the repository and applies updates to the Hub cluster itself via Server-Side Apply.
-

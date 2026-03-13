@@ -1,12 +1,23 @@
 # Rocket.Chat Cluster Observability Setup
 
-Use these instructions to configure the `rocketchat-k8s` cluster (or any remote cluster) to send telemetry to the central **Canepro Observability Hub**.
+Use these instructions to configure the `rocketchat-k8s` cluster (AKS, `k8.canepro.me`) or any remote cluster to send telemetry to the central **Canepro Observability Hub**.
 
 ## 1. Credentials
 
 **Hub URL**: `https://observability.canepro.me`
 **Username**: `observability-user`
 **Password**: `YOUR_PASSWORD_HERE`
+
+### Rocket.Chat Logs Viewer app settings (read path)
+
+If you install the Rocket.Chat marketplace app `Logs Viewer`, configure:
+- `loki_base_url`: `https://observability.canepro.me`
+- `loki_username`: `observability-user`
+- `loki_token`: `YOUR_PASSWORD_HERE`
+
+Important:
+- The app is a **reader** and calls Loki query APIs (`/loki/api/v1/query_range`).
+- Ingress must expose Loki query routes, not only `/loki/api/v1/push`.
 
 ---
 
@@ -82,4 +93,4 @@ helm upgrade --install promtail grafana/promtail -f values-monitoring.yaml -n mo
 2.  **Check Central Grafana**:
     -   Go to https://grafana.canepro.me
     -   Explore -> Prometheus
-    -   Query: `{cluster="rocketchat-k3s"}` (or whatever `external_labels.cluster` you set)
+    -   Query: `{cluster="aks-canepro"}` (or whatever `external_labels.cluster` you set)

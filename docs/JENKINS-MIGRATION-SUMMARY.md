@@ -62,6 +62,7 @@ When agent allocation fails (e.g. image pull error), the pipeline never runs on 
 |------|--------|
 | **Jenkins URL** | `https://jenkins.canepro.me` |
 | **Controller** | OKE, namespace `jenkins`, Helm chart + `helm/jenkins-values.yaml` |
+| **Controller image** | `docker.io/jenkins/jenkins:2.541.2-jdk17` |
 | **Dynamic agents (OKE)** | Kubernetes cloud; pod templates with labels `terraform-oci`, `version-checker`, `helm`, `security`; jnlp image `docker.io/jenkins/inbound-agent:3355.v388858a_47b_33-8-jdk21` |
 | **Static agent (AKS)** | Label `aks-agent`; connects via WebSocket to `https://jenkins.canepro.me` when AKS is up |
 | **GrafanaLocal pipelines** | `.jenkins/*.Jenkinsfile`; multibranch jobs; script paths e.g. `.jenkins/terraform-validation.Jenkinsfile` |
@@ -72,6 +73,7 @@ When agent allocation fails (e.g. image pull error), the pipeline never runs on 
 
 - **Image tags:** Use only tags that exist on Docker Hub; verify when upgrading (e.g. `jenkins/inbound-agent` tags).
 - **CRI-O / OKE:** Always use fully qualified image names (`docker.io/...`) in Jenkinsfiles and Helm defaults.
+- **GitOps-only admin changes:** Treat Jenkins UI warnings as signals; apply core/plugin changes in `helm/jenkins-values.yaml` and sync via ArgoCD (avoid UI plugin/core update actions that create drift).
 - **Post actions:** Do not assume a workspace exists in `post { always { ... } }`; guard steps that require `FilePath` (e.g. `cleanWs()`) when agent allocation may have failed.
 - **Cleanup after restarts:** After controller or plugin restarts, run the stale-agent cleanup script and abort stuck queue items before expecting normal behaviour.
 - **Multibranch:** After changing Jenkinsfiles, run “Scan Multibranch Pipeline Now” and build the correct branch (e.g. `main`) so jobs use the latest pipeline definition.
@@ -89,4 +91,4 @@ When agent allocation fails (e.g. image pull error), the pipeline never runs on 
 
 ---
 
-*Last updated: 2026-01-31 — DNS cutover complete; AKS controller retirement pending due to cluster auto-shutdown schedule.*
+*Last updated: 2026-02-22 — Jenkins controller image bumped to 2.541.2-jdk17; GitOps handling for admin warning banners documented.*
