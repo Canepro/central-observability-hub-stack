@@ -68,7 +68,7 @@ spec:
       }
       steps {
         sh '''
-          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           # Install required tools
           # Alpine-based agent: install dependencies via apk
           apk add --no-cache \
@@ -137,7 +137,7 @@ SCRIPT
       steps {
         dir('terraform') {
           sh '''
-            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             # Run tfsec scan and output JSON results
             tfsec . --format json --out ${WORKSPACE}/${TFSEC_OUTPUT} || true
             
@@ -157,7 +157,7 @@ SCRIPT
       steps {
         dir('terraform') {
           sh '''
-            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             # Remove any existing file or directory so readJSON later sees a file (checkov can create a dir)
             rm -rf "${WORKSPACE}/${CHECKOV_OUTPUT}"
             # Run checkov scan on Terraform files
@@ -186,7 +186,7 @@ SCRIPT
       }
       steps {
         sh '''
-          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           # Scan Kubernetes manifests in ops/manifests/
           if [ -d "ops/manifests" ] && command -v kube-score >/dev/null 2>&1; then
             kube-score score ops/manifests/*.yaml --output-format json > kube-score-results.json || true
@@ -244,7 +244,7 @@ SCRIPT
               if (line.contains(':')) {
                 def image = line.trim()
                 sh """
-                  cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "\${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                  cat <<'SCRIPT' | sh "\${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "\${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                   echo "Scanning image: ${image}"
                   trivy image --format json --output \${WORKSPACE}/trivy-${image.replaceAll('[/: ]', '-')}.json ${image} || true
                   trivy image ${image} || true
@@ -267,7 +267,7 @@ SCRIPT
       steps {
         script {
           sh '''
-            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             python3 - <<'PY'
 import json, os, datetime
 
@@ -632,6 +632,10 @@ EOF
             string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS}", variable: 'PH_BRIDGE_SECRET'),
           ]) {
             if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
+              if (fileExists('.jenkins/scripts/pipelinehealer-bridge-evidence.groovy')) {
+                def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
+                bridgeEvidence.writeLogExcerpt("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt")
+              }
               sh '''
                 set +e
                 export PH_REPOSITORY="${GITHUB_REPO}"
@@ -643,9 +647,6 @@ EOF
                   PH_BRANCH_VALUE="${BRANCH_NAME:-unknown}"
                 fi
                 export PH_BRANCH="${PH_BRANCH_VALUE}"
-                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
-                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
-                fi
                 export PH_COMMIT_SHA="${GIT_COMMIT:-}"
                 export PH_FAILURE_STAGE="security-validation"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins security validation failed"
@@ -653,7 +654,7 @@ EOF
                 if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
                   export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                 fi
-                bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
+                bash "${WORKSPACE}/.jenkins/scripts/send-pipelinehealer-bridge.sh" >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
             } else {
