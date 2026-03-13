@@ -632,6 +632,10 @@ EOF
             string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_SECRET_CREDENTIALS}", variable: 'PH_BRIDGE_SECRET'),
           ]) {
             if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
+              if (fileExists('.jenkins/scripts/pipelinehealer-bridge-evidence.groovy')) {
+                def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
+                bridgeEvidence.writeLogExcerpt("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt")
+              }
               sh '''
                 set +e
                 export PH_REPOSITORY="${GITHUB_REPO}"
@@ -643,9 +647,6 @@ EOF
                   PH_BRANCH_VALUE="${BRANCH_NAME:-unknown}"
                 fi
                 export PH_BRANCH="${PH_BRANCH_VALUE}"
-                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
-                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
-                fi
                 export PH_COMMIT_SHA="${GIT_COMMIT:-}"
                 export PH_FAILURE_STAGE="security-validation"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins security validation failed"
