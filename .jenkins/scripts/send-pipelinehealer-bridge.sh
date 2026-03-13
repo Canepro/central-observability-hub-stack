@@ -96,11 +96,6 @@ if [[ -n "${PH_LOG_EXCERPT:-}" ]]; then
   printf '%s\n' "${PH_LOG_EXCERPT}" >"$EXCERPT_FILE"
 elif [[ -n "${PH_LOG_EXCERPT_FILE:-}" && -f "${PH_LOG_EXCERPT_FILE}" ]]; then
   cat "${PH_LOG_EXCERPT_FILE}" >"$EXCERPT_FILE"
-else
-  JOB_URL="${PH_JOB_URL:-${BUILD_URL:-}}"
-  if [[ -n "$JOB_URL" ]]; then
-    curl -fsSL "${JOB_URL%/}/consoleText" >"$EXCERPT_FILE" 2>/dev/null || true
-  fi
 fi
 
 RAW_EXCERPT=""
@@ -109,6 +104,11 @@ if [[ -f "$EXCERPT_FILE" ]]; then
   if [[ -n "$RAW_EXCERPT" ]]; then
     RAW_EXCERPT="$(printf '%s' "$RAW_EXCERPT" | tail -c 20000)"
   fi
+fi
+
+if [[ "$RAW_EXCERPT" == "<html>"* || "$RAW_EXCERPT" == *"Authentication required"* ]]; then
+  warn "discarding non-log bridge excerpt content"
+  RAW_EXCERPT=""
 fi
 
 JOB_URL="${PH_JOB_URL:-${BUILD_URL:-}}"
@@ -147,7 +147,8 @@ cat >"$BODY_FILE" <<EOF
   "metadata": {
     "jenkins_instance": "$(json_escape "$JOB_HOST")",
     "job_name": "$(json_escape "$JOB_NAME")",
-    "build_url": "$(json_escape "$JOB_URL")"
+    "build_url": "$(json_escape "$JOB_URL")",
+    "bridge_excerpt_present": "$(json_escape "$([[ -n "$RAW_EXCERPT" ]] && printf true || printf false)")"
   }
 }
 EOF
