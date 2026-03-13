@@ -170,3 +170,15 @@ For bridge-enabled pipelines:
 - keep workspace cleanup in `post { cleanup { ... } }`, not `post { always { ... } }`, so failure handlers still have access to the checked-out bridge scripts and captured excerpt
 - export `PH_LOG_EXCERPT_FILE` from the failure block when the excerpt file exists
 - keep the existing bridge sender (`send-pipelinehealer-bridge.sh`) as the single signed POST implementation
+
+### Bridge Smoke Test
+
+To verify that Jenkins failures send a real `log_excerpt` payload instead of summary-only bridge events, run:
+
+```bash
+./scripts/test-pipelinehealer-bridge.sh
+```
+
+This local smoke test:
+- posts one request with a real excerpt file and verifies the bridge payload contains `failure.log_excerpt`
+- posts one request with HTML auth-page content and verifies the bridge script discards it instead of forwarding fake evidence
