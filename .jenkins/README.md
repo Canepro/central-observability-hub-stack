@@ -161,3 +161,15 @@ Failed Jenkins runs can also be pushed into PipelineHealer through the signed Je
   - `oci-vault` `ClusterSecretStore`
 
 If those credentials are missing, the Jenkinsfiles skip bridge notification and continue with the existing GitHub issue/comment behavior.
+
+### Bridge Smoke Test
+
+To verify that Jenkins failures send a real `log_excerpt` payload instead of summary-only bridge events, run:
+
+```bash
+./scripts/test-pipelinehealer-bridge.sh
+```
+
+This local smoke test:
+- posts one request with a real excerpt file and verifies the bridge payload contains `failure.log_excerpt`
+- posts one request with HTML auth-page content and verifies the bridge script discards it instead of forwarding fake evidence
