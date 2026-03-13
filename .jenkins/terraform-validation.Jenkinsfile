@@ -240,7 +240,7 @@ SCRIPT
             if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
               if (fileExists('.jenkins/scripts/pipelinehealer-bridge-evidence.groovy')) {
                 def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-                bridgeEvidence.writeLogExcerpt("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt")
+                bridgeEvidence.writeLogExcerpt()
               }
               sh '''
                 set +e
