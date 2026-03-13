@@ -227,6 +227,9 @@ EOF
     failure {
       echo '❌ Terraform validation failed'
       script {
+        def bridgeExcerptPath = "${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+        def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
+        bridgeEvidence.writeLogExcerpt(bridgeExcerptPath)
         try {
           withCredentials([
             string(credentialsId: "${env.PIPELINEHEALER_BRIDGE_URL_CREDENTIALS}", variable: 'PH_BRIDGE_URL'),
@@ -244,6 +247,9 @@ EOF
                   PH_BRANCH_VALUE="${BRANCH_NAME:-unknown}"
                 fi
                 export PH_BRANCH="${PH_BRANCH_VALUE}"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                fi
                 export PH_COMMIT_SHA="${GIT_COMMIT:-}"
                 export PH_FAILURE_STAGE="terraform-validation"
                 export PH_FAILURE_SUMMARY="Jenkins Terraform validation failed"

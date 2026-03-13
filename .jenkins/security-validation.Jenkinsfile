@@ -536,6 +536,9 @@ Remediation: create PR(s) manually to fix. This issue is updated on each run."
     failure {
       echo '❌ Security validation failed'
       script {
+        def bridgeExcerptPath = "${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+        def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
+        bridgeEvidence.writeLogExcerpt(bridgeExcerptPath)
         withCredentials([usernamePassword(credentialsId: "${env.GITHUB_TOKEN_CREDENTIALS}", usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
           if (!env.GITHUB_TOKEN?.trim()) {
             echo "⚠️ GitHub token is empty; skipping failure notification."
@@ -622,6 +625,9 @@ EOF
                   PH_BRANCH_VALUE="${BRANCH_NAME:-unknown}"
                 fi
                 export PH_BRANCH="${PH_BRANCH_VALUE}"
+                if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
+                  export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                fi
                 export PH_COMMIT_SHA="${GIT_COMMIT:-}"
                 export PH_FAILURE_STAGE="security-validation"
                 export PH_FAILURE_SUMMARY="Scheduled Jenkins security validation failed"
