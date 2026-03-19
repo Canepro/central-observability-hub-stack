@@ -2,6 +2,8 @@
 set -eu
 
 OUTPUT_FILE="${1:?usage: capture-pipelinehealer-bridge-excerpt.sh <output-file>}"
+MARKER_FILE="${OUTPUT_FILE}.build"
+BUILD_MARKER="${BUILD_TAG:-${BUILD_ID:-${BUILD_NUMBER:-unknown}}}"
 CAPTURE_SHELL="${PH_CAPTURE_SHELL:-/bin/sh}"
 STATUS_FILE="$(mktemp)"
 SCRIPT_FILE="$(mktemp)"
@@ -26,7 +28,8 @@ fi
 STATUS="$(cat "$STATUS_FILE" 2>/dev/null || echo 1)"
 if [ "$STATUS" -ne 0 ]; then
   mv "$TMP_OUTPUT_FILE" "$OUTPUT_FILE"
+  printf '%s\n' "$BUILD_MARKER" > "$MARKER_FILE"
 else
-  rm -f "$OUTPUT_FILE"
+  rm -f "$OUTPUT_FILE" "$MARKER_FILE"
 fi
 exit "$STATUS"

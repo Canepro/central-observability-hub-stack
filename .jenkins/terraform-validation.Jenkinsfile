@@ -133,7 +133,7 @@ EOF
     stage('Terraform Format') {
       steps {
         sh '''
-          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           cd terraform
           terraform fmt -check -recursive
 SCRIPT
@@ -152,7 +152,7 @@ SCRIPT
               string(credentialsId: 'oci-s3-secret-key', variable: 'S3_SECRET_KEY')
             ]) {
               sh '''
-                cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+                cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                 cd terraform
                 terraform init \
                   -backend-config="access_key=${S3_ACCESS_KEY}" \
@@ -165,7 +165,7 @@ SCRIPT
             }
           } else {
             sh '''
-              cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+              cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
               cd terraform
               echo "OCI parameters not set; running init -backend=false and validate (no plan)."
               terraform init -backend=false
@@ -188,7 +188,7 @@ SCRIPT
           string(credentialsId: 'oci-ssh-public-key', variable: 'SSH_PUBLIC_KEY')
         ]) {
           sh '''
-            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             cd terraform
             export TF_VAR_ssh_public_key="$SSH_PUBLIC_KEY"
             cp "$OCI_KEY_FILE" ~/.oci/oci_api_key.pem
@@ -240,7 +240,7 @@ SCRIPT
             if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
               if (fileExists('.jenkins/scripts/pipelinehealer-bridge-evidence.groovy')) {
                 def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-                bridgeEvidence.writeLogExcerpt("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt")
+                bridgeEvidence.writeLogExcerpt()
               }
               sh '''
                 set +e
@@ -260,7 +260,7 @@ SCRIPT
                 if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
                   export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                 fi
-                bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
+                bash "${WORKSPACE}/.jenkins/scripts/send-pipelinehealer-bridge.sh" >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
             } else {
