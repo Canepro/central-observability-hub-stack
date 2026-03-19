@@ -444,16 +444,29 @@ Then fix by changing Git (values/manifest) and letting ArgoCD reconcile.
 ### `HubContainerOOMKilled` is firing
 
 **Meaning**
-- A container in `monitoring` or `argocd` on the hub cluster had a new `OOMKilled` termination event in the last 15 minutes.
+- A container in `monitoring` or `argocd` on the hub cluster restarted within the last 15 minutes.
+- Its last termination reason is still `OOMKilled`.
 - The rule has `for: 0m` (it fires immediately).
 
 **Important behavior note**
-- This alert should be evaluated with a time-window based expression such as `changes(...[15m]) > 0`, not the raw `last_terminated_reason == 1` gauge. The raw gauge stays at `1` until a different termination reason overwrites it and causes stale alerts.
+- This alert should not use the raw `last_terminated_reason == 1` gauge by itself, because that gauge stays at `1` until a different termination reason overwrites it and causes stale alerts.
+- It should also avoid relying on `changes(last_terminated_reason[15m]) > 0` alone, because that can miss real OOMs when the series simply appears at `1`.
+- The safer pattern is: recent restart plus `last_terminated_reason="OOMKilled"`.
 
 **Fast verification**
 In Grafana Explore (Prometheus):
 ```promql
-changes(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"}[15m]) > 0
+(
+  max by (cluster, namespace, pod, container, uid) (
+    increase(kube_pod_container_status_restarts_total{cluster="oke-hub",namespace=~"monitoring|argocd"}[15m])
+  ) > 0
+)
+and on (cluster, namespace, pod, container, uid)
+(
+  max by (cluster, namespace, pod, container, uid) (
+    kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"}
+  ) == 1
+)
 ```
 
 **Remediation flow (check cluster capacity first)**
@@ -471,7 +484,12 @@ Do **not** increase the pod’s memory limit until you have checked node headroo
 
 4. **Decide and apply**
    - **Tight cluster**: Trim limits on under-used workloads in this repo (`helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`), then increase the OOM’d workload.
-   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` (requests + limits) in `terraform/argocd.tf` (`helm_release.argocd`), then run `terraform apply`.
+   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi) when recurrence or impact justifies it.
+   - **Argo CD application-controller**: Do not raise memory after a single isolated OOM by default. Raise `controller.resources` (requests + limits) in `terraform/argocd.tf` only if repeat OOMs or operational impact meet the policy in **hub-docs/OPERATIONS-HUB.md**.
+
+**Argo CD controller decision policy**
+- One isolated OOM during migration or cutover is not enough by itself to permanently raise limits.
+- Increase controller memory only if there are repeated OOMs, visible reconciliation impact, or repeated high-utilization windows under normal steady-state reconciliation.
 
 **What to check next (per-pod)**
 ```bash

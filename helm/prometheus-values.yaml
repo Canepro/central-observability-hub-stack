@@ -639,7 +639,17 @@ serverFiles:
 
           - alert: HubContainerOOMKilled
             expr: |
-              changes(kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="oke-hub", namespace=~"monitoring|argocd"}[15m]) > 0
+              (
+                max by (cluster, namespace, pod, container, uid) (
+                  increase(kube_pod_container_status_restarts_total{cluster="oke-hub", namespace=~"monitoring|argocd"}[15m])
+                ) > 0
+              )
+              and on (cluster, namespace, pod, container, uid)
+              (
+                max by (cluster, namespace, pod, container, uid) (
+                  kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="oke-hub", namespace=~"monitoring|argocd"}
+                ) == 1
+              )
             for: 0m
             labels:
               severity: warning
@@ -847,7 +857,17 @@ serverFiles:
           # Container OOMKilled
           - alert: AKSContainerOOMKilled
             expr: |
-              changes(kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="aks-canepro"}[15m]) > 0
+              (
+                max by (cluster, namespace, pod, container, uid) (
+                  increase(kube_pod_container_status_restarts_total{cluster="aks-canepro"}[15m])
+                ) > 0
+              )
+              and on (cluster, namespace, pod, container, uid)
+              (
+                max by (cluster, namespace, pod, container, uid) (
+                  kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="aks-canepro"}
+                ) == 1
+              )
             for: 0m
             labels:
               severity: warning
