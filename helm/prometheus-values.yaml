@@ -639,7 +639,7 @@ serverFiles:
 
           - alert: HubContainerOOMKilled
             expr: |
-              kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="oke-hub", namespace=~"monitoring|argocd"} == 1
+              changes(kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="oke-hub", namespace=~"monitoring|argocd"}[15m]) > 0
             for: 0m
             labels:
               severity: warning
@@ -847,7 +847,7 @@ serverFiles:
           # Container OOMKilled
           - alert: AKSContainerOOMKilled
             expr: |
-              kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="aks-canepro"} == 1
+              changes(kube_pod_container_status_last_terminated_reason{reason="OOMKilled", cluster="aks-canepro"}[15m]) > 0
             for: 0m
             labels:
               severity: warning
@@ -872,11 +872,11 @@ serverFiles:
           - alert: AKSManyStalePods
             expr: |
               (
-                count(kube_pod_status_phase{phase="Failed", cluster="aks-canepro"}) or vector(0)
+                sum(kube_pod_status_phase{phase="Failed", cluster="aks-canepro"} == 1) or vector(0)
               ) + (
-                count(kube_pod_status_phase{phase="Unknown", cluster="aks-canepro"}) or vector(0)
+                sum(kube_pod_status_phase{phase="Unknown", cluster="aks-canepro"} == 1) or vector(0)
               ) + (
-                count(kube_pod_status_phase{phase="Succeeded", cluster="aks-canepro"}) or vector(0)
+                sum(kube_pod_status_phase{phase="Succeeded", cluster="aks-canepro"} == 1) or vector(0)
               ) > 15
             for: 30m
             labels:

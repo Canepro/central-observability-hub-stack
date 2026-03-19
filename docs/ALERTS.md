@@ -67,7 +67,7 @@ The alert rules are grouped (in `helm/prometheus-values.yaml`) as:
 | Alert | Severity | `for:` | When it fires |
 |---|---|---|---|
 | `HubPodCrashLooping` | warning | 10m | > 3 restarts in 15m (CrashLoop pattern) in `monitoring|argocd`. |
-| `HubContainerOOMKilled` | warning | 0m | A container was last terminated due to `OOMKilled`. |
+| `HubContainerOOMKilled` | warning | 0m | A container had a new `OOMKilled` termination event within the last 15 minutes. |
 | `HubPodStuckPending` | warning | 15m | Pod phase `Pending` for > 15m. |
 
 #### HubWorkloadAlerts (monitoring/argocd and a few core namespaces, oke-hub)
