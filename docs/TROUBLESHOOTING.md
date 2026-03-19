@@ -444,16 +444,16 @@ Then fix by changing Git (values/manifest) and letting ArgoCD reconcile.
 ### `HubContainerOOMKilled` is firing
 
 **Meaning**
-- A container in `monitoring` or `argocd` on the hub cluster has `last_terminated_reason=OOMKilled`.
+- A container in `monitoring` or `argocd` on the hub cluster had a new `OOMKilled` termination event in the last 15 minutes.
 - The rule has `for: 0m` (it fires immediately).
 
 **Important behavior note**
-- This alert is based on `kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}` which can remain `1` until the container terminates again for a different reason. If you only want "recent OOMKills", change the rule to a time-window based expression.
+- This alert should be evaluated with a time-window based expression such as `changes(...[15m]) > 0`, not the raw `last_terminated_reason == 1` gauge. The raw gauge stays at `1` until a different termination reason overwrites it and causes stale alerts.
 
 **Fast verification**
 In Grafana Explore (Prometheus):
 ```promql
-kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"} == 1
+changes(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"}[15m]) > 0
 ```
 
 **Remediation flow (check cluster capacity first)**
@@ -485,7 +485,7 @@ Then adjust resources (requests/limits) in Git per the procedure above, or fix t
 ### `AKSManyStalePods` is firing
 
 **Meaning**
-- On the AKS cluster (`cluster="aks-canepro"`), the count of pods in terminal phases is > 15 for 30 minutes:
+- On the AKS cluster (`cluster="aks-canepro"`), the sum of pods currently in terminal phases is > 15 for 30 minutes:
   - `Failed` + `Unknown` + `Succeeded`
 
 **Why this happens**
@@ -496,13 +496,13 @@ Then adjust resources (requests/limits) in Git per the procedure above, or fix t
 **Fast verification**
 In Grafana Explore (Prometheus):
 ```promql
-count(kube_pod_status_phase{phase="Failed",cluster="aks-canepro"}) or vector(0)
+sum(kube_pod_status_phase{phase="Failed",cluster="aks-canepro"} == 1) or vector(0)
 ```
 ```promql
-count(kube_pod_status_phase{phase="Unknown",cluster="aks-canepro"}) or vector(0)
+sum(kube_pod_status_phase{phase="Unknown",cluster="aks-canepro"} == 1) or vector(0)
 ```
 ```promql
-count(kube_pod_status_phase{phase="Succeeded",cluster="aks-canepro"}) or vector(0)
+sum(kube_pod_status_phase{phase="Succeeded",cluster="aks-canepro"} == 1) or vector(0)
 ```
 
 **What to check next**
