@@ -20,13 +20,13 @@ def markerFilePath(String outputPath) {
 }
 
 def currentBuildMarker() {
-  env.BUILD_TAG ?: env.BUILD_ID ?: env.BUILD_NUMBER ?: ''
+  env.BUILD_TAG ?: env.BUILD_ID ?: env.BUILD_NUMBER ?: null
 }
 
 def readMarker(String outputPath) {
   def markerPath = markerFilePath(outputPath)
   if (!fileExists(markerPath)) {
-    return ''
+    return null
   }
   return readFile(markerPath).trim()
 }
@@ -42,7 +42,8 @@ def writeLogExcerpt(String outputPath = '.pipelinehealer-log-excerpt.txt', int m
 
   def buildMarker = currentBuildMarker()
   if (fileExists(outputPath)) {
-    if (sh(returnStatus: true, script: "test -s '${outputPath}'") == 0 && readMarker(outputPath) == buildMarker) {
+    def storedMarker = readMarker(outputPath)
+    if (sh(returnStatus: true, script: "test -s '${outputPath}'") == 0 && storedMarker && buildMarker && storedMarker == buildMarker) {
       def existingBytes = sh(returnStdout: true, script: "wc -c < '${outputPath}'").trim()
       echo "PipelineHealer bridge evidence: reusing existing excerpt (${existingBytes} bytes)"
       return true
