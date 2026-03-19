@@ -15,15 +15,40 @@ def fetchConsoleText(String outputPath, int maxLines, int maxChars, String authA
   """) == 0
 }
 
+def markerFilePath(String outputPath) {
+  "${outputPath}.build"
+}
+
+def currentBuildMarker() {
+  env.BUILD_TAG ?: env.BUILD_ID ?: env.BUILD_NUMBER ?: null
+}
+
+def readMarker(String outputPath) {
+  def markerPath = markerFilePath(outputPath)
+  if (!fileExists(markerPath)) {
+    return null
+  }
+  return readFile(markerPath).trim()
+}
+
+def writeMarker(String outputPath, String marker) {
+  if (marker?.trim()) {
+    writeFile file: markerFilePath(outputPath), text: "${marker}\n"
+  }
+}
+
 def writeLogExcerpt(String outputPath = '.pipelinehealer-log-excerpt.txt', int maxLines = 120, int maxChars = 20000) {
   echo "PipelineHealer bridge evidence: writeLogExcerpt called (outputPath=${outputPath})"
 
+  def buildMarker = currentBuildMarker()
   if (fileExists(outputPath)) {
-    if (sh(returnStatus: true, script: "test -s '${outputPath}'") == 0) {
+    def storedMarker = readMarker(outputPath)
+    if (sh(returnStatus: true, script: "test -s '${outputPath}'") == 0 && storedMarker && buildMarker && storedMarker == buildMarker) {
       def existingBytes = sh(returnStdout: true, script: "wc -c < '${outputPath}'").trim()
       echo "PipelineHealer bridge evidence: reusing existing excerpt (${existingBytes} bytes)"
       return true
     }
+    sh "rm -f '${outputPath}' '${markerFilePath(outputPath)}'"
   }
 
   echo 'PipelineHealer bridge evidence: fetching console text via BUILD_URL API...'
@@ -51,6 +76,7 @@ def writeLogExcerpt(String outputPath = '.pipelinehealer-log-excerpt.txt', int m
   }
 
   if (captured) {
+    writeMarker(outputPath, buildMarker)
     return true
   }
 

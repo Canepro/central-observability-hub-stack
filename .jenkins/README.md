@@ -164,10 +164,13 @@ If those credentials are missing, the Jenkinsfiles skip bridge notification and 
 
 ### Recommended bridge capture pattern
 
-Use the repo-shipped shell helper `.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh` to wrap failure-prone `sh` steps. It captures the real command output into `${WORKSPACE}/.pipelinehealer-log-excerpt.txt` without relying on Jenkins-specific Pipeline plugins or `currentBuild.rawBuild` access.
+Use the repo-shipped shell helper `.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh` to wrap failure-prone `sh` steps. It captures the real command output into `${WORKSPACE}/.pipelinehealer-log-excerpt.txt`.
+
+If the pipeline fails before that shell wrapper produces an excerpt, load `.jenkins/scripts/pipelinehealer-bridge-evidence.groovy` in `post { failure { ... } }` and synthesize `${WORKSPACE}/.pipelinehealer-log-excerpt.txt` from the Jenkins console tail before sending the bridge payload.
 
 For bridge-enabled pipelines:
 - keep workspace cleanup in `post { cleanup { ... } }`, not `post { always { ... } }`, so failure handlers still have access to the checked-out bridge scripts and captured excerpt
+- preserve the Groovy console-tail fallback in `post { failure { ... } }` so setup/bootstrap failures do not degrade to summary-only evidence
 - export `PH_LOG_EXCERPT_FILE` from the failure block when the excerpt file exists
 - keep the existing bridge sender (`send-pipelinehealer-bridge.sh`) as the single signed POST implementation
 

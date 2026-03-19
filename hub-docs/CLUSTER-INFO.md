@@ -200,7 +200,7 @@ resource changes over time based on observed incidents:
 | 2026-02-10 | ingress-nginx controller | `helm/nginx-ingress-values.yaml` | 512Mi -> 256Mi | Reduced over-provisioned limit on low-usage component. |
 | 2026-02-22 | Grafana | `helm/grafana-values.yaml` | 512Mi -> 768Mi | Kubelet logs showed repeated `/api/health` liveness timeouts and exit 137 restarts without OOM events; extra headroom reduced health-check stalls. |
 
-Argo CD is installed by Terraform in this repo. To address `argocd-application-controller` OOMs, bump the controller to **Guaranteed** QoS by setting `controller.resources.requests.memory == controller.resources.limits.memory` (e.g. `768Mi`) in `terraform/argocd.tf`, then run `terraform apply`.
+Argo CD is installed by Terraform in this repo. Do **not** raise `argocd-application-controller` memory after a single isolated OOM by default. Treat one migration or cutover-era OOM as investigation evidence, not an automatic sizing change. Only raise controller memory in `terraform/argocd.tf` when recurrence or operational impact is proven; see `hub-docs/OPERATIONS-HUB.md` for the decision policy.
 
 Note: The snapshot tables above reflect whatever was running at capture time. After applying Git changes (Argo CD sync and/or `terraform apply`), re-run the commands below and refresh this snapshot.
 
