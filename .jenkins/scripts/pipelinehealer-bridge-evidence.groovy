@@ -1,37 +1,86 @@
-def trimExcerpt(String text, int maxLines = 120, int maxChars = 20000) {
-  def lines = (text ?: '').readLines()
-  if (maxLines > 0 && lines.size() > maxLines) {
-    lines = lines.takeRight(maxLines)
+def fetchConsoleText(String outputPath, int maxLines, int maxChars, String authArg = '') {
+  return sh(returnStatus: true, script: """
+    set +e
+    EXCERPT_TMP='${outputPath}.tmp'
+    HTTP_CODE=\$(curl -sS ${authArg} -o "\$EXCERPT_TMP" -w '%{http_code}' "\${BUILD_URL}consoleText" 2>/dev/null)
+    if [ "\$HTTP_CODE" = "200" ] && [ -s "\$EXCERPT_TMP" ]; then
+      tail -n ${maxLines} "\$EXCERPT_TMP" | sed 's/\\x1b\\[[0-9;]*m//g; s/\\*\\{4,\\}/****/g' | tail -c ${maxChars} > '${outputPath}'
+      rm -f "\$EXCERPT_TMP"
+      echo "PipelineHealer bridge evidence: captured \$(wc -c < '${outputPath}') bytes via consoleText API"
+      exit 0
+    fi
+    rm -f "\$EXCERPT_TMP"
+    echo "PipelineHealer bridge evidence: consoleText API returned HTTP \$HTTP_CODE"
+    exit 1
+  """) == 0
+}
+
+def markerFilePath(String outputPath) {
+  "${outputPath}.build"
+}
+
+def currentBuildMarker() {
+  env.BUILD_TAG ?: env.BUILD_ID ?: env.BUILD_NUMBER ?: ''
+}
+
+def readMarker(String outputPath) {
+  def markerPath = markerFilePath(outputPath)
+  if (!fileExists(markerPath)) {
+    return ''
   }
-  def excerpt = lines.join('\n')
-  if (maxChars > 0 && excerpt.length() > maxChars) {
-    excerpt = excerpt.substring(excerpt.length() - maxChars)
+  return readFile(markerPath).trim()
+}
+
+def writeMarker(String outputPath, String marker) {
+  if (marker?.trim()) {
+    writeFile file: markerFilePath(outputPath), text: "${marker}\n"
   }
-  excerpt
 }
 
 def writeLogExcerpt(String outputPath = '.pipelinehealer-log-excerpt.txt', int maxLines = 120, int maxChars = 20000) {
+  echo "PipelineHealer bridge evidence: writeLogExcerpt called (outputPath=${outputPath})"
+
+  def buildMarker = currentBuildMarker()
   if (fileExists(outputPath)) {
-    def existing = trimExcerpt(readFile(outputPath), maxLines, maxChars)
-    if (existing?.trim()) {
-      writeFile file: outputPath, text: existing
+    if (sh(returnStatus: true, script: "test -s '${outputPath}'") == 0 && readMarker(outputPath) == buildMarker) {
+      def existingBytes = sh(returnStdout: true, script: "wc -c < '${outputPath}'").trim()
+      echo "PipelineHealer bridge evidence: reusing existing excerpt (${existingBytes} bytes)"
       return true
     }
+    sh "rm -f '${outputPath}' '${markerFilePath(outputPath)}'"
   }
 
+  echo 'PipelineHealer bridge evidence: fetching console text via BUILD_URL API...'
+
+  def captured = false
+  def authAttempted = false
   try {
-    def lines = currentBuild?.rawBuild?.getLog(maxLines) ?: []
-    def excerpt = trimExcerpt(lines.join('\n'), maxLines, maxChars)
-    if (!excerpt?.trim()) {
-      echo 'PipelineHealer bridge: Jenkins log excerpt is empty'
-      return false
+    withCredentials([usernamePassword(
+      credentialsId: 'jenkins-api-token',
+      usernameVariable: 'JENKINS_API_USER',
+      passwordVariable: 'JENKINS_API_TOKEN',
+    )]) {
+      authAttempted = true
+      captured = fetchConsoleText(outputPath, maxLines, maxChars, '-u "$JENKINS_API_USER:$JENKINS_API_TOKEN"')
     }
-    writeFile file: outputPath, text: excerpt
-    return true
   } catch (err) {
-    echo "PipelineHealer bridge: failed to capture Jenkins log excerpt: ${err}"
-    return false
+    echo "PipelineHealer bridge evidence: jenkins-api-token credential not configured (${err}); will try unauthenticated..."
   }
+
+  if (!captured) {
+    if (authAttempted) {
+      echo 'PipelineHealer bridge evidence: authenticated consoleText fetch failed; trying unauthenticated...'
+    }
+    captured = fetchConsoleText(outputPath, maxLines, maxChars)
+  }
+
+  if (captured) {
+    writeMarker(outputPath, buildMarker)
+    return true
+  }
+
+  echo 'PipelineHealer bridge evidence: all excerpt capture methods failed.'
+  return false
 }
 
 return this

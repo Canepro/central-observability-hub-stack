@@ -56,7 +56,7 @@ spec:
       }
       steps {
         sh '''
-          cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+          cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
           # Alpine-based agent: install tools via apk (openssl required for Helm install script checksum)
           apk add --no-cache curl jq git bash yq openssl github-cli || \
             apk add --no-cache curl jq git bash yq openssl
@@ -111,7 +111,7 @@ SCRIPT
       steps {
         script {
           sh '''
-            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             # Add Helm repositories
             helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
             helm repo add grafana https://grafana.github.io/helm-charts 2>/dev/null || true
@@ -159,7 +159,7 @@ SCRIPT
           
           // Build update list and reports in shell (avoid Groovy JSON sandbox restrictions)
           sh '''
-            cat <<'SCRIPT' | sh .jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
+            cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             set -e
             components="GRAFANA LOKI PROMTAIL TEMPO PROMETHEUS NGINX METRICS_SERVER"
             updates='[]'
@@ -674,7 +674,7 @@ EOF
             if (fileExists('.jenkins/scripts/send-pipelinehealer-bridge.sh')) {
               if (fileExists('.jenkins/scripts/pipelinehealer-bridge-evidence.groovy')) {
                 def bridgeEvidence = load '.jenkins/scripts/pipelinehealer-bridge-evidence.groovy'
-                bridgeEvidence.writeLogExcerpt("${env.WORKSPACE}/.pipelinehealer-log-excerpt.txt")
+                bridgeEvidence.writeLogExcerpt()
               }
               sh '''
                 set +e
@@ -694,7 +694,7 @@ EOF
                 if [ -f "${WORKSPACE}/.pipelinehealer-log-excerpt.txt" ]; then
                   export PH_LOG_EXCERPT_FILE="${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
                 fi
-                bash .jenkins/scripts/send-pipelinehealer-bridge.sh >/dev/null || \
+                bash "${WORKSPACE}/.jenkins/scripts/send-pipelinehealer-bridge.sh" >/dev/null || \
                   echo "⚠️ WARNING: Failed to notify PipelineHealer bridge"
               '''
             } else {
