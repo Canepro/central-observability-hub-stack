@@ -67,7 +67,7 @@ The alert rules are grouped (in `helm/prometheus-values.yaml`) as:
 | Alert | Severity | `for:` | When it fires |
 |---|---|---|---|
 | `HubPodCrashLooping` | warning | 10m | > 3 restarts in 15m (CrashLoop pattern) in `monitoring|argocd`. |
-| `HubContainerOOMKilled` | warning | 0m | A container had a new `OOMKilled` termination event within the last 15 minutes. |
+| `HubContainerOOMKilled` | warning | 0m | A container restarted within the last 15 minutes and its last termination reason is `OOMKilled`. |
 | `HubPodStuckPending` | warning | 15m | Pod phase `Pending` for > 15m. |
 
 #### HubWorkloadAlerts (monitoring/argocd and a few core namespaces, oke-hub)
@@ -134,7 +134,7 @@ AKS alert rules are implemented under groups in `helm/prometheus-values.yaml` (f
 | Alert Name | Logic (PromQL) | Severity | Description |
 |---|---|---|---|
 | AKS Pod Crash Looping | `rate(restarts_total[15m]) > 3` | Warning | Pod restarted >3 times in 15m |
-| AKS Container OOM Killed | `last_terminated_reason=OOMKilled` | Warning | Container killed by OOM |
+| AKS Container OOM Killed | `increase(restarts_total[15m]) > 0 and last_terminated_reason=OOMKilled` | Warning | Container restarted recently and its last termination was OOMKilled |
 | AKS Pod Stuck Pending | `phase=Pending for 15m` | Warning | Pod cannot be scheduled |
 | AKS Many Stale Pods | `Failed+Unknown+Succeeded > 15` | Warning | Cleanup CronJob may not be working |
 
