@@ -444,16 +444,29 @@ Then fix by changing Git (values/manifest) and letting ArgoCD reconcile.
 ### `HubContainerOOMKilled` is firing
 
 **Meaning**
-- A container in `monitoring` or `argocd` on the hub cluster has `last_terminated_reason=OOMKilled`.
+- A container in `monitoring` or `argocd` on the hub cluster restarted within the last 15 minutes.
+- Its last termination reason is still `OOMKilled`.
 - The rule has `for: 0m` (it fires immediately).
 
 **Important behavior note**
-- This alert is based on `kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}` which can remain `1` until the container terminates again for a different reason. If you only want "recent OOMKills", change the rule to a time-window based expression.
+- This alert should not use the raw `last_terminated_reason == 1` gauge by itself, because that gauge stays at `1` until a different termination reason overwrites it and causes stale alerts.
+- It should also avoid relying on `changes(last_terminated_reason[15m]) > 0` alone, because that can miss real OOMs when the series simply appears at `1`.
+- The safer pattern is: recent restart plus `last_terminated_reason="OOMKilled"`.
 
 **Fast verification**
 In Grafana Explore (Prometheus):
 ```promql
-kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"} == 1
+(
+  max by (cluster, namespace, pod, container, uid) (
+    increase(kube_pod_container_status_restarts_total{cluster="oke-hub",namespace=~"monitoring|argocd"}[15m])
+  ) > 0
+)
+and on (cluster, namespace, pod, container, uid)
+(
+  max by (cluster, namespace, pod, container, uid) (
+    kube_pod_container_status_last_terminated_reason{reason="OOMKilled",cluster="oke-hub",namespace=~"monitoring|argocd"}
+  ) == 1
+)
 ```
 
 **Remediation flow (check cluster capacity first)**
@@ -471,7 +484,12 @@ Do **not** increase the pod’s memory limit until you have checked node headroo
 
 4. **Decide and apply**
    - **Tight cluster**: Trim limits on under-used workloads in this repo (`helm/grafana-values.yaml`, `helm/prometheus-values.yaml` alertmanager, `helm/nginx-ingress-values.yaml`), then increase the OOM’d workload.
-   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi). For **Argo CD application-controller**, change `controller.resources` (requests + limits) in `terraform/argocd.tf` (`helm_release.argocd`), then run `terraform apply`.
+   - **Enough headroom**: Increase only the OOM’d container (e.g. 512Mi → 768Mi) when recurrence or impact justifies it.
+   - **Argo CD application-controller**: Do not raise memory after a single isolated OOM by default. Raise `controller.resources` (requests + limits) in `terraform/argocd.tf` only if repeat OOMs or operational impact meet the policy in **hub-docs/OPERATIONS-HUB.md**.
+
+**Argo CD controller decision policy**
+- One isolated OOM during migration or cutover is not enough by itself to permanently raise limits.
+- Increase controller memory only if there are repeated OOMs, visible reconciliation impact, or repeated high-utilization windows under normal steady-state reconciliation.
 
 **What to check next (per-pod)**
 ```bash
@@ -485,7 +503,7 @@ Then adjust resources (requests/limits) in Git per the procedure above, or fix t
 ### `AKSManyStalePods` is firing
 
 **Meaning**
-- On the AKS cluster (`cluster="aks-canepro"`), the count of pods in terminal phases is > 15 for 30 minutes:
+- On the AKS cluster (`cluster="aks-canepro"`), the sum of pods currently in terminal phases is > 15 for 30 minutes:
   - `Failed` + `Unknown` + `Succeeded`
 
 **Why this happens**
@@ -496,13 +514,13 @@ Then adjust resources (requests/limits) in Git per the procedure above, or fix t
 **Fast verification**
 In Grafana Explore (Prometheus):
 ```promql
-count(kube_pod_status_phase{phase="Failed",cluster="aks-canepro"}) or vector(0)
+sum(kube_pod_status_phase{phase="Failed",cluster="aks-canepro"} == 1) or vector(0)
 ```
 ```promql
-count(kube_pod_status_phase{phase="Unknown",cluster="aks-canepro"}) or vector(0)
+sum(kube_pod_status_phase{phase="Unknown",cluster="aks-canepro"} == 1) or vector(0)
 ```
 ```promql
-count(kube_pod_status_phase{phase="Succeeded",cluster="aks-canepro"}) or vector(0)
+sum(kube_pod_status_phase{phase="Succeeded",cluster="aks-canepro"} == 1) or vector(0)
 ```
 
 **What to check next**

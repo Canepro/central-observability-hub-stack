@@ -262,7 +262,32 @@ Identify:
 |-----------|--------|
 | Node memory &lt; ~80% and only one pod OOM’d | **Small bump**: increase the OOM’d container limit (e.g. 512Mi → 768Mi). Prefer 768Mi if headroom is tight. |
 | Node memory already high (e.g. ≥80%) | **Trim first**: reduce limits on under-used workloads (in this repo usually `helm/prometheus-values.yaml` alertmanager and `helm/nginx-ingress-values.yaml`) before raising the unstable workload. Keep Grafana at 768Mi unless probe/liveness evidence shows sustained excess headroom. |
-| Argo CD application-controller OOM | Controller resources **are** defined in this repo via `terraform/argocd.tf` (`helm_release.argocd`, Helm values `controller.resources`). Increase **both** `controller.resources.requests.memory` and `controller.resources.limits.memory` together (e.g. `768Mi` or `1Gi`) to keep QoS **Guaranteed**, then run `terraform apply`. |
+| Argo CD application-controller OOM | Do **not** increase memory after a single isolated event by default. First decide whether it was a one-off burst or a steady-state sizing problem using the policy below. If you do raise it, change **both** `controller.resources.requests.memory` and `controller.resources.limits.memory` together in `terraform/argocd.tf`, then run `terraform apply`. |
+
+### Argo CD application-controller sizing policy
+
+Treat alert-rule noise and controller sizing as separate decisions.
+
+- A real OOM event can coexist with a stale firing alert.
+- Fix `HubContainerOOMKilled` rule behavior separately from any Argo CD sizing change.
+- Current RCA wording for a single event should be:
+  - confirmed OOMKilled event
+  - stale alert afterward if the rule is still based on sticky `last_terminated_reason == 1`
+  - likely cause: reconciliation burst under the current limit
+  - exact triggering workload or code path not yet proven
+
+Increase `argocd-application-controller` memory only if one of these is true:
+
+- 2 or more confirmed `OOMKilled` restarts within 7 days
+- any OOM causes visible sync delay, failed reconciliation, or user-facing deployment impact
+- controller memory stays above roughly 85-90% of its limit during normal reconciliation windows on multiple days
+- logs and metrics show repeated spikes from steady-state reconciliation, not just a one-off migration or cutover burst
+
+Operational follow-up before changing limits:
+
+- watch for repeat OOMs over the next 7 days
+- capture controller memory utilization vs limit during normal reconciliation windows
+- if recurrence happens, raise memory in Git as a separate change with before/after evidence
 
 ### 5. Apply changes (GitOps)
 
