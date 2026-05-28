@@ -11,12 +11,13 @@ All applications are managed by Argo CD with `prune: true` and `selfHeal: true`.
 
 ### Local Admin And SSO Posture
 
-The built-in `admin` account is a bootstrap and break-glass control. Keep it
-enabled until SSO login, admin group mapping, and recovery access are proven.
+The built-in `admin` account is a bootstrap control. It should stay disabled in
+normal operation now that SSO login, admin group mapping, and recovery access
+have been proven.
 
 Do not paste the initial admin password into chat, reports, tickets, logs, or
 shell transcripts. If emergency recovery requires it, retrieve it only in a
-private operator shell, then rotate or disable the account after SSO is proven.
+private operator shell, then rotate and disable the account again after recovery.
 
 ### SSO Cutover Sequence
 
@@ -47,7 +48,7 @@ The active non-secret Entra settings are in `terraform/argocd-auth.tf` and
 storage paths, secret IDs, human-account details, and raw credential material
 out of committed docs.
 
-Local admin remains enabled until SSO login and break-glass recovery are proven.
+Local admin is disabled after SSO login and break-glass recovery were proven.
 Do not add `groups` to requested scopes for Entra; groups are emitted by the
 application's `groupMembershipClaims=SecurityGroup` setting.
 The live Kubernetes secret must have label `app.kubernetes.io/part-of=argocd`
