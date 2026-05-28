@@ -6,16 +6,11 @@
 
 **URL:** https://grafana.canepro.me (HTTPS enabled)
 
-**Login:**
-```bash
-Username: admin
-Password: (run command below)
+**Login:** use the approved operator credential path. Do not print the Grafana
+admin password into chat, tickets, shared terminals, reports, or PR comments.
 
-kubectl -n monitoring get secret grafana \
-  -o jsonpath="{.data.admin-password}" | base64 -d ; echo
-```
-
-**Note**: Admin credentials and Grafana `secret_key` are sourced from OCI Vault via External Secrets Operator into the `grafana` secret.
+**Note**: Admin credentials and Grafana `secret_key` are sourced from OCI Vault
+via External Secrets Operator into the `grafana` secret.
 
 **Note**: If HTTPS certificate errors occur, wait 2-3 minutes for certificate propagation or use HTTP fallback: http://grafana.canepro.me
 
@@ -257,11 +252,10 @@ kubectl delete pod alertmanager-prometheus-alertmanager-0 -n monitoring
 ## 🆘 Troubleshooting
 
 ### Grafana Login Issues
-```bash
-# Reset admin password
-kubectl exec -n monitoring deployment/grafana -- \
-  grafana-cli admin reset-admin-password newpassword
-```
+
+Rotate the source secret through the approved secret store, then allow External
+Secrets Operator to refresh `monitoring/grafana`. Avoid ad-hoc in-pod password
+resets because they drift from the declared source of truth.
 
 ### Can't Access Grafana
 ```bash

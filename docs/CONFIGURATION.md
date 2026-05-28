@@ -24,11 +24,9 @@ This guide provides step-by-step instructions for connecting your applications t
 
 1. **URL**: https://grafana.canepro.me (HTTPS enabled)
 2. **Username**: `admin`
-3. **Password**: Run to retrieve:
-   ```bash
-   kubectl -n monitoring get secret grafana \
-     -o jsonpath="{.data.admin-password}" | base64 -d ; echo
-   ```
+3. **Password**: use the approved operator credential path. Do not decode or
+   paste the Kubernetes Secret value into shared terminals, tickets, reports, or
+   PR comments.
    (Source: External Secrets Operator syncs from OCI Vault into `grafana`)
 
 ### Change Admin Password
@@ -40,13 +38,10 @@ This guide provides step-by-step instructions for connecting your applications t
 3. Go to "Change Password"
 4. Enter current and new password
 
-**Or via CLI**:
-```bash
-kubectl exec -n monitoring deployment/grafana -- \
-  grafana-cli admin reset-admin-password <new-password>
-```
-
-**Credential source of truth**: Update the JSON secret in OCI Vault (keys: `admin_password`, `secret_key`). ESO refreshes the Kubernetes secret automatically.
+**Credential source of truth**: rotate the JSON secret in the approved secret
+store (keys: `admin_password`, `secret_key`). ESO refreshes the Kubernetes
+secret automatically. Avoid CLI password resets because they drift from the
+declared source of truth.
 
 ### Configure Loki Datasource
 
@@ -192,10 +187,11 @@ If you use server-side tools that read logs directly from Loki (for example Rock
 - Query path used by clients: `/loki/api/v1/query_range` (and optionally `/loki/api/v1/query`)
 - Auth: same Basic Auth credentials used for ingress
 
-Example validation from a workstation:
+Example validation from a workstation, using a password from the approved
+operator credential path:
 
 ```bash
-curl -sS -u 'observability-user:YOUR_PASSWORD_HERE' -G \
+curl -sS -u 'observability-user:<redacted>' -G \
   'https://observability.canepro.me/loki/api/v1/query_range' \
   --data-urlencode 'query={job="rocketchat"}' \
   --data-urlencode 'limit=1'
@@ -331,7 +327,7 @@ const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter({
     url: 'https://observability.canepro.me/v1/traces',
     headers: {
-      'Authorization': 'Basic ' + Buffer.from('observability-user:YOUR_PASSWORD').toString('base64')
+      'Authorization': 'Basic ' + Buffer.from(process.env.OBSERVABILITY_BASIC_AUTH).toString('base64')
     }
     // Note: Path /v1/traces corresponds to the Ingress rule
   }),
