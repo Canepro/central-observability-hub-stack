@@ -35,11 +35,12 @@ approved change.
 
 Current SSO target:
 - Provider: Microsoft Entra ID.
-- Tenant ID: `040f4d47-c5be-488d-a48b-4b43fe04cac4`.
-- Client ID: `e1b5f345-dbd8-4e1e-a138-1c8fdb91fed9`.
 - Redirect URI: `https://argocd.canepro.me/auth/callback`.
-- Admin group: `ArgoCD OKE Admins` (`96a9bc27-c2d0-467c-a4ec-350ed00c653d`).
-- OIDC client secret: staged in Infisical `canepro-secrets/prod:/platform/oke/argocd` as `ARGOCD_OIDC_CLIENT_SECRET` and present in Kubernetes as `argocd/argocd-oidc-client-secret` key `clientSecret`.
+- Non-secret issuer/client ID and RBAC group mapping live in Terraform and Kubernetes source.
+- OIDC client secret value and private secret-manager path must stay out of this public repo.
+
+Detailed cutover and troubleshooting runbook:
+`hub-docs/ARGOCD-ENTRA-OIDC-CUTOVER.md`.
 
 ## 📂 3. GitOps Configuration (Sources of Truth)
 
