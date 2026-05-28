@@ -53,6 +53,10 @@ private operator shell, then rotate or disable the account after SSO is proven.
 Local admin remains enabled until SSO login and break-glass recovery are proven.
 Do not add `groups` to requested scopes for Entra; groups are emitted by the
 application's `groupMembershipClaims=SecurityGroup` setting.
+The live Kubernetes secret must have label `app.kubernetes.io/part-of=argocd`
+so Argo CD resolves `$argocd-oidc-client-secret:clientSecret`. Write the value
+without a trailing newline; otherwise Entra rejects the token exchange with
+`AADSTS7000215`.
 
 ## How to think about updates
 
