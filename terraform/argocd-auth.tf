@@ -54,9 +54,9 @@ variable "argocd_oidc_client_secret_name" {
 }
 
 variable "argocd_oidc_requested_scopes" {
-  description = "OIDC scopes requested by Argo CD. Keep groups when RBAC maps provider groups."
+  description = "OIDC scopes requested by Argo CD. Entra emits groups as a token claim through groupMembershipClaims, not through a groups OAuth scope."
   type        = list(string)
-  default     = ["openid", "profile", "email", "groups"]
+  default     = ["openid", "profile", "email"]
 }
 
 locals {
