@@ -176,3 +176,18 @@ preserving their live names and keys:
 These are still mounted or referenced by existing Helm values and ingress
 annotations. The ExternalSecret manifests intentionally keep the same Secret
 names so the application manifests do not need credential reference changes.
+
+## SignalForge Agent Token Cutover
+
+`signalforge/signalforge-agent-token` is managed as a transitional
+ExternalSecret from `ClusterSecretStore/infisical-oke-signalforge`.
+
+The target uses `creationPolicy: Merge` because the `signalforge-agent` Helm
+release still owns the Secret object contract. This keeps the token key in
+Infisical without forcing a Helm chart ownership change in the observability
+repo. A later SignalForge-agent chart/source change should switch the release
+to `agent.token.existingSecret` so Helm stops rendering token data entirely.
+
+`signalforge/signalforge-agent-regcred` is not referenced by the live
+`signalforge-agent` Deployment imagePullSecrets. It is not treated as a live
+consumer until a source manifest uses it.
