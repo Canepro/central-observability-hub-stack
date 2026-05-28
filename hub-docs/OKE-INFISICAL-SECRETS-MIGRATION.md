@@ -82,7 +82,10 @@ Public docs and PRs must not include:
    - Target shape: keep existing Kubernetes Secret names and Jenkins credential
      IDs.
    - Cutover method: mirror one Jenkins credential family at a time, then switch
-     ESO source after Jenkins can still scan and run non-destructive jobs.
+     ESO source after Jenkins can still scan and run non-destructive jobs. The
+     first source-backed cutover uses the scoped
+     `ClusterSecretStore/infisical-oke-jenkins` and preserves existing target
+     Secrets.
    - Rollback: switch the ExternalSecret back to OCI Vault.
 
 4. **Loki/Tempo S3 credentials**
@@ -140,3 +143,19 @@ by Infisical:
 Private operator notes own the Infisical auth material and any rollback value.
 Public proof should stay limited to store readiness, ExternalSecret readiness,
 target Secret key shape, Argo rollout status, and SSO/admin success.
+
+## Existing ESO Consumer Cutover
+
+After the Argo OIDC pilot, the next reviewed GitOps cutover moves existing OCI
+Vault-backed ESO consumers to Infisical while preserving their live Kubernetes
+Secret names and keys:
+
+- `monitoring/grafana`
+- `jenkins/jenkins-admin-credentials`
+- `jenkins/github-token`
+- `jenkins/pipelinehealer-bridge-secret`
+- `jenkins/pipelinehealer-bridge-url`
+
+The public repo contains only non-secret store names, folder paths, and remote
+key names. Private operator proof owns value staging, service-token creation,
+and rollback notes.
