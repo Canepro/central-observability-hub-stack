@@ -37,18 +37,15 @@ private operator shell, then rotate or disable the account after SSO is proven.
 6. Only after SSO and recovery access are proven, set
    `argocd_local_admin_enabled=false` in a separate approved change.
 
+For the full repeatable cutover, validation, and troubleshooting path, see
+`hub-docs/ARGOCD-ENTRA-OIDC-CUTOVER.md`.
+
 ### Current Entra SSO Configuration
 
-- Provider: Microsoft Entra ID
-- Tenant ID: `040f4d47-c5be-488d-a48b-4b43fe04cac4`
-- Issuer: `https://login.microsoftonline.com/040f4d47-c5be-488d-a48b-4b43fe04cac4/v2.0`
-- Argo CD app client ID: `e1b5f345-dbd8-4e1e-a138-1c8fdb91fed9`
-- Redirect URI: `https://argocd.canepro.me/auth/callback`
-- Admin group: `ArgoCD OKE Admins`
-- Admin group object ID: `96a9bc27-c2d0-467c-a4ec-350ed00c653d`
-- Requested OIDC scopes: `openid`, `profile`, `email`
-- Secret staging path: Infisical `canepro-secrets/prod:/platform/oke/argocd`, key `ARGOCD_OIDC_CLIENT_SECRET`
-- Live Kubernetes secret: `argocd/argocd-oidc-client-secret`, key `clientSecret`
+The active non-secret Entra settings are in `terraform/argocd-auth.tf` and
+`k8s/argocd-rbac-config.yaml`. This repository is public, so keep secret
+storage paths, secret IDs, human-account details, and raw credential material
+out of committed docs.
 
 Local admin remains enabled until SSO login and break-glass recovery are proven.
 Do not add `groups` to requested scopes for Entra; groups are emitted by the
