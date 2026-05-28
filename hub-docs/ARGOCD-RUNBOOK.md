@@ -37,6 +37,20 @@ private operator shell, then rotate or disable the account after SSO is proven.
 6. Only after SSO and recovery access are proven, set
    `argocd_local_admin_enabled=false` in a separate approved change.
 
+### Current Entra SSO Configuration
+
+- Provider: Microsoft Entra ID
+- Tenant ID: `040f4d47-c5be-488d-a48b-4b43fe04cac4`
+- Issuer: `https://login.microsoftonline.com/040f4d47-c5be-488d-a48b-4b43fe04cac4/v2.0`
+- Argo CD app client ID: `e1b5f345-dbd8-4e1e-a138-1c8fdb91fed9`
+- Redirect URI: `https://argocd.canepro.me/auth/callback`
+- Admin group: `ArgoCD OKE Admins`
+- Admin group object ID: `96a9bc27-c2d0-467c-a4ec-350ed00c653d`
+- Secret staging path: Infisical `canepro-secrets/prod:/platform/oke/argocd`, key `ARGOCD_OIDC_CLIENT_SECRET`
+- Live Kubernetes secret: `argocd/argocd-oidc-client-secret`, key `clientSecret`
+
+Local admin remains enabled until SSO login and break-glass recovery are proven.
+
 ## How to think about updates
 
 - **Edit repo files** (`helm/*.yaml`, `k8s/*.yaml`, `argocd/applications/*.yaml`)
@@ -271,4 +285,3 @@ export KUBECONFIG=/mnt/d/secrets/kube/config
 - **Small change** (values, ingress tweaks): edit → commit → sync that app.
 - **Wide change** (multiple apps): edit → commit → sync parent app (`oke-observability-stack`).
 - If Argo “looks stuck”: check `.status.conditions` and use hard refresh.
-

@@ -16,19 +16,19 @@ variable "argocd_local_admin_enabled" {
 variable "argocd_oidc_enabled" {
   description = "Enable Argo CD OIDC SSO config. Requires the client secret to already exist in the argocd namespace."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "argocd_oidc_name" {
   description = "Display name for the Argo CD OIDC connector."
   type        = string
-  default     = "OIDC"
+  default     = "Microsoft Entra ID"
 }
 
 variable "argocd_oidc_issuer_url" {
   description = "OIDC issuer URL for Argo CD SSO."
   type        = string
-  default     = ""
+  default     = "https://login.microsoftonline.com/040f4d47-c5be-488d-a48b-4b43fe04cac4/v2.0"
 
   validation {
     condition     = !var.argocd_oidc_enabled || length(trimspace(var.argocd_oidc_issuer_url)) > 0
@@ -39,7 +39,7 @@ variable "argocd_oidc_issuer_url" {
 variable "argocd_oidc_client_id" {
   description = "OIDC client ID for Argo CD SSO. This is not a secret."
   type        = string
-  default     = ""
+  default     = "e1b5f345-dbd8-4e1e-a138-1c8fdb91fed9"
 
   validation {
     condition     = !var.argocd_oidc_enabled || length(trimspace(var.argocd_oidc_client_id)) > 0
