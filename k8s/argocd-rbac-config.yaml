@@ -25,8 +25,8 @@ data:
     # Local bootstrap admin. Keep until SSO and break-glass recovery are proven.
     g, admin, role:admin
 
-    # Add the approved OIDC admin group here during the SSO cutover, for example:
-    # g, <approved-oidc-admin-group>, role:admin
+    # Microsoft Entra group: ArgoCD OKE Admins.
+    g, 96a9bc27-c2d0-467c-a4ec-350ed00c653d, role:admin
 
   # Default role for all users
   policy.default: role:readonly
