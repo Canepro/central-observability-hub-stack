@@ -46,10 +46,13 @@ private operator shell, then rotate or disable the account after SSO is proven.
 - Redirect URI: `https://argocd.canepro.me/auth/callback`
 - Admin group: `ArgoCD OKE Admins`
 - Admin group object ID: `96a9bc27-c2d0-467c-a4ec-350ed00c653d`
+- Requested OIDC scopes: `openid`, `profile`, `email`
 - Secret staging path: Infisical `canepro-secrets/prod:/platform/oke/argocd`, key `ARGOCD_OIDC_CLIENT_SECRET`
 - Live Kubernetes secret: `argocd/argocd-oidc-client-secret`, key `clientSecret`
 
 Local admin remains enabled until SSO login and break-glass recovery are proven.
+Do not add `groups` to requested scopes for Entra; groups are emitted by the
+application's `groupMembershipClaims=SecurityGroup` setting.
 
 ## How to think about updates
 
