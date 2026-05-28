@@ -1,8 +1,8 @@
 # Argo CD Entra OIDC Cutover Runbook
 
 This public-safe runbook captures the repeatable path used to move Argo CD from
-local admin-only access to Microsoft Entra OIDC while keeping local admin as
-break-glass until SSO is proven.
+local admin-only access to Microsoft Entra OIDC, prove SSO, and then disable the
+local admin account in a separate change.
 
 Because this repository is public, keep secret values and private operational
 metadata out of this file. The source manifests necessarily contain non-secret
@@ -22,14 +22,14 @@ human-account details here.
 
 ## Safety Boundary
 
-- Keep `argocd_local_admin_enabled=true` until SSO login and admin access are
-  proven in the browser.
+- Keep `argocd_local_admin_enabled=true` only until SSO login and admin access
+  are proven in the browser.
 - Do not print, commit, paste, screenshot, or log the Entra client secret value.
 - Store the client secret in the approved secret manager and inject it into
   Kubernetes without exposing the value.
 - Do not change DNS, firewall, ingress, or local admin disablement in the same
   change as initial SSO enablement.
-- Treat disabling local admin as a later PR after rollback access is clear.
+- Treat disabling local admin as a separate PR after rollback access is clear.
 
 ## Source Files
 
@@ -211,7 +211,7 @@ Fix:
   `AWS_RESPONSE_CHECKSUM_VALIDATION=when_required`
 - verify a follow-up plan is clean
 
-## Disable Local Admin Later
+## Disable Local Admin
 
 Only after successful SSO login and admin access are proven:
 
@@ -221,4 +221,5 @@ Only after successful SSO login and admin access are proven:
 4. Apply and verify local admin is disabled.
 
 Do not bundle local admin disablement with secret rotation, Entra app changes,
-DNS, ingress, firewall, or unrelated GitOps changes.
+DNS, ingress, firewall, or unrelated GitOps changes. After apply, verify
+`argocd-cm` has `admin.enabled=false` and browser SSO still works.
