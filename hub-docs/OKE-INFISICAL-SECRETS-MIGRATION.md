@@ -125,3 +125,18 @@ These actions need explicit current-task approval:
 - making Infisical authoritative for a live consumer
 - deleting old secret sources
 - changing cross-cluster, SignalForge, or break-glass credential paths
+
+## Argo OIDC Pilot
+
+The first live pilot keeps the existing Argo CD consumer contract and moves the
+source of `argocd/argocd-oidc-client-secret` to External Secrets Operator backed
+by Infisical:
+
+- store: `ClusterSecretStore/infisical-oke`
+- target: `argocd/argocd-oidc-client-secret`
+- key: `clientSecret`
+- required label: `app.kubernetes.io/part-of=argocd`
+
+Private operator notes own the Infisical auth material and any rollback value.
+Public proof should stay limited to store readiness, ExternalSecret readiness,
+target Secret key shape, Argo rollout status, and SSO/admin success.
