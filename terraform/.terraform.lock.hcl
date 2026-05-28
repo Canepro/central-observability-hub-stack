@@ -5,6 +5,7 @@ provider "registry.terraform.io/hashicorp/helm" {
   version     = "3.1.1"
   constraints = ">= 2.0.0"
   hashes = [
+    "h1:47CqNwkxctJtL/N/JuEj+8QMg8mRNI/NWeKO5/ydfZU=",
     "h1:5b2ojWKT0noujHiweCds37ZreRFRQLNaErdJLusJN88=",
     "zh:1a6d5ce931708aec29d1f3d9e360c2a0c35ba5a54d03eeaff0ce3ca597cd0275",
     "zh:3411919ba2a5941801e677f0fea08bdd0ae22ba3c9ce3309f55554699e06524a",
@@ -24,6 +25,7 @@ provider "registry.terraform.io/hashicorp/helm" {
 provider "registry.terraform.io/oracle/oci" {
   version = "7.31.0"
   hashes = [
+    "h1:5E0shLvUXFro+WZh4sxNDFy4FRyn6HUTah4oxOeFRoA=",
     "h1:xTOq7b4XMT8u6odPZfT4l0qV1r3Ti6AhkTye5uw98XQ=",
     "zh:1e9543b399109dfd66b95169579cf470d4482249b3379115b73fa3a7f2684c29",
     "zh:2915b76d376d9b2baca13bbf79680c73bea778c480f60ac87252c80a31043a79",
