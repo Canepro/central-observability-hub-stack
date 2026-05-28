@@ -23,10 +23,11 @@ Notes:
 - The old cluster `k8-canepro-rocketchat` has been retired/deleted.
 
 ### 🔑 ArgoCD Access Posture
-The local `admin` account is bootstrap/break-glass only. Do not paste the
-initial admin password into chat, reports, tickets, logs, or shell transcripts.
-Retrieve it only in a private operator shell when emergency recovery requires
-it, then rotate or disable the account after SSO is proven.
+The local `admin` account is bootstrap/break-glass only and should be disabled
+in normal operation. Do not paste the initial admin password into chat, reports,
+tickets, logs, or shell transcripts. Retrieve it only in a private operator
+shell when emergency recovery requires it, then rotate and disable the account
+again after recovery.
 
 SSO cutover must happen in this order: provision OIDC app and client secret,
 add the approved admin group to `k8s/argocd-rbac-config.yaml`, enable OIDC in
