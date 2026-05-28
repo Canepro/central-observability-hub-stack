@@ -74,8 +74,10 @@ Public docs and PRs must not include:
 2. **Grafana SMTP credentials**
    - Target shape: keep `monitoring/grafana-smtp-credentials` with keys
      `password`, `user`, `from_address`, and `to_address`.
-   - Cutover method: sync from Infisical, restart Grafana and Alertmanager,
-     prove alert notification config loads without printing values.
+   - Cutover method: sync from Infisical through
+     `ClusterSecretStore/infisical-oke-monitoring`, restart Grafana and
+     Alertmanager, prove alert notification config loads without printing
+     values.
    - Rollback: restore the previous Kubernetes Secret shape.
 
 3. **Jenkins OCI Vault-backed secrets**
@@ -91,8 +93,9 @@ Public docs and PRs must not include:
 4. **Loki/Tempo S3 credentials**
    - Target shape: keep `monitoring/loki-s3-credentials` with the current AWS
      SDK-compatible keys.
-   - Cutover method: sync from Infisical, restart Loki and Tempo, prove write
-     and read paths with status/health checks only.
+   - Cutover method: sync from Infisical through
+     `ClusterSecretStore/infisical-oke-monitoring`, restart Loki and Tempo,
+     prove write and read paths with status/health checks only.
    - Rollback: restore previous Secret source.
 
 5. **Observability remote-write auth and SignalForge agent credentials**
@@ -159,3 +162,17 @@ Secret names and keys:
 The public repo contains only non-secret store names, folder paths, and remote
 key names. Private operator proof owns value staging, service-token creation,
 and rollback notes.
+
+## Manual Monitoring Secret Cutover
+
+The manual monitoring batch moves existing Kubernetes Secrets to Infisical while
+preserving their live names and keys:
+
+- `monitoring/grafana-smtp-credentials`
+- `monitoring/loki-s3-credentials`
+- `monitoring/oci-s3-creds`
+- `monitoring/observability-auth`
+
+These are still mounted or referenced by existing Helm values and ingress
+annotations. The ExternalSecret manifests intentionally keep the same Secret
+names so the application manifests do not need credential reference changes.
