@@ -21,7 +21,12 @@ data:
     p, role:admin, accounts, *, *, allow
     p, role:admin, gpgkeys, *, *, allow
     p, role:admin, certificates, *, *, allow
+
+    # Local bootstrap admin. Keep until SSO and break-glass recovery are proven.
     g, admin, role:admin
+
+    # Add the approved OIDC admin group here during the SSO cutover, for example:
+    # g, <approved-oidc-admin-group>, role:admin
 
   # Default role for all users
   policy.default: role:readonly
