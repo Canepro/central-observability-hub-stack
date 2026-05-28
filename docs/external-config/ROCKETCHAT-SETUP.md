@@ -6,14 +6,14 @@ Use these instructions to configure the `rocketchat-k8s` cluster (AKS, `k8.canep
 
 **Hub URL**: `https://observability.canepro.me`
 **Username**: `observability-user`
-**Password**: `YOUR_PASSWORD_HERE`
+**Password**: use the approved operator credential path
 
 ### Rocket.Chat Logs Viewer app settings (read path)
 
 If you install the Rocket.Chat marketplace app `Logs Viewer`, configure:
 - `loki_base_url`: `https://observability.canepro.me`
 - `loki_username`: `observability-user`
-- `loki_token`: `YOUR_PASSWORD_HERE`
+- `loki_token`: use the approved operator credential path
 
 Important:
 - The app is a **reader** and calls Loki query APIs (`/loki/api/v1/query_range`).
@@ -39,15 +39,14 @@ kubectl delete configmap prometheus-agent-config -n monitoring --ignore-not-foun
 ```
 
 ### Step 2: Create Observability Namespace & Secret
-Ensure the namespace exists and store the hub credentials.
+Ensure the namespace exists and store the hub credentials through the approved
+secret store or a private operator runbook.
 
 ```bash
 kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl create secret generic observability-credentials -n monitoring \
-  --from-literal=username="observability-user" \
-  --from-literal=password="YOUR_PASSWORD_HERE" \
-  --dry-run=client -o yaml | kubectl apply -f -
+kubectl get secret observability-credentials -n monitoring -o json |
+  jq '{name:.metadata.name, data_keys:(.data|keys)}'
 ```
 
 ### Step 3: Deploy Prometheus Agent
@@ -72,7 +71,7 @@ promtail:
       - url: https://observability.canepro.me/loki/api/v1/push
         basic_auth:
           username: observability-user
-          password: YOUR_PASSWORD_HERE
+          password: <redacted>
 ```
 
 **Apply via Helm:**

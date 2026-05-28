@@ -30,25 +30,16 @@ kubectl create namespace monitoring
 
 ## Step 2: Create Credentials Secret
 
-You need the same credentials used in the Hub's `observability-auth` secret.
+Use the approved secret store or private operator runbook to provision the spoke
+`observability-credentials` secret. Do not retrieve or paste the hub
+`observability-auth` payload into public docs, chat, tickets, or shared logs.
+
+The spoke Secret must contain the same key shape expected by the Prometheus
+Agent config:
 
 ```bash
-# Create the secret with Basic Auth credentials
-kubectl create secret generic observability-credentials \
-  --from-literal=username="observability-user" \
-  --from-literal=password="YOUR_PASSWORD_HERE" \
-  -n monitoring
-```
-
-**Note**: Replace `YOUR_PASSWORD_HERE` with the actual password from your Hub's `observability-auth` secret.
-
-To retrieve the password from the Hub:
-```bash
-# Switch to Hub context
-kubectl config use-context <oke-context>
-
-# Get the password (if stored as plain text)
-kubectl get secret observability-auth -n monitoring -o jsonpath='{.data.auth}' | base64 -d
+kubectl -n monitoring get secret observability-credentials -o json |
+  jq '{name:.metadata.name, data_keys:(.data|keys)}'
 ```
 
 ## Step 3: Deploy Node Exporter (Optional but Recommended)

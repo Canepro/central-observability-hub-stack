@@ -242,8 +242,9 @@ After Jenkins is up, you need the **agent connection secret** for the **aks-agen
 
 - **Controller:** Running at **https://jenkins-oke.canepro.me** (OKE, namespace `jenkins`).
 - **TLS:** Certificate `jenkins-oke-tls` is **Ready**; HTTPS works.
-- **Login:** Admin password from secret:  
-  `kubectl get secret -n jenkins jenkins -o jsonpath='{.data.jenkins-admin-password}' | base64 -d; echo`
+- **Login:** use the approved operator credential path. Do not decode the
+  Jenkins admin password into shared terminals, tickets, reports, or PR
+  comments.
 - **aks-agent node:** Defined in JCasC (inbound launcher). Agent secret for Phase 2: **Manage Jenkins → Nodes → aks-agent → Connect** (or `/computer/aks-agent/`).
 - **Next:** Phase 2 — connect the AKS static agent with `-webSocket` to `https://jenkins-oke.canepro.me`.
 
