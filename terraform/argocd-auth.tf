@@ -10,7 +10,7 @@
 variable "argocd_local_admin_enabled" {
   description = "Whether the built-in Argo CD local admin account is enabled. Keep true until SSO login and break-glass recovery are proven."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "argocd_oidc_enabled" {
