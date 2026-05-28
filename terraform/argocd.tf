@@ -12,6 +12,9 @@ resource "helm_release" "argocd" {
       global = {
         domain = "argocd.canepro.me"
       }
+      configs = {
+        cm = merge(local.argocd_cm_base, local.argocd_cm_oidc)
+      }
       server = {
         metrics   = { enabled = true }
         extraArgs = ["--insecure"]

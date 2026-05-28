@@ -9,13 +9,33 @@ All applications are managed by Argo CD with `prune: true` and `selfHeal: true`.
 
 ## Initial Setup & Access
 
-### Retrieve Admin Password
-If you need the initial admin password for the ArgoCD UI:
+### Local Admin And SSO Posture
 
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d ; echo
-```
+The built-in `admin` account is a bootstrap and break-glass control. Keep it
+enabled until SSO login, admin group mapping, and recovery access are proven.
+
+Do not paste the initial admin password into chat, reports, tickets, logs, or
+shell transcripts. If emergency recovery requires it, retrieve it only in a
+private operator shell, then rotate or disable the account after SSO is proven.
+
+### SSO Cutover Sequence
+
+1. Provision an OIDC application for `https://argocd.canepro.me/auth/callback`
+   with MFA-backed users/groups.
+2. Create `Secret argocd/argocd-oidc-client-secret` with key `clientSecret`
+   through the approved secret-management path. Do not commit or print the
+   value.
+3. Add the exact approved admin group mapping to
+   `k8s/argocd-rbac-config.yaml`:
+   `g, <approved-oidc-admin-group>, role:admin`.
+4. Set Terraform variables:
+   - `argocd_oidc_enabled=true`
+   - `argocd_oidc_name=<provider display name>`
+   - `argocd_oidc_issuer_url=<issuer URL>`
+   - `argocd_oidc_client_id=<client ID>`
+5. Apply and verify SSO login, group claims, admin mapping, and app visibility.
+6. Only after SSO and recovery access are proven, set
+   `argocd_local_admin_enabled=false` in a separate approved change.
 
 ## How to think about updates
 
@@ -251,5 +271,4 @@ export KUBECONFIG=/mnt/d/secrets/kube/config
 - **Small change** (values, ingress tweaks): edit → commit → sync that app.
 - **Wide change** (multiple apps): edit → commit → sync parent app (`oke-observability-stack`).
 - If Argo “looks stuck”: check `.status.conditions` and use hard refresh.
-
 

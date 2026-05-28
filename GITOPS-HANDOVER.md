@@ -22,12 +22,16 @@ Notes:
 - `k8.canepro.me` is the current AKS Rocket.Chat cluster and may be offline weekdays 4pm-11pm due to auto-shutdown.
 - The old cluster `k8-canepro-rocketchat` has been retired/deleted.
 
-### 🔑 ArgoCD Initial Access
-To retrieve the initial `admin` password:
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d ; echo
-```
+### 🔑 ArgoCD Access Posture
+The local `admin` account is bootstrap/break-glass only. Do not paste the
+initial admin password into chat, reports, tickets, logs, or shell transcripts.
+Retrieve it only in a private operator shell when emergency recovery requires
+it, then rotate or disable the account after SSO is proven.
+
+SSO cutover must happen in this order: provision OIDC app and client secret,
+add the approved admin group to `k8s/argocd-rbac-config.yaml`, enable OIDC in
+Terraform, prove login/admin access, then disable local admin in a separate
+approved change.
 
 ## 📂 3. GitOps Configuration (Sources of Truth)
 
