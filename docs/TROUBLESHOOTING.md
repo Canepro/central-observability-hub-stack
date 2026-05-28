@@ -24,14 +24,13 @@ Common issues and solutions for the OKE observability stack deployment.
 2. **Wrong Hash Format**: NGINX Ingress `auth-type: basic` requires `htpasswd` format (MD5/APR1/Bcrypt), but some generated hashes (like default `openssl passwd`) might be incompatible or truncated.
 
 **Solution**:
-Always use **single quotes** when creating secrets via CLI to prevent variable expansion.
+If a temporary basic-auth Secret must be created manually, generate the
+`htpasswd` file outside shared terminals and apply it from a file. Avoid
+`--from-literal` with credential payloads in commands because those values often
+end up in shell history and transcripts.
 
 ```bash
-# BAD (Bash expands $apr1)
-kubectl create secret generic auth --from-literal=auth="user:$apr1$..."
-
-# GOOD (Single quotes)
-kubectl create secret generic auth --from-literal=auth='user:$apr1$...'
+kubectl create secret generic auth --from-file=auth -n monitoring
 ```
 
 ---
@@ -77,10 +76,10 @@ nginx.ingress.kubernetes.io/rewrite-target: /$1
    - `/loki/api/v1/query`
    - `/loki/api/v1/query_range`
 2. Commit the change and let ArgoCD sync `nginx-ingress` / manifests.
-3. Re-test with Basic Auth:
+3. Re-test with Basic Auth using the approved operator credential path:
 
 ```bash
-curl -sS -u 'observability-user:YOUR_PASSWORD_HERE' -G \
+curl -sS -u 'observability-user:<redacted>' -G \
   'https://observability.canepro.me/loki/api/v1/query_range' \
   --data-urlencode 'query={job="rocketchat"}' \
   --data-urlencode 'limit=1'
@@ -163,13 +162,16 @@ loki:
 **Fix pattern** (recommended):
 
 - Put credentials in a K8s Secret as `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- Prefer syncing that Secret from the approved secret store instead of creating
+  it manually on the cluster
 - Inject the secret via `extraEnvFrom`
 - Do **not** embed credentials in the Loki/Tempo config blocks; let the SDK read env vars.
 
+Verify the runtime shape without printing values:
+
 ```bash
-kubectl -n monitoring create secret generic loki-s3-credentials \
-  --from-literal=AWS_ACCESS_KEY_ID='...' \
-  --from-literal=AWS_SECRET_ACCESS_KEY='...'
+kubectl -n monitoring get secret loki-s3-credentials -o json |
+  jq '{name:.metadata.name, data_keys:(.data|keys)}'
 ```
 
 ### Grafana Loki dashboard error: `parse error ... unexpected IDENTIFIER`
@@ -363,16 +365,14 @@ It should be > 0.
 
 **Fix**
 1. Generate a new **Gmail App Password** for the account used to send alerts.
-2. Update the Secret (safe upsert, no delete):
+2. Rotate the value through the approved secret store and sync it back into
+   `monitoring/grafana-smtp-credentials`.
+3. Verify the Kubernetes Secret by key shape only:
 ```bash
-kubectl -n monitoring create secret generic grafana-smtp-credentials \
-  --from-literal=password='NEW_GMAIL_APP_PASSWORD' \
-  --from-literal=user='your-email@gmail.com' \
-  --from-literal=from_address='your-email@gmail.com' \
-  --from-literal=to_address='alerts-recipient@gmail.com' \
-  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n monitoring get secret grafana-smtp-credentials -o json |
+  jq '{name:.metadata.name, data_keys:(.data|keys)}'
 ```
-3. Restart Alertmanager (pods do not reload env vars automatically):
+4. Restart Alertmanager (pods do not reload env vars automatically):
 ```bash
 kubectl -n monitoring rollout restart statefulset/prometheus-alertmanager
 ```

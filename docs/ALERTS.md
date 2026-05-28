@@ -164,17 +164,11 @@ When you see an alert firing in Grafana (*Alerting* -> *Alert rules*), use `docs
 
 ## 8. Maintenance & Secret Restoration
 
-In the event of a cluster rebuild, the SMTP secret must be restored manually to re-enable notifications:
-
-```bash
-# Run on the OKE Cluster
-kubectl create secret generic grafana-smtp-credentials \
-  --from-literal=password='your-app-password' \
-  --from-literal=user='your-email@gmail.com' \
-  --from-literal=from_address='your-email@gmail.com' \
-  --from-literal=to_address='your-email@gmail.com' \
-  -n monitoring
-```
+In the event of a cluster rebuild, restore the SMTP secret through the approved
+secret store and sync it back into `monitoring/grafana-smtp-credentials`.
+Manual `kubectl create secret --from-literal=...` commands are intentionally
+not documented here because this repo is public and those commands encourage
+credential exposure in terminals and transcripts.
 
 **Note**: All SMTP credentials (password, user, from_address, to_address) are stored in the secret to avoid exposing PII in the public repository.
 
@@ -192,17 +186,9 @@ If `from_address` / `user` are missing, Grafana may fail to start with `CreateCo
 
 ### Safe update / rotation (no delete)
 
-Use `apply` to upsert values (recommended when rotating passwords):
-
-```bash
-# Run on the OKE Cluster
-kubectl -n monitoring create secret generic grafana-smtp-credentials \
-  --from-literal=password='NEW_APP_PASSWORD' \
-  --from-literal=user='your-email@gmail.com' \
-  --from-literal=from_address='your-email@gmail.com' \
-  --from-literal=to_address='your-email@gmail.com' \
-  --dry-run=client -o yaml | kubectl apply -f -
-```
+Rotate values in the source secret store, then verify Kubernetes only by key
+shape and rollout status. Do not paste SMTP values into shell history or shared
+logs.
 
 Verify the keys:
 

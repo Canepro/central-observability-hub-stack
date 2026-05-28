@@ -208,7 +208,7 @@ helm upgrade --install promtail grafana/promtail \
   --namespace monitoring \
   --set config.clients[0].url=https://observability.canepro.me/loki/api/v1/push \
   --set config.clients[0].basic_auth.username=observability-user \
-  --set config.clients[0].basic_auth.password=50JjX+diU6YmAZPl
+  --set config.clients[0].basic_auth.password='<redacted>'
 ```
 
 ### 2. Add More Spoke Clusters

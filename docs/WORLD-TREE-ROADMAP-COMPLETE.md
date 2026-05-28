@@ -51,12 +51,10 @@ See `docs/external-config/KIND-SPOKE-SETUP.md` for complete instructions.
 
 Quick start:
 ```bash
-# 1. Create namespace and secret
+# 1. Create namespace and verify the secret shape
 kubectl create namespace monitoring
-kubectl create secret generic observability-credentials \
-  --from-literal=username="observability-user" \
-  --from-literal=password="YOUR_PASSWORD" \
-  -n monitoring
+kubectl get secret observability-credentials -n monitoring -o json |
+  jq '{name:.metadata.name, data_keys:(.data|keys)}'
 
 # 2. Deploy agent
 kubectl apply -f docs/external-config/prometheus-agent-kind-spoke.yaml

@@ -311,15 +311,10 @@ Scrapes use the service account CA for TLS verification (no `insecure_skip_verif
 - Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
 
 ## 🔑 Grafana Admin Password Reset
-If you lose access to the Grafana UI, the preferred fix is to rotate the Vault secret (`admin_password`) so ESO refreshes the Kubernetes secret. If you must reset via CLI, update Vault afterward to avoid drift.
-
-```bash
-# 1. Get the pod name first
-POD_NAME=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[0].metadata.name}")
-
-# 2. Reset the 'admin' user password (e.g., to 'admin123')
-kubectl exec -n monitoring $POD_NAME -- grafana-cli admin reset-admin-password admin123
-```
+If you lose access to the Grafana UI, rotate the source secret
+(`admin_password`) through the approved secret store so ESO refreshes the
+Kubernetes Secret. Avoid in-pod password resets because they drift from the
+declared source of truth.
 
 ## 🧩 Grafana Rollouts (E1 vs PVC)
 
