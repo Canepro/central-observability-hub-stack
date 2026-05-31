@@ -24,6 +24,7 @@ Thumbs.db
 # Local testing
 test-output/
 *.log
+/agent.jar
 
 terraform/.terraform/
 terraform/terraform.tfstate*

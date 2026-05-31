@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OKE Infisical Argo OIDC Cutover Closeout</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101216;
+      --panel: #171b21;
+      --panel-2: #20262e;
+      --ink: #f2efe7;
+      --muted: #bbb5aa;
+      --line: #343b46;
+      --good: #8fd08f;
+      --warn: #e2b15e;
+      --bad: #df7b72;
+      --info: #9db8dc;
+      --accent: #d4ad63;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #151a20 0, var(--bg) 420px);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    code, pre { font-family: var(--mono); }
+    .shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 54px; }
+    .topbar { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 0.92rem; margin-bottom: 24px; }
+    .brand { color: var(--ink); font-weight: 800; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.75fr);
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .headline, .meta-card, section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(23, 27, 33, 0.96);
+    }
+    .headline { padding: 30px; }
+    h1, h2, h3 { margin: 0; letter-spacing: 0; line-height: 1.15; }
+    h1 { font-size: clamp(2rem, 4vw, 4.2rem); max-width: 900px; }
+    .lede { color: var(--muted); max-width: 760px; margin: 16px 0 0; font-size: 1.06rem; }
+    .meta-grid { display: grid; gap: 12px; }
+    .meta-card { padding: 16px; }
+    .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
+    .value { margin-top: 7px; font-size: 1.05rem; font-weight: 760; }
+    .status { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid currentColor; border-radius: 999px; font-weight: 800; font-size: 0.86rem; }
+    .status:before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .done { color: var(--good); }
+    .partial { color: var(--warn); }
+    .risk { color: var(--bad); }
+    .info { color: var(--info); }
+    nav { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 14px; backdrop-filter: blur(12px); }
+    nav a { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(17, 20, 25, 0.92); color: var(--ink); text-decoration: none; font-weight: 700; font-size: 0.9rem; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    section { grid-column: span 12; padding: 22px; scroll-margin-top: 80px; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-5 { grid-column: span 5; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .card { border: 1px solid var(--line); border-radius: 8px; background: #141820; padding: 15px; }
+    .card strong { display: block; margin-bottom: 7px; }
+    p { color: var(--muted); margin: 10px 0 0; }
+    ul { color: var(--muted); margin: 12px 0 0; padding-left: 20px; }
+    li { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 0.94rem; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--panel-2); color: var(--muted); font-size: 0.76rem; letter-spacing: 0.07em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    pre { margin: 14px 0 0; padding: 14px; background: #0d1014; border: 1px solid var(--line); border-radius: 8px; color: #e8e3d8; overflow-x: auto; font-size: 0.9rem; }
+    .tag { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; color: var(--muted); font-size: 0.78rem; margin: 2px 4px 2px 0; }
+    .note { border-left: 3px solid var(--accent); padding-left: 12px; }
+    @media (max-width: 840px) {
+      .hero { grid-template-columns: 1fr; }
+      .span-6, .span-7, .span-5 { grid-column: span 12; }
+      .cards { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Mira / Codex Closeout</div>
+      <div>Generated 2026-05-28, Europe/London</div>
+    </div>
+
+    <div class="hero">
+      <div class="headline">
+        <span class="status done">Pilot Complete</span>
+        <h1>OKE Infisical Argo OIDC Cutover</h1>
+        <p class="lede">This report closes the work since the SignalForge OKE findings and Infisical triage report: Argo CD auth hardening, Entra SSO, local-admin removal, metadata-first Infisical planning, and the approved live Argo OIDC secret cutover to Infisical through External Secrets Operator.</p>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="label">Public Repo</div>
+          <div class="value">central-observability-hub-stack</div>
+        </div>
+        <div class="meta-card">
+          <div class="label">Final GitOps Commit</div>
+          <div class="value"><code>e80fe5ab7a2d3309aa920822ab05eb0b69f19d34</code></div>
+        </div>
+        <div class="meta-card">
+          <div class="label">Private Closeout Commit</div>
+          <div class="value"><code>071bfe8</code> in <code>velora-infra</code></div>
+        </div>
+      </div>
+    </div>
+
+    <nav>
+      <a href="#outcome">Outcome</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#proof">Live Proof</a>
+      <a href="#files">Files</a>
+      <a href="#boundaries">Boundaries</a>
+      <a href="#remaining">Remaining</a>
+    </nav>
+
+    <div class="grid">
+      <section id="outcome" class="span-7">
+        <h2>Outcome</h2>
+        <p>The first OKE Infisical migration pilot is live. Argo CD still authenticates through Entra OIDC, local admin remains disabled, and the Argo OIDC client secret is now sourced from Infisical through ESO instead of being hand-managed directly as a Kubernetes Secret.</p>
+        <div class="cards">
+          <div class="card">
+            <strong>Auth hardening</strong>
+            <span class="tag">Entra OIDC</span>
+            <span class="tag">admin.enabled=false</span>
+            <p>Argo CD moved from bootstrap admin dependency to Entra-backed group auth.</p>
+          </div>
+          <div class="card">
+            <strong>Secret path</strong>
+            <span class="tag">Infisical</span>
+            <span class="tag">ExternalSecret</span>
+            <p>The approved current value was staged without printing it, then consumed through ESO.</p>
+          </div>
+          <div class="card">
+            <strong>Source control</strong>
+            <span class="tag">PR #78</span>
+            <span class="tag">GitOps</span>
+            <p>The live resources are public-safe source-managed manifests.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="scope" class="span-5">
+        <h2>Scope</h2>
+        <p>This was the Argo OIDC pilot, not a blanket migration of all OKE secrets.</p>
+        <ul>
+          <li>Moved one approved consumer: <code>argocd/argocd-oidc-client-secret</code>.</li>
+          <li>Did not print, commit, paste, or preserve the secret value.</li>
+          <li>Did not change DNS, firewall, ingress, kubeconfig authority, or unrelated workloads.</li>
+          <li>Did not rotate the Entra client secret; this used Vincent-approved <code>copy_current_value</code>.</li>
+        </ul>
+      </section>
+
+      <section id="timeline">
+        <h2>Timeline Since The Previous HTML Report</h2>
+        <table>
+          <thead>
+            <tr><th>Step</th><th>Result</th><th>Evidence</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Argo auth prep</td>
+              <td>Reviewed and merged source-only Argo OIDC hardening prep, with safe defaults and no live auth change at merge.</td>
+              <td>PR #71 / follow-on work from Selene and Mira review.</td>
+            </tr>
+            <tr>
+              <td>Entra SSO enablement</td>
+              <td>Configured Argo CD for Entra OIDC and corrected the invalid <code>groups</code> OAuth scope issue.</td>
+              <td>PR #72, PR #73, PR #74, PR #75.</td>
+            </tr>
+            <tr>
+              <td>Local admin disabled</td>
+              <td>After successful Entra login, Argo local bootstrap admin was disabled.</td>
+              <td>PR #76; live <code>argocd-cm admin.enabled=false</code>.</td>
+            </tr>
+            <tr>
+              <td>Infisical migration plan</td>
+              <td>Created public-safe OKE secret migration docs and private value-gated runbook/proof packets.</td>
+              <td>PR #77; private <code>velora-infra</code> security reports and runbook.</td>
+            </tr>
+            <tr>
+              <td>Approved value handling</td>
+              <td>Vincent approved <code>copy_current_value</code> for the Argo OIDC secret. The value was copied through a restrictive temp file and staged in Infisical without disclosure.</td>
+              <td>Local-only redacted proof JSON; raw temp directory deleted.</td>
+            </tr>
+            <tr>
+              <td>ESO cutover</td>
+              <td>Merged and reconciled the GitOps manifests for <code>ClusterSecretStore/infisical-oke</code> and <code>ExternalSecret/argocd-oidc-client-secret</code>.</td>
+              <td>PR #78; merge commit <code>e80fe5ab7a2d3309aa920822ab05eb0b69f19d34</code>.</td>
+            </tr>
+            <tr>
+              <td>Runtime proof</td>
+              <td>Store validated, ExternalSecret synced, target Secret owned by ESO, and <code>argocd-server</code> rolled out after restart.</td>
+              <td>Live Kubernetes and Argo checks on 2026-05-28.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="proof" class="span-6">
+        <h2>Live Proof</h2>
+        <pre>ClusterSecretStore/infisical-oke
+Ready=True
+Reason=Valid
+Message=store validated
+LastTransitionTime=2026-05-28T18:15:43Z
+
+argocd/ExternalSecret/argocd-oidc-client-secret
+Ready=True
+Reason=SecretSynced
+RefreshTime=2026-05-28T18:18:43Z
+Store=infisical-oke
+Target=argocd-oidc-client-secret</pre>
+      </section>
+
+      <section class="span-6">
+        <h2>Argo Runtime Proof</h2>
+        <pre>argocd-server rollout: successfully rolled out
+Argo API version: v3.2.5+c56f440
+argocd-cm admin.enabled=false
+argocd-cm has oidc.config=true
+argocd-rbac-cm scopes=[groups]
+Entra admin group id mapped to role:admin
+
+OKE Argo applications: Synced/Healthy
+AKS application entries: Unknown/Healthy, unchanged known cross-cluster visibility state</pre>
+      </section>
+
+      <section id="files">
+        <h2>Files And Commits</h2>
+        <table>
+          <thead>
+            <tr><th>Surface</th><th>Files</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Public GitOps repo</td>
+              <td><code>k8s/external-secrets/clustersecretstore-infisical-oke.yaml</code><br><code>k8s/external-secrets/argocd-oidc-client-secret-externalsecret.yaml</code><br><code>hub-docs/OKE-INFISICAL-SECRETS-MIGRATION.md</code></td>
+              <td>PR #78 merged at <code>e80fe5ab7a2d3309aa920822ab05eb0b69f19d34</code>.</td>
+            </tr>
+            <tr>
+              <td>Private durable proof</td>
+              <td><code>/Users/canepro/src/velora-infra/reports/security/2026-05-28-oke-infisical-argocd-oidc-live-cutover-result.md</code><br><code>/Users/canepro/src/velora-infra/runbooks/oke-infisical-argocd-oidc-cutover.md</code></td>
+              <td>Copied to host checkout and pushed to <code>velora-infra</code> main at <code>071bfe8</code>.</td>
+            </tr>
+            <tr>
+              <td>Local-only redacted proof</td>
+              <td><code>/Users/canepro/src/velora-infra/reports/security/local-only/2026-05-28-oke-argocd-infisical-cutover/</code></td>
+              <td>Contains byte counts, target shape, and staging summary only. Raw temp value files were deleted.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="boundaries" class="span-6">
+        <h2>Boundaries Kept</h2>
+        <ul>
+          <li>No secret value was printed to chat, committed to Git, written into the HTML report, or left in command output.</li>
+          <li>The public repository contains only non-secret Infisical metadata and ESO consumer manifests.</li>
+          <li>The value movement approval was limited to <code>argocd/argocd-oidc-client-secret</code>.</li>
+          <li>Argo local admin remains disabled; no rollback to local admin was performed.</li>
+          <li>The final Selene handoff could not be sent from this lane because the agent-handoff key is missing on both the Mac-local and host handoff paths. The host-side durable proof commit was pushed instead.</li>
+        </ul>
+      </section>
+
+      <section id="remaining" class="span-6">
+        <h2>Remaining Work</h2>
+        <p class="note">The pilot is complete. The broader OKE secrets migration is still staged work, not done by implication.</p>
+        <ul>
+          <li>Rotate the Entra client secret later if Vincent wants a fresh provider-side value instead of the copied current value.</li>
+          <li>Migrate remaining OKE/GitOps secrets one consumer at a time, with explicit value-handling approval per secret or batch.</li>
+          <li>Decide when to retire old non-Infisical sources after each consumer has redacted proof.</li>
+          <li>Repair the Selene/Velora agent-handoff key path so future closeouts can be confirmed through the live bus, not only through Git proof.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
