@@ -6,22 +6,25 @@ or operator-specific Infisical metadata here.
 
 ## Current Secret Delivery
 
-The OKE hub currently uses a mixed model:
+After the May 28 cutovers, approved live OKE/GitOps consumers sync from
+Infisical through External Secrets Operator while keeping their Kubernetes
+Secret names and key shapes stable:
 
 | Class | Current delivery | GitOps consumer | Migration posture |
 | --- | --- | --- | --- |
-| Grafana admin and `secret_key` | External Secrets Operator from OCI Vault | `monitoring/grafana` and `helm/grafana-values.yaml` | Keep live path until an Infisical-backed ESO store is proven |
-| Jenkins admin | External Secrets Operator from OCI Vault | `jenkins/jenkins-admin-credentials` and `helm/jenkins-values.yaml` | Candidate for staged Infisical mirror, then source cutover |
-| Jenkins GitHub token | External Secrets Operator from OCI Vault | `jenkins/github-token` and Jenkins credentials provider | Candidate after token owner, scope, and rotation path are confirmed |
-| PipelineHealer Jenkins bridge values | External Secrets Operator from OCI Vault | `jenkins/pipelinehealer-bridge-*` | Candidate after PipelineHealer consumer smoke is defined |
-| Argo CD OIDC client secret | Manual Kubernetes Secret referenced by Argo CD | `argocd/argocd-oidc-client-secret` and `terraform/argocd-auth.tf` | Good first OKE cutover candidate; low shape complexity, clear rollback |
-| Grafana SMTP credentials | Manual Kubernetes Secret | `monitoring/grafana-smtp-credentials`, Grafana, Alertmanager | Candidate after mail owner and app-password rotation path are confirmed |
-| Loki/Tempo S3 credentials | Manual Kubernetes Secret | `monitoring/loki-s3-credentials`, Loki, Tempo | Candidate after object-storage access key scope and rollback are confirmed |
-| Observability basic auth | Manual Kubernetes Secret | `monitoring/observability-auth`, remote-write clients | Higher blast radius; migrate after spoke cutover plan exists |
+| Grafana admin and `secret_key` | External Secrets Operator from Infisical | `monitoring/grafana` and `helm/grafana-values.yaml` | Live, proved by store readiness, ExternalSecret sync, and Grafana health |
+| Jenkins admin | External Secrets Operator from Infisical | `jenkins/jenkins-admin-credentials` and `helm/jenkins-values.yaml` | Live, with the Jenkins chart consuming the existing Secret |
+| Jenkins GitHub token | External Secrets Operator from Infisical | `jenkins/github-token` and Jenkins credentials provider | Live, with Jenkins credential ID preserved |
+| PipelineHealer Jenkins bridge values | External Secrets Operator from Infisical | `jenkins/pipelinehealer-bridge-*` | Live, with Jenkins credential IDs preserved |
+| Argo CD OIDC client secret | External Secrets Operator from Infisical | `argocd/argocd-oidc-client-secret` and `terraform/argocd-auth.tf` | Live, with the Argo CD Secret shape preserved |
+| Grafana SMTP credentials | External Secrets Operator from Infisical | `monitoring/grafana-smtp-credentials`, Grafana, Alertmanager | Live, with alerting key shape preserved |
+| Loki/Tempo S3 credentials | External Secrets Operator from Infisical | `monitoring/loki-s3-credentials`, Loki, Tempo | Live, with object-storage key shape preserved |
+| Observability basic auth | External Secrets Operator from Infisical | `monitoring/observability-auth`, remote-write clients | Live, with ingress auth Secret name preserved |
 | TLS and cert-manager secrets | Controller-managed Kubernetes Secrets | cert-manager, ingress controllers | Leave controller-owned; do not migrate values to Infisical |
 | Helm release secrets | Helm internal state | Helm/Argo CD | Leave unmanaged by Infisical |
 | Argo repo and cluster credentials | Argo-managed Kubernetes Secrets | Argo CD | Handle separately; may include stale or cross-cluster credentials |
-| SignalForge agent token and pull secret | Helm/manual Kubernetes Secrets | `signalforge-agent` | Coordinate through SignalForge/Selene runbook before value movement |
+| SignalForge agent token | External Secrets Operator from Infisical with `creationPolicy: Merge` | `signalforge-agent` | Live transitional cutover; hold chart ownership cleanup for `existingSecret` follow-up |
+| SignalForge pull secret | Not referenced by the live Deployment imagePullSecrets | `signalforge-agent-regcred` | Guarded holdout until a source manifest uses it or deletion is explicitly approved |
 
 ## Target Model
 
@@ -46,7 +49,7 @@ Public docs and PRs may include:
 - Kubernetes namespace and Secret name
 - expected key names
 - owning controller or consumer
-- current source class such as OCI Vault, manual Kubernetes Secret, Helm, or cert-manager
+- current source class such as Infisical, Helm, cert-manager, or a retained rollback source
 - target store class such as Infisical via ESO
 - rollout and rollback steps
 - redacted proof shape
@@ -80,7 +83,7 @@ Public docs and PRs must not include:
      values.
    - Rollback: restore the previous Kubernetes Secret shape.
 
-3. **Jenkins OCI Vault-backed secrets**
+3. **Jenkins secrets**
    - Target shape: keep existing Kubernetes Secret names and Jenkins credential
      IDs.
    - Cutover method: mirror one Jenkins credential family at a time, then switch
@@ -88,7 +91,9 @@ Public docs and PRs must not include:
      first source-backed cutover uses the scoped
      `ClusterSecretStore/infisical-oke-jenkins` and preserves existing target
      Secrets.
-   - Rollback: switch the ExternalSecret back to OCI Vault.
+   - Rollback: restore the previous Kubernetes Secret shape or switch the
+     ExternalSecret back to the retained rollback source if that rollback source
+     still exists.
 
 4. **Loki/Tempo S3 credentials**
    - Target shape: keep `monitoring/loki-s3-credentials` with the current AWS
@@ -149,9 +154,9 @@ target Secret key shape, Argo rollout status, and SSO/admin success.
 
 ## Existing ESO Consumer Cutover
 
-After the Argo OIDC pilot, the next reviewed GitOps cutover moves existing OCI
-Vault-backed ESO consumers to Infisical while preserving their live Kubernetes
-Secret names and keys:
+After the Argo OIDC pilot, the next reviewed GitOps cutover moved existing ESO
+consumers to Infisical while preserving their live Kubernetes Secret names and
+keys:
 
 - `monitoring/grafana`
 - `jenkins/jenkins-admin-credentials`

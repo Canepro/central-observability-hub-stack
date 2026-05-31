@@ -9,7 +9,7 @@
 **Login:** use the approved operator credential path. Do not print the Grafana
 admin password into chat, tickets, shared terminals, reports, or PR comments.
 
-**Note**: Admin credentials and Grafana `secret_key` are sourced from OCI Vault
+**Note**: Admin credentials and Grafana `secret_key` are sourced from Infisical
 via External Secrets Operator into the `grafana` secret.
 
 **Note**: If HTTPS certificate errors occur, wait 2-3 minutes for certificate propagation or use HTTP fallback: http://grafana.canepro.me

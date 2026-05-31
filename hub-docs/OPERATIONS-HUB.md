@@ -305,10 +305,10 @@ In this repo those are enabled via `serverFiles.prometheus.yml.scrape_configs` i
 If the PVC panel shows `No data`, check whether these metrics exist in Prometheus Explore first.
 Scrapes use the service account CA for TLS verification (no `insecure_skip_verify`).
 
-## 🔐 Secrets Management (ESO + OCI Vault)
-- External Secrets Operator (ESO) runs in `external-secrets` and syncs from OCI Vault.
-- Grafana admin credentials and `secret_key` live in Vault and are synced to `monitoring/grafana`.
-- Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
+## 🔐 Secrets Management (ESO + Infisical)
+- External Secrets Operator (ESO) runs in `external-secrets` and syncs from Infisical.
+- Grafana admin credentials and `secret_key` live in Infisical and are synced to `monitoring/grafana`.
+- Source manifests: `k8s/external-secrets/` (Infisical ClusterSecretStore + ExternalSecret).
 
 ## 🔑 Grafana Admin Password Reset
 If you lose access to the Grafana UI, rotate the source secret

@@ -82,10 +82,10 @@ Detailed cutover and troubleshooting runbook:
   ```
 
 ### 🔐 Secrets Management (Hub)
-- Grafana admin credentials and `secret_key` are stored in **OCI Vault** and synced into Kubernetes via **External Secrets Operator (ESO)**.
-- Source manifests: `k8s/external-secrets/` (ClusterSecretStore + ExternalSecret).
+- Grafana admin credentials and `secret_key` are stored in **Infisical** and synced into Kubernetes via **External Secrets Operator (ESO)**.
+- Source manifests: `k8s/external-secrets/` (Infisical ClusterSecretStore + ExternalSecret).
 - Grafana secret name: `grafana` (keys: `admin-user`, `admin-password`, `secret_key`).
-- After rotating secrets in OCI Vault, ESO refreshes the Kubernetes secret automatically (default refresh: 1h).
+- After rotating secrets in Infisical, ESO refreshes the Kubernetes secret automatically (default refresh: 1h).
 
 ### 🛡️ Automated Guardrails
 - **OCI Storage Audit**: Use `./scripts/check-oci-storage.sh` to verify we are under the 200GB Always Free limit (currently at 194GB).

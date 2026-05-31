@@ -27,7 +27,7 @@ This guide provides step-by-step instructions for connecting your applications t
 3. **Password**: use the approved operator credential path. Do not decode or
    paste the Kubernetes Secret value into shared terminals, tickets, reports, or
    PR comments.
-   (Source: External Secrets Operator syncs from OCI Vault into `grafana`)
+   (Source: External Secrets Operator syncs from Infisical into `grafana`)
 
 ### Change Admin Password
 
