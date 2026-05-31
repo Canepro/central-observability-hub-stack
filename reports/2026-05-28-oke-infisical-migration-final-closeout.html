@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OKE Infisical Migration Final Closeout</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101216;
+      --panel: #171b21;
+      --panel-2: #20262e;
+      --ink: #f2efe7;
+      --muted: #bbb5aa;
+      --line: #343b46;
+      --good: #8fd08f;
+      --warn: #e2b15e;
+      --info: #9db8dc;
+      --accent: #d4ad63;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: linear-gradient(180deg, #151a20 0, var(--bg) 420px); color: var(--ink); font-family: var(--sans); line-height: 1.55; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    code, pre { font-family: var(--mono); }
+    .shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 54px; }
+    .topbar { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 0.92rem; margin-bottom: 24px; }
+    .brand { color: var(--ink); font-weight: 800; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.75fr); gap: 16px; margin-bottom: 18px; }
+    .headline, .meta-card, section { border: 1px solid var(--line); border-radius: 8px; background: rgba(23, 27, 33, 0.96); }
+    .headline { padding: 30px; }
+    h1, h2, h3 { margin: 0; letter-spacing: 0; line-height: 1.15; }
+    h1 { font-size: clamp(2rem, 4vw, 4.2rem); max-width: 920px; }
+    .lede { color: var(--muted); max-width: 780px; margin: 16px 0 0; font-size: 1.06rem; }
+    .meta-grid { display: grid; gap: 12px; }
+    .meta-card { padding: 16px; }
+    .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
+    .value { margin-top: 7px; font-size: 1.05rem; font-weight: 760; }
+    .status { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid currentColor; border-radius: 999px; font-weight: 800; font-size: 0.86rem; }
+    .status:before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .done { color: var(--good); }
+    .partial { color: var(--warn); }
+    .info { color: var(--info); }
+    nav { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 14px; backdrop-filter: blur(12px); }
+    nav a { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(17, 20, 25, 0.92); color: var(--ink); text-decoration: none; font-weight: 700; font-size: 0.9rem; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    section { grid-column: span 12; padding: 22px; scroll-margin-top: 80px; }
+    .span-6 { grid-column: span 6; }
+    .span-5 { grid-column: span 5; }
+    .span-7 { grid-column: span 7; }
+    p { color: var(--muted); margin: 10px 0 0; }
+    ul { color: var(--muted); margin: 12px 0 0; padding-left: 20px; }
+    li { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 0.94rem; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--panel-2); color: var(--muted); font-size: 0.76rem; letter-spacing: 0.07em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    pre { margin: 14px 0 0; padding: 14px; background: #0d1014; border: 1px solid var(--line); border-radius: 8px; color: #e8e3d8; overflow-x: auto; font-size: 0.9rem; }
+    .tag { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; color: var(--muted); font-size: 0.78rem; margin: 2px 4px 2px 0; }
+    .note { border-left: 3px solid var(--accent); padding-left: 12px; }
+    @media (max-width: 840px) {
+      .hero { grid-template-columns: 1fr; }
+      .span-6, .span-5, .span-7 { grid-column: span 12; }
+      .topbar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Mira / Codex Final Closeout</div>
+      <div>Generated 2026-05-28, Europe/London</div>
+    </div>
+
+    <div class="hero">
+      <div class="headline">
+        <span class="status done">Goal Complete</span>
+        <h1>OKE GitOps Secrets Are Now Infisical-Backed</h1>
+        <p class="lede">This closes the approved OKE/GitOps secrets migration goal after the Argo OIDC pilot. All non-deferred live consumers found in the inventory now sync from Infisical through External Secrets Operator with redacted proof only.</p>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-card"><div class="label">Final Public Commit</div><div class="value"><code>7dbe6cdc6897895af78e1d207791dfc3983f2d49</code></div></div>
+        <div class="meta-card"><div class="label">Infisical Stores</div><div class="value">4 ready stores</div></div>
+        <div class="meta-card"><div class="label">ExternalSecrets</div><div class="value">11 synced consumers</div></div>
+      </div>
+    </div>
+
+    <nav>
+      <a href="#outcome">Outcome</a>
+      <a href="#prs">PRs</a>
+      <a href="#consumers">Consumers</a>
+      <a href="#proof">Proof</a>
+      <a href="#boundaries">Boundaries</a>
+      <a href="#deferred">Deferred</a>
+    </nav>
+
+    <div class="grid">
+      <section id="outcome" class="span-7">
+        <h2>Outcome</h2>
+        <p>Infisical is now the live source for the approved OKE/GitOps secret consumers. The migration kept Kubernetes Secret names and keys stable, used scoped ESO service tokens, and avoided printing or committing any value.</p>
+        <p>Argo CD remains Entra-backed with local admin disabled. Existing OKE Argo applications are synced and healthy. SignalForge agent runtime remains intentionally paused at zero replicas.</p>
+      </section>
+
+      <section class="span-5">
+        <h2>What Changed</h2>
+        <ul>
+          <li>Added scoped Infisical ClusterSecretStores for Argo, monitoring, Jenkins, and SignalForge.</li>
+          <li>Migrated existing OCI Vault-backed ESO consumers to Infisical.</li>
+          <li>Migrated manual monitoring Secrets into ESO-backed Infisical management.</li>
+          <li>Migrated the paused SignalForge agent token as a transitional ESO Merge cutover.</li>
+          <li>Documented deferred/generated/non-consumer Secrets instead of forcing unsafe ownership changes.</li>
+        </ul>
+      </section>
+
+      <section id="prs">
+        <h2>Public GitOps PRs</h2>
+        <table>
+          <thead><tr><th>PR</th><th>Commit</th><th>Scope</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>#78</td><td><code>e80fe5ab7a2d3309aa920822ab05eb0b69f19d34</code></td><td>Argo OIDC client secret pilot</td><td><span class="status done">Live</span></td></tr>
+            <tr><td>#79</td><td><code>75028119b7c9df512f1e333ae6ffebe0b9c86f77</code></td><td>Existing Grafana/Jenkins ESO consumers</td><td><span class="status done">Live</span></td></tr>
+            <tr><td>#80</td><td><code>22d4c0473dcd9d0077d292db46a3a6420382e51d</code></td><td>Manual monitoring Secrets</td><td><span class="status done">Live</span></td></tr>
+            <tr><td>#81</td><td><code>7dbe6cdc6897895af78e1d207791dfc3983f2d49</code></td><td>SignalForge agent token</td><td><span class="status done">Live</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="consumers">
+        <h2>Migrated Consumers</h2>
+        <table>
+          <thead><tr><th>Namespace</th><th>Target Secret</th><th>Store</th><th>Consumer</th></tr></thead>
+          <tbody>
+            <tr><td><code>argocd</code></td><td><code>argocd-oidc-client-secret</code></td><td><code>infisical-oke</code></td><td>Argo Entra OIDC</td></tr>
+            <tr><td><code>monitoring</code></td><td><code>grafana</code></td><td><code>infisical-oke-monitoring</code></td><td>Grafana admin/session secret</td></tr>
+            <tr><td><code>monitoring</code></td><td><code>grafana-smtp-credentials</code></td><td><code>infisical-oke-monitoring</code></td><td>Grafana and Alertmanager SMTP</td></tr>
+            <tr><td><code>monitoring</code></td><td><code>loki-s3-credentials</code></td><td><code>infisical-oke-monitoring</code></td><td>Loki and Tempo object storage</td></tr>
+            <tr><td><code>monitoring</code></td><td><code>oci-s3-creds</code></td><td><code>infisical-oke-monitoring</code></td><td>OCI S3 compatibility credentials</td></tr>
+            <tr><td><code>monitoring</code></td><td><code>observability-auth</code></td><td><code>infisical-oke-monitoring</code></td><td>Observability ingress basic auth</td></tr>
+            <tr><td><code>jenkins</code></td><td><code>jenkins-admin-credentials</code></td><td><code>infisical-oke-jenkins</code></td><td>Jenkins admin</td></tr>
+            <tr><td><code>jenkins</code></td><td><code>github-token</code></td><td><code>infisical-oke-jenkins</code></td><td>Jenkins GitHub credential</td></tr>
+            <tr><td><code>jenkins</code></td><td><code>pipelinehealer-bridge-secret</code></td><td><code>infisical-oke-jenkins</code></td><td>PipelineHealer bridge auth</td></tr>
+            <tr><td><code>jenkins</code></td><td><code>pipelinehealer-bridge-url</code></td><td><code>infisical-oke-jenkins</code></td><td>PipelineHealer endpoint</td></tr>
+            <tr><td><code>signalforge</code></td><td><code>signalforge-agent-token</code></td><td><code>infisical-oke-signalforge</code></td><td>Paused SignalForge OKE agent</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="proof" class="span-6">
+        <h2>Current ESO Proof</h2>
+        <pre>Infisical stores:
+infisical-oke True Valid
+infisical-oke-jenkins True Valid
+infisical-oke-monitoring True Valid
+infisical-oke-signalforge True Valid
+
+ExternalSecrets:
+11 total migrated consumers
+all Ready=True
+all Reason=SecretSynced</pre>
+      </section>
+
+      <section class="span-6">
+        <h2>Runtime Proof</h2>
+        <pre>Argo external-secrets-config: Synced/Healthy at 7dbe6cdc6897895af78e1d207791dfc3983f2d49
+OKE Argo applications: Synced/Healthy
+Grafana login: HTTP/2 200
+Jenkins login: HTTP/2 200
+Alertmanager readiness: OK
+Loki readiness: ready
+Tempo readiness: ready
+Observability ingress: HTTP/2 401 Basic challenge
+SignalForge agent deployment: replicas=0, token Secret synced</pre>
+      </section>
+
+      <section id="boundaries" class="span-6">
+        <h2>Boundaries Kept</h2>
+        <ul>
+          <li>No secret value was printed to chat or reports.</li>
+          <li>No secret value was committed to the public repo or private proof repo.</li>
+          <li>All raw value handling used restrictive temporary files that were deleted.</li>
+          <li>Public manifests contain only non-secret store names, folder paths, and remote key names.</li>
+          <li>Selene was informed through live handoffs after each major batch.</li>
+        </ul>
+      </section>
+
+      <section id="deferred" class="span-6">
+        <h2>Deferred Or Non-Consumer Items</h2>
+        <p class="note">These were not forced into Infisical because doing so would weaken ownership clarity or migrate something without a live consumer.</p>
+        <ul>
+          <li><code>signalforge-agent-regcred</code>: not referenced by the live deployment imagePullSecrets.</li>
+          <li>Argo cluster/repo Secrets: Argo-managed control-plane access, deferred.</li>
+          <li>Argo runtime-generated Secrets: bootstrap/session internals, deferred.</li>
+          <li>cert-manager/TLS Secrets: generated by cert-manager, deferred.</li>
+          <li>Helm release Secrets: release metadata, not secret-manager payloads.</li>
+          <li>OCI Vault values were left available as rollback material; deleting old provider values is a separate cleanup gate.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

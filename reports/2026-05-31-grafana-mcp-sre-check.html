@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grafana MCP SRE Check - 2026-05-31</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c0d10;
+      --panel: #15171d;
+      --inset: #101217;
+      --line: #2a2f3a;
+      --text: #f2f3f5;
+      --muted: #a8afbd;
+      --soft: #d0d5de;
+      --good: #6ee7a8;
+      --warn: #f7c66b;
+      --bad: #ff8a8a;
+      --accent: #c9a46b;
+      --blue: #8fb6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(201, 164, 107, 0.14), transparent 30rem),
+        linear-gradient(180deg, #11131a 0%, var(--bg) 28rem);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    a { color: var(--blue); }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.92em;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0b0d12;
+      color: #d8deea;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 20px 56px; }
+    .hero { padding: 44px 0 26px; }
+    .kicker {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+    h1 {
+      margin: 0.45rem 0 0.8rem;
+      font-size: clamp(2rem, 5vw, 4.3rem);
+      line-height: 1.02;
+      letter-spacing: 0;
+      max-width: 980px;
+    }
+    .lede { max-width: 840px; color: var(--soft); font-size: 1.1rem; }
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      margin: 22px 0 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--line);
+    }
+    .fact { background: rgba(21, 23, 29, 0.92); padding: 16px; min-height: 92px; }
+    .fact b { display: block; font-size: 1.35rem; margin-bottom: 0.25rem; }
+    .fact span { color: var(--muted); font-size: 0.9rem; }
+    .grid { display: grid; gap: 18px; grid-template-columns: 1.4fr 0.9fr; }
+    section, .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(21, 23, 29, 0.9);
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.28);
+      padding: 20px;
+      margin-top: 18px;
+    }
+    h2 { margin: 0 0 12px; font-size: 1.15rem; letter-spacing: 0; }
+    h3 { margin: 18px 0 8px; font-size: 1rem; }
+    p { margin: 0 0 12px; color: var(--soft); }
+    ul { margin: 0; padding-left: 1.2rem; color: var(--soft); }
+    li { margin: 0.35rem 0; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 8px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; background: #11141a; }
+    td { color: var(--soft); }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--inset);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .muted { color: var(--muted); }
+    .callout {
+      border-left: 4px solid var(--warn);
+      background: rgba(247, 198, 107, 0.08);
+      padding: 14px 16px;
+      border-radius: 8px;
+      color: var(--soft);
+    }
+    .evidence details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-top: 10px;
+      background: var(--inset);
+    }
+    summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    details pre { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; }
+    .full { grid-column: 1 / -1; }
+    @media (max-width: 840px) {
+      .facts, .grid { grid-template-columns: 1fr; }
+      .hero { padding-top: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <div class="kicker">SRE check via Grafana MCP</div>
+      <h1>OKE hub is healthy. AKS visibility is broken.</h1>
+      <p class="lede">Read-only health check of the Grafana, Prometheus, Loki, Tempo, Kubernetes, and ArgoCD signals available through the new Grafana MCP server on 2026-05-31.</p>
+      <div class="facts">
+        <div class="fact"><b class="good">0</b><span>Firing Prometheus alerts found through <code>ALERTS{alertstate="firing"}</code>.</span></div>
+        <div class="fact"><b class="good">4</b><span>OKE nodes report Ready=true.</span></div>
+        <div class="fact"><b class="warn">7</b><span>AKS ArgoCD apps are Healthy but Sync Unknown.</span></div>
+        <div class="fact"><b class="warn">0</b><span>Current AKS metric samples visible in Prometheus instant queries.</span></div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section>
+        <h2>Verdict</h2>
+        <p><span class="status warn">Partial</span></p>
+        <p>The OKE observability hub is serving current telemetry and its local workloads look healthy. The spoke side is not trustworthy from this Grafana view: ArgoCD cannot resolve the AKS API hostname, and current Prometheus samples for <code>cluster="aks-canepro"</code> are absent.</p>
+        <div class="callout">Treat AKS app health as unknown until the AKS API DNS/control-plane path is restored or the cluster is intentionally retired/shut down. The current ArgoCD health label still says Healthy, but sync and live-state comparison are failing.</div>
+      </section>
+
+      <section>
+        <h2>Scope</h2>
+        <ul>
+          <li>Datasources: Prometheus <code>prometheus</code>, Loki <code>loki</code>, Tempo <code>tempo</code>.</li>
+          <li>Clusters discovered: <code>oke-hub</code> and historical/discovery label <code>aks-canepro</code>.</li>
+          <li>No cluster state, rules, silences, deployments, or secrets were changed.</li>
+        </ul>
+      </section>
+
+      <section class="full">
+        <h2>Cluster And App Health</h2>
+        <table>
+          <thead>
+            <tr><th>Area</th><th>Status</th><th>Evidence</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>OKE scrape health</td>
+              <td><span class="status good">Clean</span></td>
+              <td><code>count by (cluster, job) (up == 0)</code> returned no series. Prometheus has live OKE targets for kubelet, cAdvisor, node-exporter, kube-state-metrics, ArgoCD metrics, Alertmanager, and service endpoints.</td>
+            </tr>
+            <tr>
+              <td>OKE nodes</td>
+              <td><span class="status good">Ready</span></td>
+              <td><code>kube_node_status_condition{condition="Ready"}</code> shows 4 Ready=true, 0 false, 0 unknown.</td>
+            </tr>
+            <tr>
+              <td>OKE workloads</td>
+              <td><span class="status good">Healthy</span></td>
+              <td>No unavailable deployments, statefulsets, or daemonsets. No Pending, Failed, or Unknown pods. No restarts in the last hour.</td>
+            </tr>
+            <tr>
+              <td>ArgoCD local apps</td>
+              <td><span class="status good">Synced</span></td>
+              <td>17 applications report Healthy/Synced.</td>
+            </tr>
+            <tr>
+              <td>AKS apps</td>
+              <td><span class="status warn">Unknown sync</span></td>
+              <td>7 applications report Healthy/Unknown. ArgoCD logs show DNS failure resolving <code>aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io</code>.</td>
+            </tr>
+            <tr>
+              <td>Tempo ingestion</td>
+              <td><span class="status good">Active</span></td>
+              <td><code>sum(increase(tempo_distributor_spans_received_total[5m]))</code> returned 158.89 spans.</td>
+            </tr>
+            <tr>
+              <td>PVC usage</td>
+              <td><span class="status warn">Not verified</span></td>
+              <td>Prometheus lists kubelet volume metrics by name, but instant and 30-minute queries returned no current series.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Resource Saturation</h2>
+        <table>
+          <thead><tr><th>Signal</th><th>Worst observed</th><th>Read</th></tr></thead>
+          <tbody>
+            <tr><td>Node CPU</td><td>27.36%</td><td>Comfortable.</td></tr>
+            <tr><td>Node memory</td><td>53.50%</td><td>Comfortable.</td></tr>
+            <tr><td>Root filesystem</td><td>67.89%</td><td>Watch, but not urgent.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Log Signals</h2>
+        <ul>
+          <li>ArgoCD: repeated AKS comparison/cache failures due to AKS API DNS lookup failure.</li>
+          <li>External Secrets: repeated <code>oci-vault</code> ClusterSecretStore validation errors every few minutes.</li>
+          <li>Loki: query cancellation/EOF noise appeared while this check was querying Loki. Treat as low priority unless it persists outside operator queries.</li>
+          <li>CoreDNS: initial error keyword count was polluted by <code>NOERROR</code> DNS logs. Refined query excluded that false positive.</li>
+        </ul>
+      </section>
+
+      <section class="full">
+        <h2>Recommended Next Actions</h2>
+        <table>
+          <thead><tr><th>Priority</th><th>Action</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>P1</td>
+              <td>Confirm whether AKS <code>aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io</code> should still exist and be managed by ArgoCD.</td>
+              <td>ArgoCD cannot resolve the API hostname, so sync and live-state checks for Rocket.Chat, Traefik, cert-manager, and external-secrets on AKS are blind.</td>
+            </tr>
+            <tr>
+              <td>P2</td>
+              <td>Fix or retire the <code>oci-vault</code> ClusterSecretStore.</td>
+              <td>External Secrets is still reconciling and logging validation failures for an OCI Vault store after the Infisical migration work.</td>
+            </tr>
+            <tr>
+              <td>P2</td>
+              <td>Decide whether missing kubelet volume stats are expected on OKE.</td>
+              <td>PVC fullness alerts rely on those metrics. The scrape target is up, but the metrics are not currently queryable.</td>
+            </tr>
+            <tr>
+              <td>P3</td>
+              <td>Reduce duplicate kube-state-metrics series created by local scrape plus remote-write labels if dashboards show duplicate rows.</td>
+              <td>Several kube-state metrics appear once with Helm labels and once with <code>origin_prometheus="oke-hub"</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="full evidence">
+        <h2>Evidence Index</h2>
+        <details open>
+          <summary>Prometheus and ArgoCD query set</summary>
+          <pre>Datasources: Prometheus uid=prometheus, Loki uid=loki, Tempo uid=tempo
+Cluster labels: ["aks-canepro","oke-hub"]
+ALERTS{alertstate="firing"}: no data
+count by (cluster, job) (up == 0): no data
+sum by (cluster, condition, status) (kube_node_status_condition{condition="Ready"}): oke-hub true=4 false=0 unknown=0
+(kube_deployment_spec_replicas - kube_deployment_status_replicas_available) &gt; 0: no data
+(kube_statefulset_replicas - kube_statefulset_status_replicas_ready) &gt; 0: no data
+(kube_daemonset_status_desired_number_scheduled - kube_daemonset_status_number_ready) &gt; 0: no data
+sum by (cluster, namespace, phase) (kube_pod_status_phase{phase=~"Pending|Failed|Unknown"} == 1): no data
+topk(20, sum by (...) (increase(kube_pod_container_status_restarts_total[1h])) &gt; 0): no data
+count by (cluster, health_status, sync_status) (argocd_app_info): Healthy/Synced=17, Healthy/Unknown=7
+sum(increase(tempo_distributor_spans_received_total[5m])): 158.89</pre>
+        </details>
+        <details>
+          <summary>AKS ArgoCD failure excerpt</summary>
+          <pre>level=error msg="Failed to cache app resources: error getting resource tree: failed to iterate resource hierarchy v2: error synchronizing cache state : failed to get server version: failed to get server version: Get \"https://aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io:443/version?timeout=32s\": dial tcp: lookup aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io on 10.96.5.5:53: no such host" application=aks-rocketchat-ops
+
+Affected apps observed with sync_status="Unknown":
+aks-cert-manager
+aks-rocketchat-external-secrets
+aks-rocketchat-helm
+aks-rocketchat-mongodb-operator
+aks-rocketchat-ops
+aks-rocketchat-secrets
+aks-traefik</pre>
+        </details>
+        <details>
+          <summary>External Secrets failure excerpt</summary>
+          <pre>{"level":"error","logger":"controllers.ClusterSecretStore","msg":"unable to validate store","clustersecretstore":{"name":"oci-vault"},"error":"could not determine validation status"}</pre>
+        </details>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
