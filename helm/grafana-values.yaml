@@ -91,7 +91,7 @@ envValueFrom:
       name: grafana-smtp-credentials
       key: from_address
 
-# Admin credentials are managed by ExternalSecrets (OCI Vault) into Secret `grafana`.
+# Admin credentials are managed by ExternalSecrets (Infisical) into Secret `grafana`.
 # Tell the chart to use that existing secret and not generate/overwrite one.
 admin:
   existingSecret: grafana

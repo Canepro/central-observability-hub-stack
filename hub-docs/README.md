@@ -35,8 +35,8 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 
 ## Secrets Management
 
-- **External Secrets Operator (ESO)** runs in `external-secrets` and syncs secrets from **OCI Vault**.
-- Grafana admin credentials and `secret_key` are stored in Vault and materialized as `monitoring/grafana`.
+- **External Secrets Operator (ESO)** runs in `external-secrets` and syncs hub secrets from **Infisical**.
+- Grafana admin credentials and `secret_key` are stored in Infisical and materialized as `monitoring/grafana`.
 - ESO config manifests live in `k8s/external-secrets/`.
 - ESO CRDs are installed out-of-band via server-side apply; Helm values set `installCRDs: false`.
 
@@ -45,6 +45,7 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and storage architecture
 - [CLUSTER-INFO.md](CLUSTER-INFO.md) - OKE cluster details and access commands
 - [OPERATIONS-HUB.md](OPERATIONS-HUB.md) - Retention policies and maintenance
+- [GRAFANA-MCP-SRE.md](GRAFANA-MCP-SRE.md) - Grafana MCP setup for local SRE callups
 - [TRACING-ROLLOUT-CHECKLIST.md](TRACING-ROLLOUT-CHECKLIST.md) - Phased tracing rollout gates for useful service graphs and drilldown
 - [TRACING-SERVICE-ONBOARDING-TEMPLATE.md](TRACING-SERVICE-ONBOARDING-TEMPLATE.md) - Copy/paste checklist for onboarding one service to tracing
 - [TRACING-ONBOARDING-argocd-server.md](TRACING-ONBOARDING-argocd-server.md) - Pre-filled onboarding example for `argocd-server`
