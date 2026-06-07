@@ -30,6 +30,47 @@ The default local launcher is write-capable because this is Vincent's OKE
 playground cluster. Set `GRAFANA_MCP_DISABLE_WRITE=true` for a temporary
 read-only session.
 
+## SRE Check Order
+
+Treat Grafana as observability evidence, not the only source of truth. Before
+calling a spoke broken, establish whether that spoke is expected to be online.
+
+Default expected state:
+
+| Target | Expected state | Source of truth |
+| --- | --- | --- |
+| OKE hub | Live | This repo and Grafana MCP telemetry |
+| AKS spoke (`aks-canepro`, `k8.canepro.me`) | On-demand / cost parked unless explicitly started | Azure control plane plus `/Users/canepro/src/rocketchat-k8s` |
+
+For OKE checks:
+
+1. Use Grafana MCP to query Prometheus, Loki, alerting, and dashboards.
+2. Verify scrape health, nodes, workloads, restarts, storage, capacity, and
+   recent high-signal logs.
+3. Treat OKE-local Argo CD apps as expected online unless a runbook says
+   otherwise.
+
+For AKS checks:
+
+1. First decide whether AKS is supposed to be online for a job, migration,
+   startup window, or explicit user request.
+2. Use Azure control-plane truth before interpreting Grafana or Argo CD:
+   `az` is available on Vincent's Mac at `/opt/homebrew/bin/az`.
+3. Use `/Users/canepro/src/rocketchat-k8s` for AKS desired state, runbooks,
+   manifests, and repo-local context.
+4. Use Grafana and Argo CD as supporting evidence:
+   - absent `cluster="aks-canepro"` metrics
+   - Argo CD `Healthy/Unknown`
+   - DNS failure for the AKS API hostname
+
+Those signals are expected while AKS is parked. Escalate them only when Azure
+or repo context says AKS should be online, or when startup/shutdown automation
+reports failure.
+
+Do not print Azure credentials, kubeconfigs, tokens, or full auth headers.
+Azure CLI checks should stay read-only unless Vincent explicitly approves a
+start, stop, scale, credential, or deployment action for the current task.
+
 ## Security Model
 
 Use a dedicated Grafana service account token. Do not use a personal login,
