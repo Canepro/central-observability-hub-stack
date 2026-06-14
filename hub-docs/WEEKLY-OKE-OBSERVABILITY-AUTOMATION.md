@@ -92,8 +92,14 @@ runbook says AKS should be online.
      risk and verified
    - chart, values, manifest, dashboard, and documentation updates can be made
      through GitOps when evidence-backed and verified
-   - ingress changes, RBAC narrowing, secret rotations, Azure changes,
-     Terraform applies, and Argo CD force syncs require explicit approval
+   - Terraform applies are allowed when the plan was reviewed, the backend and
+     workspace are correct, no secret values are printed, the change does not
+     cross a hard gate, and rollback is documented
+   - Argo CD refresh, sync, and resync actions are allowed when the target app,
+     source revision, rendered diff, and expected health result are understood;
+     use prune only when the diff proves the deletion is intended
+   - ingress changes, RBAC narrowing, secret rotations, and Azure cost-changing
+     actions require explicit approval
 10. Draft the weekly report as
    `reports/YYYY-MM-DD-weekly-oke-observability.html`.
 
@@ -140,11 +146,19 @@ HTML report, before any of these actions:
 
 - secret-value reads, exports, rotations, copies, or prints
 - Azure AKS start, stop, scale, credential, deployment, or cost-changing action
-- direct OCI, DNS, firewall, Terraform apply, or live Kubernetes mutation
-- Argo CD force sync or prune beyond read-only observation
+- direct OCI, DNS, firewall changes, or live Kubernetes mutation that bypasses
+  GitOps
 - ingress changes, even when source-backed
 - RBAC narrowing that could affect reconciliation
 - SignalForge scale-up or rerun
+
+Terraform `apply` is allowed when `terraform plan` has been reviewed, the
+target backend/workspace is correct, no secret values are exposed, the change
+does not cross one of the hard gates above, and rollback is documented.
+
+Argo CD refresh, sync, and resync actions are allowed when the target
+application, source revision, rendered diff, and expected health result are
+clear. Use prune only when the diff proves the deletion is intended.
 
 Public GitHub comments, labels, issue closure, branch pushes, and PR merges are
 allowed on Vincent's personal repos when the automation has enough evidence and
