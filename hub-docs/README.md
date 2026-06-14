@@ -46,6 +46,7 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 - [CLUSTER-INFO.md](CLUSTER-INFO.md) - OKE cluster details and access commands
 - [OPERATIONS-HUB.md](OPERATIONS-HUB.md) - Retention policies and maintenance
 - [GRAFANA-MCP-SRE.md](GRAFANA-MCP-SRE.md) - Grafana MCP setup for local SRE callups
+- [WEEKLY-OKE-OBSERVABILITY-AUTOMATION.md](WEEKLY-OKE-OBSERVABILITY-AUTOMATION.md) - Weekly OKE health, update, issue, PR, and report automation
 - [TRACING-ROLLOUT-CHECKLIST.md](TRACING-ROLLOUT-CHECKLIST.md) - Phased tracing rollout gates for useful service graphs and drilldown
 - [TRACING-SERVICE-ONBOARDING-TEMPLATE.md](TRACING-SERVICE-ONBOARDING-TEMPLATE.md) - Copy/paste checklist for onboarding one service to tracing
 - [TRACING-ONBOARDING-argocd-server.md](TRACING-ONBOARDING-argocd-server.md) - Pre-filled onboarding example for `argocd-server`
