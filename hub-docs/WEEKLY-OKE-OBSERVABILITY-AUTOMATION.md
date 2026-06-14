@@ -37,12 +37,23 @@ runbook says AKS should be online.
    - query Loki for recent high-signal errors in `monitoring`, `argocd`,
      `ingress-nginx`, and `external-secrets`
    - search dashboards only when a finding needs dashboard context
-5. Classify AKS before escalating it:
+5. Escalate to `k8s-sre-triage` when the evidence shows a Kubernetes runtime
+   issue, not just an observability symptom:
+   - non-ready OKE nodes, unschedulable pods, `CrashLoopBackOff`, `Error`,
+     repeated restarts, pending PVCs, mount failures, stuck rollouts, broken
+     Services, broken Ingress, DNS/TLS failures, or non-AKS Argo CD apps that
+     are unhealthy or blocked
+   - use `k8s-sre-triage` to gather Kubernetes evidence, classify the failure
+     bucket, choose a GitOps-safe fix path, and verify recovery
+   - do not use it for Grafana-only alert logic, scrape-query mistakes, stale
+     dashboards, or expected parked AKS visibility; keep those in
+     `prometheus-grafana-triage`
+6. Classify AKS before escalating it:
    - default state: parked or on-demand for cost control
    - use Azure control-plane state as source of truth before calling AKS broken
    - do not start, stop, scale, upgrade, or deploy AKS resources without current
      explicit approval
-6. Review open GitHub issues and PRs for
+7. Review open GitHub issues and PRs for
    `Canepro/central-observability-hub-stack`:
    - refresh PR details before deciding readiness
    - for version PRs, check whether they are still current, whether checks pass,
@@ -51,7 +62,7 @@ runbook says AKS should be online.
      needs investigation
    - do not close issues, merge PRs, or post public comments unless Vincent has
      explicitly approved that action for the current run
-7. Check update candidates:
+8. Check update candidates:
    - compare current pins in `argocd/applications/*.yaml` and
      `VERSION-TRACKING.md` with official release sources or existing automated
      PRs
@@ -60,7 +71,7 @@ runbook says AKS should be online.
    - major chart upgrades, RBAC narrowing, ingress changes, secret rotations,
      Azure changes, Terraform applies, Argo CD force syncs, and GitHub
      merges/comments require explicit approval
-8. Draft the weekly report as
+9. Draft the weekly report as
    `reports/YYYY-MM-DD-weekly-oke-observability.html`.
 
 ## Grafana MCP Queries
@@ -91,6 +102,8 @@ The weekly report must include:
 - OKE cluster health, including nodes, pods, Argo CD apps, External Secrets, and
   storage
 - Grafana MCP evidence for Prometheus, Loki, and Tempo
+- Kubernetes escalation decision: `k8s-sre-triage` not needed, or used with
+  evidence and verification
 - AKS expected-state classification and the source used for that classification
 - GitHub issue and PR queue, with recommended next action per item
 - update candidates, grouped into safe, approval-gated, and blocked
