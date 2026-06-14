@@ -6,8 +6,9 @@ This runbook defines the weekly Codex automation for the OKE observability hub i
 ## Purpose
 
 Once a week, check whether the OKE hub still works, identify updates or queued
-repo work, handle safe source-only maintenance, and write a dark-first HTML
-report under `reports/`.
+repo work, handle safe source-only maintenance, write a dark-first HTML report
+under `reports/`, send the result to Selene, and leave a searchable activity
+record in the second brain.
 
 The hub contains Grafana, Prometheus, Loki, Tempo, Argo CD, External Secrets,
 and related GitOps manifests. AKS data appears in this Grafana view, but the AKS
@@ -102,6 +103,19 @@ runbook says AKS should be online.
      actions require explicit approval
 10. Draft the weekly report as
    `reports/YYYY-MM-DD-weekly-oke-observability.html`.
+11. Send the weekly result to Selene and write a searchable second-brain
+    activity record:
+   - use `velora-handoff-ops` and the host handoff bridge to send Selene a
+     compact summary with status, report path, commit/PR/issue ids, GitOps,
+     Terraform, or Argo CD actions taken, gates hit, and follow-up asks
+   - use `second-brain-context` to write or append a redacted activity record
+     titled `GrafanaLocal OKE weekly maintenance YYYY-MM-DD`; include the
+     report path, source revision, automation id, Selene handoff id, facts,
+     evidence, and applies-to context for Mira/Selene/automation retrieval
+   - store only redacted operational facts and evidence; never store secret
+     values, kubeconfig contents, tokens, private keys, cookies, or OAuth state
+   - run `second-brain doctor` after the write and report pre-existing drift
+     separately from the success or failure of the weekly activity record
 
 ## Grafana MCP Queries
 
@@ -137,6 +151,9 @@ The weekly report must include:
 - GitHub issue and PR queue, with recommended next action per item
 - update candidates, grouped into safe, approval-gated, and blocked
 - changes made during the run, including local file paths and verification
+- Selene handoff id, or the exact blocker that prevented sending it
+- second-brain activity record path/id, or the exact blocker that prevented
+  writing it
 - residual risks and explicit approval gates
 
 ## Hard Gates
