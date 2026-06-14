@@ -60,8 +60,11 @@ runbook says AKS should be online.
      and whether release notes suggest breaking changes
    - for issues, classify as fixed, actionable, blocked by approval, stale, or
      needs investigation
-   - do not close issues, merge PRs, or post public comments unless Vincent has
-     explicitly approved that action for the current run
+   - public GitHub actions on Vincent's personal repos are allowed when
+     evidence-backed: comments, labels, issue closure, branch pushes, and PR
+     merges
+   - treat GitHub actions that change GitOps-managed live state as live
+     mutation; those still require explicit approval
 8. Check update candidates:
    - compare current pins in `argocd/applications/*.yaml` and
      `VERSION-TRACKING.md` with official release sources or existing automated
@@ -69,8 +72,8 @@ runbook says AKS should be online.
    - safe source-only updates can be drafted locally when the change is low
      risk and verified
    - major chart upgrades, RBAC narrowing, ingress changes, secret rotations,
-     Azure changes, Terraform applies, Argo CD force syncs, and GitHub
-     merges/comments require explicit approval
+     Azure changes, Terraform applies, and Argo CD force syncs require explicit
+     approval when they would affect live state
 9. Draft the weekly report as
    `reports/YYYY-MM-DD-weekly-oke-observability.html`.
 
@@ -121,8 +124,12 @@ HTML report, before any of these actions:
 - Argo CD force sync or prune beyond read-only observation
 - RBAC narrowing that could affect reconciliation
 - SignalForge scale-up or rerun
-- GitHub PR merge, issue close, public comment, label mutation, or branch push
-- major Helm chart upgrades or any upgrade with breaking-change risk
+
+Public GitHub comments, labels, issue closure, branch pushes, and PR merges are
+allowed on Vincent's personal repos when the automation has enough evidence and
+the action does not cross one of the hard gates above. In this GitOps repo,
+merging or pushing a change that Argo CD will reconcile into the cluster counts
+as live mutation and remains approval-gated.
 
 Safe default work is read-only evidence collection, local report creation,
 source-only draft changes, and a concrete recommendation.
