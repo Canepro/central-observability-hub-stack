@@ -48,12 +48,29 @@ runbook says AKS should be online.
    - do not use it for Grafana-only alert logic, scrape-query mistakes, stale
      dashboards, or expected parked AKS visibility; keep those in
      `prometheus-grafana-triage`
-6. Classify AKS before escalating it:
+6. Use specialist skills only when the weekly evidence points there:
+   - `gitops-reconcile` for Argo CD convergence, drift, OutOfSync, prune, or
+     self-heal problems
+   - `alerting-irm` for alert routing, contact points, silences, notification
+     policies, or SLO/IRM behavior
+   - `promql` for suspicious PromQL, alert expressions, ratios, or panel query
+     logic
+   - `loki` for LogQL, log parsing, log pipeline behavior, or log-derived
+     metrics
+   - `loki-label-analyzer` for slow Loki queries or label strategy problems
+   - `prometheus-cardinality-troubleshooter` for high series count, ingest
+     pressure, memory pressure, or slow Prometheus queries
+   - `infisical-secrets-management` for metadata-only External Secrets or
+     Infisical inventory, staging, rotation planning, or source ownership work
+   - `ci-pipeline-triage` or `jenkins-sre` for Jenkins, PipelineHealer, or
+     GitHub Actions failures
+   - `maintainer-orchestrator` for issue/PR prioritization and queue decisions
+7. Classify AKS before escalating it:
    - default state: parked or on-demand for cost control
    - use Azure control-plane state as source of truth before calling AKS broken
    - do not start, stop, scale, upgrade, or deploy AKS resources without current
      explicit approval
-7. Review open GitHub issues and PRs for
+8. Review open GitHub issues and PRs for
    `Canepro/central-observability-hub-stack`:
    - refresh PR details before deciding readiness
    - for version PRs, check whether they are still current, whether checks pass,
@@ -63,18 +80,21 @@ runbook says AKS should be online.
    - public GitHub actions on Vincent's personal repos are allowed when
      evidence-backed: comments, labels, issue closure, branch pushes, and PR
      merges
-   - treat GitHub actions that change GitOps-managed live state as live
-     mutation; those still require explicit approval
-8. Check update candidates:
+   - GitOps source changes that reconcile into OKE are allowed when they are
+     evidence-backed, reviewed against this runbook, verified, and include a
+     rollback path
+   - do not use direct cluster changes as a shortcut around GitOps
+9. Check update candidates:
    - compare current pins in `argocd/applications/*.yaml` and
      `VERSION-TRACKING.md` with official release sources or existing automated
      PRs
    - safe source-only updates can be drafted locally when the change is low
      risk and verified
-   - major chart upgrades, RBAC narrowing, ingress changes, secret rotations,
-     Azure changes, Terraform applies, and Argo CD force syncs require explicit
-     approval when they would affect live state
-9. Draft the weekly report as
+   - chart, values, manifest, dashboard, and documentation updates can be made
+     through GitOps when evidence-backed and verified
+   - ingress changes, RBAC narrowing, secret rotations, Azure changes,
+     Terraform applies, and Argo CD force syncs require explicit approval
+10. Draft the weekly report as
    `reports/YYYY-MM-DD-weekly-oke-observability.html`.
 
 ## Grafana MCP Queries
@@ -120,16 +140,17 @@ HTML report, before any of these actions:
 
 - secret-value reads, exports, rotations, copies, or prints
 - Azure AKS start, stop, scale, credential, deployment, or cost-changing action
-- OCI, DNS, firewall, ingress, Terraform apply, or live Kubernetes mutation
+- direct OCI, DNS, firewall, Terraform apply, or live Kubernetes mutation
 - Argo CD force sync or prune beyond read-only observation
+- ingress changes, even when source-backed
 - RBAC narrowing that could affect reconciliation
 - SignalForge scale-up or rerun
 
 Public GitHub comments, labels, issue closure, branch pushes, and PR merges are
 allowed on Vincent's personal repos when the automation has enough evidence and
 the action does not cross one of the hard gates above. In this GitOps repo,
-merging or pushing a change that Argo CD will reconcile into the cluster counts
-as live mutation and remains approval-gated.
+source-backed changes that Argo CD will reconcile into OKE are the preferred
+mutation path, not a live-mutation bypass. Direct cluster changes remain gated.
 
 Safe default work is read-only evidence collection, local report creation,
-source-only draft changes, and a concrete recommendation.
+source-backed GitOps changes with verification, and a concrete recommendation.
