@@ -112,6 +112,7 @@ def classify_app(app: dict[str, Any]) -> dict[str, Any]:
         "name": name,
         "health": health,
         "sync": sync,
+        "is_aks": is_aks,
         "namespace": dest.get("namespace"),
         "dest_server": dest_server,
         "expected": expected,
@@ -225,10 +226,20 @@ def collect_pods() -> dict[str, Any]:
 def collect_argocd_apps() -> dict[str, Any]:
     data, raw = kubectl_json(["get", "applications", "-n", "argocd"], timeout=30)
     if data is None:
-        return {"available": False, "raw": raw, "apps": [], "problems": [], "aks_expected_parked": []}
+        return {
+            "available": False,
+            "raw": raw,
+            "apps": [],
+            "problems": [],
+            "aks_problems": [],
+            "oke_problems": [],
+            "aks_expected_parked": [],
+        }
 
     apps = [classify_app(item) for item in data.get("items", [])]
     problems = [app for app in apps if not app["ok"]]
+    aks_problems = [app for app in problems if app["is_aks"]]
+    oke_problems = [app for app in problems if not app["is_aks"]]
     aks_expected = [app for app in apps if app["expected"] == "aks-parked"]
     counts: dict[str, int] = {}
     for app in apps:
@@ -240,6 +251,8 @@ def collect_argocd_apps() -> dict[str, Any]:
         "apps": apps,
         "counts": counts,
         "problems": problems,
+        "aks_problems": aks_problems,
+        "oke_problems": oke_problems,
         "aks_expected_parked": aks_expected,
     }
 
@@ -395,14 +408,23 @@ def assess(report: dict[str, Any]) -> dict[str, Any]:
         status = "partial"
 
     apps = report["checks"]["argocd_apps"]
-    if apps["available"] and apps["problems"]:
+    if apps["available"] and apps["oke_problems"]:
         findings.append(
             {
                 "severity": "fail",
-                "message": f"{len(apps['problems'])} non-AKS Argo CD apps are not Healthy/Synced",
+                "message": f"{len(apps['oke_problems'])} OKE Argo CD apps are not Healthy/Synced",
             }
         )
         status = "fail"
+    if apps["available"] and apps["aks_problems"]:
+        findings.append(
+            {
+                "severity": "warning",
+                "message": f"{len(apps['aks_problems'])} AKS Argo CD apps are not Healthy/Synced; verify Azure expected state before escalating",
+            }
+        )
+        if status == "ok":
+            status = "partial"
     elif apps["available"] and apps["aks_expected_parked"]:
         findings.append(
             {
