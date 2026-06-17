@@ -111,6 +111,10 @@ runbook says AKS should be online.
    - public GitHub actions on Vincent's personal repos are allowed when
      evidence-backed: comments, labels, issue closure, branch pushes, and PR
      merges
+   - immediately refresh issue and PR state before pushing to an automated
+     update branch; if the PR already merged, do not push another commit to the
+     stale branch unless a new verified branch or follow-up PR is intentionally
+     being created
    - GitOps source changes that reconcile into OKE are allowed when they are
      evidence-backed, reviewed against this runbook, verified, and include a
      rollback path
@@ -126,6 +130,11 @@ runbook says AKS should be online.
    - Terraform applies are allowed when the plan was reviewed, the backend and
      workspace are correct, no secret values are printed, the change does not
      cross a hard gate, and rollback is documented
+   - when a merged source-backed fix requires Terraform to clear the live OKE
+     symptom, finish the plan/apply/verify loop in the same run instead of
+     closing at PR merge; discard any plan that creates, destroys, or changes
+     unrelated resources, rerun a fresh targeted-safe plan, then prove live
+     state and a no-op follow-up plan
    - Argo CD refresh, sync, and resync actions are allowed when the target app,
      source revision, rendered diff, and expected health result are understood;
      use prune only when the diff proves the deletion is intended
@@ -133,6 +142,10 @@ runbook says AKS should be online.
      actions require explicit approval
 10. Draft the weekly report as
    `reports/YYYY-MM-DD-weekly-oke-observability.html`.
+   - The HTML report is the durable reader-facing closeout artifact and should
+     be committed when it represents the completed weekly run.
+   - The JSON collector output is evidence for the report. Keep it local unless
+     a review, issue, or repo policy explicitly needs the raw JSON in Git.
 11. Send the weekly result to Selene and write a searchable second-brain
     activity record:
    - use `velora-handoff-ops` and the host handoff bridge to send Selene a
@@ -146,6 +159,21 @@ runbook says AKS should be online.
      values, kubeconfig contents, tokens, private keys, cookies, or OAuth state
    - run `second-brain doctor` after the write and report pre-existing drift
      separately from the success or failure of the weekly activity record
+12. Run a closeout audit before the final user response:
+   - validate the HTML report parses and includes status, report path, Grafana
+     evidence, Jenkins topology, Selene handoff id or exact blocker,
+     second-brain activity path/id or exact blocker, source commit ids, and
+     residual risks
+   - confirm the report states that this OKE automation checks only the Jenkins
+     controller and that the Azure AKS static `aks-agent` proof belongs to the
+     Rocket.Chat AKS maintenance runner when AKS is online
+   - check `git status --short --branch`; commit and push scoped source/docs
+     and durable HTML report changes when allowed, but leave unrelated dirty or
+     older untracked report artifacts untouched and name them in the final
+     response
+   - do not close the run while the report contract requires a handoff,
+     second-brain record, or issue/PR disposition and the artifact has only a
+     TODO, omission, or vague "needs triage" statement
 
 ## Grafana MCP Queries
 
@@ -167,6 +195,14 @@ sum(increase(tempo_distributor_spans_received_total[5m]))
 sum(count_over_time({namespace="monitoring"} |~ "Error on ingesting samples with different value but same timestamp" [1h]))
 ```
 
+For a named pod or container, gather current logs before status-only analysis.
+For Prometheus duplicate-sample warnings, map the target IP to the owning pod or
+service, sample the `/metrics` endpoint directly when reachable, count duplicate
+metric-label-timestamp keys, and separate duplicate target exposition from
+overlapping scrape jobs. Verification must include a log query after the last
+known warning timestamp so stale historical log lines do not masquerade as an
+active failure.
+
 ## Report Contract
 
 The weekly report must include:
@@ -183,11 +219,13 @@ The weekly report must include:
 - Grafana MCP evidence for Prometheus, Loki, and Tempo
 - Kubernetes escalation decision: `k8s-sre-triage` not needed, or used with
   evidence and verification
+- for pod-specific incidents, current log findings, previous-log availability
+  when restarts are involved, and the exact time window checked
 - AKS expected-state classification and the source used for that classification
-- GitHub issue and PR queue, with recommended next action per item
 - GitHub issue and PR queue, with action taken or exact blocker per item
 - update candidates, grouped into safe, approval-gated, and blocked
 - changes made during the run, including local file paths and verification
+- source commit ids for any repo changes made during the run
 - Selene handoff id, or the exact blocker that prevented sending it
 - second-brain activity record path/id, or the exact blocker that prevented
   writing it
@@ -209,6 +247,9 @@ HTML report, before any of these actions:
 Terraform `apply` is allowed when `terraform plan` has been reviewed, the
 target backend/workspace is correct, no secret values are exposed, the change
 does not cross one of the hard gates above, and rollback is documented.
+When a merged source change is not yet live and an allowed Terraform apply or
+Argo CD reconcile is the remaining step, the automation must treat the item as
+open until reconciliation and live verification are complete.
 
 Argo CD refresh, sync, and resync actions are allowed when the target
 application, source revision, rendered diff, and expected health result are
