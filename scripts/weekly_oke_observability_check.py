@@ -247,8 +247,10 @@ def collect_pods() -> dict[str, Any]:
         namespace = metadata.get("namespace")
         if namespace not in WATCH_NAMESPACES:
             continue
-        watched_count += 1
         name = metadata.get("name")
+        if namespace == "jenkins" and name != "jenkins-0":
+            continue
+        watched_count += 1
         status = item.get("status", {})
         phase = status.get("phase", "Unknown")
         container_statuses = status.get("containerStatuses", []) or []
