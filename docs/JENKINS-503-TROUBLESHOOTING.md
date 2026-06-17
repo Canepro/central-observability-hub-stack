@@ -64,6 +64,7 @@ kubectl get pods -n jenkins -l app.kubernetes.io/component=jenkins-controller -w
 - **Plugin error:** If logs show a specific plugin failing:
   1. Temporarily remove that plugin from `controller.installPlugins` in `helm/jenkins-values.yaml`, or
   2. Disable it at runtime: exec into the pod and remove its directory under `$JENKINS_HOME/plugins`, then restart (only if you are comfortable with that).
+  3. If the error says `Update required` for a dependency plugin, do not remove the dependent root plugin first. Compare the stale dependency under `$JENKINS_HOME/plugins` with `/usr/share/jenkins/ref/plugins/`, then refresh or pin that dependency.
 
 - **`No hudson.slaves.Cloud implementation found for kubernetes`:** JCasC is applying a kubernetes cloud from the chart default, but the plugin isn’t ready at init. Fix: set `jenkins.clouds: []` in JCasC so no dynamic cloud is configured (you only use the static aks-agent). Add a configScript in `controller.JCasC.configScripts` (e.g. `no-kubernetes-cloud`) with `jenkins: clouds: []`, then redeploy.
 
@@ -93,13 +94,16 @@ For deprecated plugin banners:
 Use this flow for plugin updates without UI drift:
 
 1. Update `controller.installPlugins` in `helm/jenkins-values.yaml` (add/remove/pin as needed), commit, and push.
+   - Prefer explicit versions over `:latest` for the OKE controller. This Jenkins instance keeps `JENKINS_HOME` on a persistent volume, and floating plugin resolution can leave older plugin artifacts on disk that only break on a later restart.
+   - Set `controller.overwritePlugins: true` when the desired plugin set is known and the goal is to force the persistent plugin volume back to the Git-declared versions.
 2. Wait for ArgoCD to reconcile:
    ```bash
    kubectl -n argocd get application jenkins
    kubectl -n jenkins get configmap jenkins -o jsonpath='{.data.plugins\.txt}'
    ```
-3. If Jenkins still shows old plugin versions, refresh only the affected plugin files in `$JENKINS_HOME/plugins`:
+3. If Jenkins still shows old plugin versions after the GitOps overwrite path, refresh only the affected plugin files in `$JENKINS_HOME/plugins` during a controlled maintenance window:
    - Move `<plugin>.jpi` and related marker files (`.pinned`, `.version_from_image`, optional extracted dir) to a timestamped backup under `/var/jenkins_home/plugin-backups/<ts>/`.
+   - Copy the matching `.jpi` from `/usr/share/jenkins/ref/plugins/` back into `$JENKINS_HOME/plugins/`.
    - Restart Jenkins (`kubectl -n jenkins rollout restart sts/jenkins`).
 4. Verify post-restart:
    ```bash
@@ -111,6 +115,7 @@ Use this flow for plugin updates without UI drift:
 Notes:
 - This repo intentionally avoids plugin install/uninstall from UI as source of truth.
 - `JENKINS_HOME/plugins` can preserve older plugin artifacts on PVC; cleanup is sometimes required after code-managed plugin changes.
+- If startup logs say `Update required` for a dependency plugin such as `prism-api` or `bouncycastle-api`, compare the version loaded from `$JENKINS_HOME/plugins` with the version in `/usr/share/jenkins/ref/plugins/` before changing anything else. That exact mismatch is a strong stale-PVC signal.
 
 ---
 

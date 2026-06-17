@@ -111,7 +111,8 @@ EOF
             # The terraform container may not ship with the OCI CLI, so install it if missing.
             if ! command -v oci >/dev/null 2>&1; then
               echo "Installing OCI CLI (required for Helm provider auth)..."
-              apk add --no-cache bash curl ca-certificates python3 py3-pip >/dev/null 2>&1 || true
+              # oci-cli can pull Python deps without aarch64/cp314 wheels; keep a compiler available for source builds.
+              apk add --no-cache bash curl ca-certificates python3 py3-pip python3-dev build-base >/dev/null 2>&1 || true
               update-ca-certificates >/dev/null 2>&1 || true
               python3 -m venv /tmp/oci-cli-venv >/dev/null 2>&1 || true
               if [ -f /tmp/oci-cli-venv/bin/activate ]; then
