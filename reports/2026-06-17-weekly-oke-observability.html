@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OKE observability weekly maintenance - 2026-06-17</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b0f;
+      --panel: #141821;
+      --panel2: #1c2230;
+      --line: rgba(255,255,255,.1);
+      --text: #efece3;
+      --muted: #aeb7c5;
+      --soft: #828b9b;
+      --accent: #d7aa59;
+      --good: #86ce8f;
+      --warn: #e0b65e;
+      --bad: #df8978;
+      --info: #8eb8e6;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: ui-serif, Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.56;
+      background:
+        radial-gradient(820px 280px at 18% -80px, rgba(215,170,89,.14), transparent 70%),
+        linear-gradient(180deg, #10141c, var(--bg) 460px);
+    }
+    .shell { width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 28px 0 64px; }
+    .topbar { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+    .hero, section { border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)), var(--panel); }
+    .hero { padding: 38px; }
+    section { padding: 24px; margin-top: 16px; }
+    .kicker { color: var(--accent); text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 800; margin-bottom: 14px; }
+    h1 { font-family: var(--serif); font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.08; margin: 0; max-width: 900px; }
+    h2 { margin: 0 0 14px; font-size: 22px; }
+    h3 { margin: 16px 0 8px; font-size: 16px; }
+    p, li, td { color: var(--muted); }
+    code { font-family: var(--mono); color: #f4d48f; background: rgba(255,255,255,.055); border: 1px solid var(--line); border-radius: 6px; padding: .08rem .3rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .lede { max-width: 82ch; margin: 16px 0 0; font-size: 17px; }
+    .facts { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-top: 22px; }
+    .fact, .card { border: 1px solid var(--line); border-radius: 13px; background: var(--panel2); padding: 15px; }
+    .label { color: var(--soft); text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 800; }
+    .value { margin-top: 8px; font-weight: 750; font-size: 18px; }
+    .status { display: inline-flex; align-items: center; gap: 8px; border: 1px solid currentColor; border-radius: 999px; padding: 4px 10px; font-weight: 750; font-size: 13px; }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .good { color: var(--good); background: rgba(134,206,143,.11); }
+    .warn { color: var(--warn); background: rgba(224,182,94,.12); }
+    .bad { color: var(--bad); background: rgba(223,137,120,.12); }
+    .info { color: var(--info); background: rgba(142,184,230,.12); }
+    nav { position: sticky; top: 0; z-index: 2; margin: 18px 0; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: rgba(9,11,15,.88); backdrop-filter: blur(14px); }
+    nav a { display: inline-block; margin: 0 8px 8px 0; padding: 7px 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.025); font-size: 13px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    th { color: var(--text); background: rgba(255,255,255,.045); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+    tr:last-child td { border-bottom: 0; }
+    pre { margin: 0; overflow: auto; white-space: pre-wrap; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #07090c; color: #d8e0eb; font-family: var(--mono); font-size: 12px; }
+    .foot { color: var(--soft); font-size: 13px; margin-top: 18px; }
+    @media (max-width: 860px) { .facts, .grid { grid-template-columns: 1fr; } .hero, section { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <div>Mira weekly maintenance report</div>
+      <div>Generated 2026-06-17 12:24 UTC</div>
+    </div>
+
+    <header class="hero">
+      <div class="kicker">OKE observability maintenance</div>
+      <h1>OKE hub is healthy. AKS cert-manager drift remains the only runtime warning.</h1>
+      <p class="lede">The official OKE collector ran against <code>oke-cluster</code> while AKS was online. Jenkins controller health is good, Grafana datasources are present, Rocket.Chat telemetry is fresh, and no live mutation was performed. The report is partial because <code>aks-cert-manager</code> is still <code>Healthy/OutOfSync</code> and the GitHub queue still has review work.</p>
+      <div class="facts">
+        <div class="fact"><div class="label">Status</div><div class="value"><span class="status warn">Partial</span></div></div>
+        <div class="fact"><div class="label">Jenkins controller</div><div class="value"><span class="status good">Healthy</span></div></div>
+        <div class="fact"><div class="label">Grafana MCP</div><div class="value"><span class="status good">Fresh</span></div></div>
+        <div class="fact"><div class="label">Mutation</div><div class="value">None</div></div>
+      </div>
+    </header>
+
+    <nav>
+      <a href="#collector">Collector</a>
+      <a href="#grafana">Grafana MCP</a>
+      <a href="#jenkins">Jenkins</a>
+      <a href="#queue">Queue</a>
+      <a href="#risks">Risks</a>
+      <a href="#closeout">Closeout</a>
+      <a href="#evidence">Evidence</a>
+    </nav>
+
+    <section id="collector">
+      <h2>Collector result</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Evidence JSON</td><td><code>/Users/canepro/src/GrafanaLocal/reports/2026-06-17-weekly-oke-observability-check.json</code></td></tr>
+          <tr><td>Collector status</td><td><code>partial</code></td></tr>
+          <tr><td>OKE nodes</td><td>2 nodes Ready on Kubernetes <code>v1.34.1</code>.</td></tr>
+          <tr><td>Policy</td><td>Read-only mode. No secret values read, decoded, or printed. No live mutation performed.</td></tr>
+          <tr><td>AKS classification</td><td>AKS is online during this check, so <code>aks-cert-manager</code> OutOfSync is real drift, not expected parked-cluster visibility loss.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="grafana">
+      <h2>Grafana MCP evidence</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Datasources</h3>
+          <ul>
+            <li><code>prometheus</code> present and default.</li>
+            <li><code>loki</code> present.</li>
+            <li><code>tempo</code> present.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Freshness</h3>
+          <ul>
+            <li>Rocket.Chat metric freshness: about 25 seconds.</li>
+            <li>MongoDB exporter: <code>mongodb_up=1</code>.</li>
+            <li>OpenTelemetry span metric freshness: about 31 seconds.</li>
+            <li>Loki streams present for <code>rocketchat</code> and <code>monitoring</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="jenkins">
+      <h2>Jenkins controller health</h2>
+      <table>
+        <thead><tr><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Public login</td><td><code>200</code></td></tr>
+          <tr><td>Argo app</td><td><code>jenkins</code> is <code>Synced</code>, <code>Healthy</code>, operation <code>Succeeded</code>.</td></tr>
+          <tr><td>Controller pod</td><td><code>jenkins-0</code> is <code>Running</code>, ready <code>2/2</code>, restart count <code>0</code>.</td></tr>
+          <tr><td>Plugin pins</td><td><code>checks-api</code> and <code>echarts-api</code> required pins are present.</td></tr>
+          <tr><td>Startup log scan</td><td>No <code>Failed Loading plugin</code>, <code>Update required</code>, <code>failed plugins</code>, or <code>SEVERE</code> signatures in the checked window.</td></tr>
+          <tr><td>Topology note</td><td>This report checks the OKE controller only. The Azure AKS <code>jenkins-static-agent</code> is checked by the Rocket.Chat AKS maintenance runner.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="queue">
+      <h2>GitHub queue</h2>
+      <table>
+        <thead><tr><th>Repo</th><th>Queue</th><th>Decision</th></tr></thead>
+        <tbody>
+          <tr><td><code>central-observability-hub-stack</code></td><td>10 open issues, 1 open PR.</td><td>PR <code>#69</code> remains <code>UNSTABLE</code>; do not merge without refreshed diff and checks.</td></tr>
+          <tr><td><code>central-observability-hub-stack</code></td><td>Issue <code>#88</code>.</td><td>Still the right tracker for <code>aks-cert-manager</code> Healthy/OutOfSync drift.</td></tr>
+          <tr><td><code>central-observability-hub-stack</code></td><td>Issues <code>#91</code>, <code>#92</code>, <code>#93</code>.</td><td>PipelineHealer review items still need triage outside this maintenance pass.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="risks">
+      <h2>Residual risks</h2>
+      <ul>
+        <li><code>aks-cert-manager</code> is <code>Healthy</code> but <code>OutOfSync</code>. Do not force-sync or prune without reviewing cert-manager cluster-scoped ownership and the failed sync task.</li>
+        <li><code>k3s-image-prune</code> has never scheduled on AKS. It is listed by the AKS maintenance runner and should be reviewed as a maintenance-job freshness issue, not fixed by live mutation during this pass.</li>
+        <li>Second-brain post-run health still reports <code>refresh-drift</code>: five expected imported notes missing. That is a local-brain maintenance blocker, not an OKE hub failure.</li>
+      </ul>
+    </section>
+
+    <section id="evidence">
+      <h2>Evidence and changes</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Path or value</th></tr></thead>
+        <tbody>
+          <tr><td>OKE collector JSON</td><td><code>/Users/canepro/src/GrafanaLocal/reports/2026-06-17-weekly-oke-observability-check.json</code></td></tr>
+          <tr><td>Rocket.Chat AKS runner JSON</td><td><code>/Users/canepro/src/rocketchat-k8s/reports/weekly-aks-maintenance/20260617T122331Z/evidence.json</code></td></tr>
+          <tr><td>Report</td><td><code>/Users/canepro/src/GrafanaLocal/reports/2026-06-17-weekly-oke-observability.html</code></td></tr>
+          <tr><td>Repo docs update</td><td><code>/Users/canepro/src/GrafanaLocal/hub-docs/WEEKLY-OKE-OBSERVABILITY-AUTOMATION.md</code> now states that OKE maintenance checks the controller and AKS maintenance checks the static agent.</td></tr>
+        </tbody>
+      </table>
+      <p class="foot">Generated by Mira. No secret values are included. Report reflects collector and Grafana MCP evidence gathered on 2026-06-17.</p>
+    </section>
+
+    <section id="closeout">
+      <h2>Closeout handoff and writeback</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Path or value</th></tr></thead>
+        <tbody>
+          <tr><td>Selene follow-up handoff</td><td><code>handoff-20260617T123222Z-f8f395ec</code></td></tr>
+          <tr><td>GrafanaLocal second-brain note</td><td><code>/Users/canepro/src/second_brain/vault/memory/2026-06-17-grafanalocal-oke-weekly-maintenance-2026-06-17.md</code></td></tr>
+          <tr><td>Rocket.Chat AKS second-brain note</td><td><code>/Users/canepro/src/second_brain/vault/memory/2026-06-17-2026-06-17-rocket-chat-aks-weekly-maintenance.md</code></td></tr>
+          <tr><td>Rocket.Chat source commit</td><td><code>398d15b</code></td></tr>
+          <tr><td>GrafanaLocal source commit</td><td><code>7da9aa6</code></td></tr>
+          <tr><td>Second-brain doctor</td><td><code>vault-validation</code>, <code>index-freshness</code>, and <code>duplicate-imports</code> passed; <code>refresh-drift</code> still fails because five expected imported notes are missing.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
