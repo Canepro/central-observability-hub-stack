@@ -48,6 +48,8 @@ When you want to run **terraform plan**, the pipeline needs OCI **identifiers** 
 
 If both parameters and credentials are empty, the pipeline runs only **Terraform Format** and **Terraform Validate** (with `terraform init -backend=false`), so PR and branch builds pass without OCI credentials.
 
+The Terraform validation agent installs OCI CLI in a temporary Python virtual environment when full OCI credentials are available. The OKE ARM agent may resolve Python dependencies without prebuilt wheels, so the Jenkinsfile installs Alpine `build-base` and `python3-dev` before `pip install oci-cli`; otherwise packages such as `crc32c` can fail with `cc: No such file or directory`.
+
 **Credential IDs** (create as **Secret text** under the GrafanaLocal folder). Use the **Description** field in Jenkins so you know what each one is later:
 
 | Credential ID           | Description | Secret text value |

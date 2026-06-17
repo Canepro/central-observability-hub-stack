@@ -86,27 +86,52 @@ controller:
     - JNLP-connect
     - JNLP2-connect
 
-  # Plugins: use latest versions for all plugins (security + features)
+  # Plugins: keep the controller plugin set explicit and reproducible.
+  # This controller uses a long-lived PVC for JENKINS_HOME, so floating plugin resolution
+  # can leave older plugin artifacts on disk and then break later restarts.
   # GitOps policy: manage plugin changes here and via ArgoCD sync; avoid UI plugin install/uninstall to prevent drift.
   installPlugins:
-    # Keep critical transitive deps explicitly above the minimums required by current plugins.
     - prism-api:1.30.0-717.vb_f8360844b_53
     - bouncycastle-api:2.30.1.83-289.v8426fcd19371
-    - configuration-as-code:latest
-    - credentials-binding:latest
-    - git:latest
-    - github:latest
-    - workflow-aggregator:latest
-    - kubernetes:latest
-    - kubernetes-credentials-provider:latest
-    - pipeline-model-definition:latest
-    - pipeline-graph-view:latest
-    - pipeline-stage-view:latest
-    - github-branch-source:latest
-    - job-dsl:latest
-    - sshd:latest
-    - ws-cleanup:latest
-  installLatestPlugins: true
+    - configuration-as-code:2088.ve3b_42c663c80
+    - credentials-binding:725.ve52b_2328a_fde
+    - git:5.10.1
+    - github:1.47.0
+    - workflow-aggregator:608.v67378e9d3db_1
+    - kubernetes:4423.vb_59f230b_ce53
+    - kubernetes-credentials-provider:1.303.vdfcf47fb_b_fef
+    - pipeline-model-definition:2.2291.v2934911987b_6
+    - pipeline-graph-view:940.v790e7a_c51722
+    - pipeline-stage-view:2.41
+    - github-branch-source:1967.1969.v205fd594c821
+    - job-dsl:3654.vdf58f53e2d15
+    - sshd:3.384.vc89b_5e138cf9
+    - ws-cleanup:0.49
+    # Transitive pins that have drifted on the persistent JENKINS_HOME plugin volume.
+    - asm-api:9.10.1-216.va_9256d3b_844b_
+    - durable-task:671.v340ff7959010
+    - git-client:6.6.0
+    - gson-api:2.14.0-201.v8eefe5515533
+    - jackson2-api:2.21.2-436.v29efdb_7418ff
+    - jakarta-xml-bind-api:4.0.9-19.v2b_a_5b_44d9a_1c
+    - joda-time-api:2.14.2-193.v422b_efce56e0
+    - mailer:534.v1b_36f5864073
+    - mina-sshd-api-common:2.17.1-187.v0341274c2905
+    - mina-sshd-api-core:2.17.1-187.v0341274c2905
+    - okhttp-api:5.3.2-200.vedb_720a_cf1f8
+    - pipeline-groovy-lib:798.v5cc688825312
+    - pipeline-input-step:551.vdff487c5998c
+    - pipeline-milestone-step:152.v6e22b_8cfc66c
+    - pipeline-model-api:2.2291.v2934911987b_6
+    - pipeline-stage-step:345.va_96187909426
+    - pipeline-stage-tags-metadata:2.2291.v2934911987b_6
+    - ssh-credentials:372.va_250881b_08cd
+    - workflow-api:1413.v2ff1a_5e720fa_
+    - workflow-durable-task-step:1479.v56e587f413a_7
+    - workflow-job:1571.1580.v18e46842c125
+    - workflow-step-api:724.v538c2362b_dfb_
+  installLatestPlugins: false
+  overwritePlugins: true
   overwritePluginsFromImage: true
 
   # JCasC: welcome message + static node for AKS agent. defaultConfig: false so chart does not inject kubernetes cloud (avoids ConfigurationAsCodeBootFailure).
