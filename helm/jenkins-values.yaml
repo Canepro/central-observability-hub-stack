@@ -180,9 +180,9 @@ controller:
         jobs:
           - script: |
               pipelineJob('version-check-rocketchat-k8s') {
-                description('Automated version checking pipeline for rocketchat-k8s. Runs weekdays at 5 PM and stays aligned with the repo Jenkinsfile.')
+                description('Automated version checking pipeline for rocketchat-k8s. Runs on weekdays during 14:30-14:59 Europe/London and stays aligned with the repo Jenkinsfile.')
                 triggers {
-                  cron('H 17 * * 1-5')
+                  cron('H(30-59) 14 * * 1-5')
                 }
                 definition {
                   cpsScm {
@@ -192,7 +192,7 @@ controller:
                           url('https://github.com/Canepro/rocketchat-k8s')
                           credentials('github-token')
                         }
-                        branch('*/master')
+                        branch('*/main')
                         extensions {
                           cleanBeforeCheckout()
                         }
@@ -204,9 +204,9 @@ controller:
                 }
               }
               pipelineJob('security-validation-rocketchat-k8s') {
-                description('Automated security validation pipeline for rocketchat-k8s. Runs weekdays at 6 PM and stays aligned with the repo Jenkinsfile.')
+                description('Automated security validation pipeline for rocketchat-k8s. Runs on weekdays during 15:00-15:29 Europe/London and stays aligned with the repo Jenkinsfile.')
                 triggers {
-                  cron('H 18 * * 1-5')
+                  cron('H(0-29) 15 * * 1-5')
                 }
                 definition {
                   cpsScm {
@@ -216,7 +216,7 @@ controller:
                           url('https://github.com/Canepro/rocketchat-k8s')
                           credentials('github-token')
                         }
-                        branch('*/master')
+                        branch('*/main')
                         extensions {
                           cleanBeforeCheckout()
                         }
