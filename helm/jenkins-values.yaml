@@ -89,6 +89,9 @@ controller:
   # Plugins: use latest versions for all plugins (security + features)
   # GitOps policy: manage plugin changes here and via ArgoCD sync; avoid UI plugin install/uninstall to prevent drift.
   installPlugins:
+    # Keep critical transitive deps explicitly above the minimums required by current plugins.
+    - prism-api:1.30.0-717.vb_f8360844b_53
+    - bouncycastle-api:2.30.1.83-289.v8426fcd19371
     - configuration-as-code:latest
     - credentials-binding:latest
     - git:latest
