@@ -25,11 +25,13 @@ runbook says AKS should be online.
 3. Run the deterministic evidence collector:
 
    ```bash
-   python3 scripts/weekly_oke_observability_check.py
+   python3 scripts/weekly_oke_observability_check.py --kube-context oke-cluster
    ```
 
    The script writes JSON evidence to
    `reports/YYYY-MM-DD-weekly-oke-observability-check.json`.
+   It defaults to `oke-cluster` for Kubernetes evidence so a previous AKS
+   maintenance run cannot silently point the OKE check at `aks-canepro`.
 4. Use Grafana MCP as live observability evidence:
    - list datasources and confirm UIDs `prometheus`, `loki`, and `tempo`
    - inspect Grafana alert rules and current alert states
@@ -38,6 +40,14 @@ runbook says AKS should be online.
    - query Loki for recent high-signal errors in `monitoring`, `argocd`,
      `ingress-nginx`, and `external-secrets`
    - search dashboards only when a finding needs dashboard context
+   - verify the OKE Jenkins controller as part of hub health: public `/login`
+     should return 200, Argo app `jenkins` should be `Synced/Healthy`,
+     `jenkins-0` should have all containers Ready, and startup logs should not
+     contain plugin dependency failures such as `Failed Loading plugin`,
+     `Update required`, or `failed plugins`
+   - confirm critical Jenkins plugin pins are present in the rendered ConfigMap,
+     especially transitive pins such as `checks-api` and `echarts-api` that can
+     break `junit`, `matrix-project`, and `ws-cleanup` after a GitOps rollout
 5. Escalate to `k8s-sre-triage` when the evidence shows a Kubernetes runtime
    issue, not just an observability symptom:
    - non-ready OKE nodes, unschedulable pods, `CrashLoopBackOff`, `Error`,
@@ -144,6 +154,9 @@ The weekly report must include:
 - status: `ok`, `warning`, `fail`, or `blocked`
 - OKE cluster health, including nodes, pods, Argo CD apps, External Secrets, and
   storage
+- OKE Jenkins controller health, including public HTTP status, Argo app state,
+  controller pod readiness, startup-log plugin signatures, and required plugin
+  pin presence
 - Grafana MCP evidence for Prometheus, Loki, and Tempo
 - Kubernetes escalation decision: `k8s-sre-triage` not needed, or used with
   evidence and verification

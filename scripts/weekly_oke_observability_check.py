@@ -23,12 +23,20 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_GITHUB_REPO = "Canepro/central-observability-hub-stack"
+DEFAULT_JENKINS_URL = "https://jenkins.canepro.me"
+DEFAULT_KUBE_CONTEXT = "oke-cluster"
+ACTIVE_KUBE_CONTEXT: str | None = None
 WATCH_NAMESPACES = {
     "argocd",
     "external-secrets",
     "ingress-nginx",
+    "jenkins",
     "kube-system",
     "monitoring",
+}
+JENKINS_REQUIRED_PLUGIN_PINS = {
+    "checks-api": "373.vfe7645102093",
+    "echarts-api": "6.0.0-1146.v5c8f3b_8f0573",
 }
 
 
@@ -71,6 +79,12 @@ def run(cmd: list[str], timeout: int = 30, cwd: pathlib.Path = REPO_ROOT) -> dic
     return result
 
 
+def kubectl_cmd(args: list[str]) -> list[str]:
+    if ACTIVE_KUBE_CONTEXT:
+        return ["kubectl", "--context", ACTIVE_KUBE_CONTEXT, *args]
+    return ["kubectl", *args]
+
+
 def parse_json_command(cmd: list[str], timeout: int = 30) -> tuple[Any | None, dict[str, Any]]:
     result = run(cmd, timeout=timeout)
     if not result["ok"]:
@@ -84,7 +98,7 @@ def parse_json_command(cmd: list[str], timeout: int = 30) -> tuple[Any | None, d
 
 
 def kubectl_json(args: list[str], timeout: int = 30) -> tuple[Any | None, dict[str, Any]]:
-    return parse_json_command(["kubectl", *args, "-o", "json"], timeout=timeout)
+    return parse_json_command(kubectl_cmd([*args, "-o", "json"]), timeout=timeout)
 
 
 def get_condition_status(obj: dict[str, Any], condition_type: str) -> str:
@@ -118,6 +132,68 @@ def classify_app(app: dict[str, Any]) -> dict[str, Any]:
         "expected": expected,
         "ok": ok,
     }
+
+
+def summarize_jenkins_app(app: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(app, dict):
+        return {"available": False}
+    status = app.get("status", {})
+    operation = status.get("operationState") or {}
+    return {
+        "available": True,
+        "name": app.get("metadata", {}).get("name"),
+        "health": status.get("health", {}).get("status", "Unknown"),
+        "sync": status.get("sync", {}).get("status", "Unknown"),
+        "reconciled_at": status.get("reconciledAt"),
+        "operation_phase": operation.get("phase"),
+        "operation_message": operation.get("message"),
+    }
+
+
+def summarize_jenkins_pod(pod: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(pod, dict):
+        return {"available": False, "ready": 0, "total": 0, "containers": []}
+    status = pod.get("status", {})
+    container_statuses = status.get("containerStatuses", []) or []
+    containers = []
+    for container in container_statuses:
+        waiting = (container.get("state", {}) or {}).get("waiting", {}) or {}
+        containers.append(
+            {
+                "name": container.get("name"),
+                "ready": bool(container.get("ready")),
+                "restart_count": int(container.get("restartCount", 0) or 0),
+                "waiting_reason": waiting.get("reason"),
+            }
+        )
+    ready = sum(1 for container in containers if container["ready"])
+    return {
+        "available": True,
+        "name": pod.get("metadata", {}).get("name"),
+        "phase": status.get("phase", "Unknown"),
+        "ready": ready,
+        "total": len(containers),
+        "containers": containers,
+    }
+
+
+def summarize_jenkins_logs(text: str) -> dict[str, Any]:
+    return {
+        "line_count": len(text.splitlines()),
+        "fully_up": "Jenkins is fully up and running" in text,
+        "failed_plugin_health": sorted(set(re.findall(r"failed plugins: \[([^\]]+)\]", text)))[:10],
+        "failed_loading_plugins": sorted(set(re.findall(r"Failed Loading plugin ([^\n\r]+)", text)))[:25],
+        "failed_to_load_count": len(re.findall(r"Failed to load", text)),
+        "severe_count": len(re.findall(r"\bSEVERE\b", text)),
+        "update_required": sorted(set(re.findall(r"Update required: ([^\n\r]+)", text)))[:25],
+    }
+
+
+def redact_stdout(result: dict[str, Any], replacement: str) -> dict[str, Any]:
+    redacted = dict(result)
+    if redacted.get("stdout"):
+        redacted["stdout"] = replacement
+    return redacted
 
 
 def collect_git() -> dict[str, Any]:
@@ -306,11 +382,58 @@ def collect_external_secrets() -> dict[str, Any]:
     return output
 
 
+def collect_jenkins_controller(jenkins_url: str) -> dict[str, Any]:
+    login = run(
+        [
+            "curl",
+            "-skS",
+            "-o",
+            "/dev/null",
+            "-w",
+            "%{http_code}",
+            "--max-time",
+            "20",
+            jenkins_url.rstrip("/") + "/login",
+        ],
+        timeout=30,
+    )
+    app, app_raw = kubectl_json(["get", "application", "jenkins", "-n", "argocd"], timeout=30)
+    pod, pod_raw = kubectl_json(["get", "pod", "jenkins-0", "-n", "jenkins"], timeout=30)
+    configmap, configmap_raw = kubectl_json(["get", "configmap", "jenkins", "-n", "jenkins"], timeout=30)
+    logs = run(kubectl_cmd(["logs", "pod/jenkins-0", "-n", "jenkins", "-c", "jenkins", "--tail", "500"]), timeout=45)
+
+    config_text = "\n".join(str(value) for value in (configmap or {}).get("data", {}).values())
+    required_pins = {
+        name: {
+            "required": version,
+            "present": f"{name}:{version}" in config_text,
+        }
+        for name, version in JENKINS_REQUIRED_PLUGIN_PINS.items()
+    }
+
+    return {
+        "available": any(result["ok"] for result in (login, app_raw, pod_raw, configmap_raw, logs)),
+        "url": jenkins_url.rstrip("/"),
+        "public_login_status": login["stdout"].strip() if login["ok"] else "unavailable",
+        "argocd_app": summarize_jenkins_app(app),
+        "pod": summarize_jenkins_pod(pod),
+        "required_plugin_pins": required_pins,
+        "startup_log_signatures": summarize_jenkins_logs(logs["stdout"] if logs["ok"] else ""),
+        "raw": {
+            "login": login,
+            "argocd_app": app_raw,
+            "pod": pod_raw,
+            "configmap": redact_stdout(configmap_raw, "<redacted: configmap data summarized>"),
+            "logs": redact_stdout(logs, "<redacted: startup log summarized>"),
+        },
+    }
+
+
 def collect_resource_usage() -> dict[str, Any]:
     return {
-        "nodes": run(["kubectl", "top", "nodes"], timeout=20),
+        "nodes": run(kubectl_cmd(["top", "nodes"]), timeout=20),
         "monitoring_pods": run(
-            ["kubectl", "top", "pods", "-n", "monitoring", "--sort-by=memory"],
+            kubectl_cmd(["top", "pods", "-n", "monitoring", "--sort-by=memory"]),
             timeout=20,
         ),
     }
@@ -444,6 +567,52 @@ def assess(report: dict[str, Any]) -> dict[str, Any]:
             findings.append({"severity": "fail", "message": f"{key} has non-Ready items"})
             status = "fail"
 
+    jenkins = report["checks"]["jenkins_controller"]
+    if not jenkins["available"]:
+        findings.append({"severity": "warning", "message": "Jenkins controller check unavailable"})
+        if status == "ok":
+            status = "partial"
+    else:
+        login_status = str(jenkins.get("public_login_status", ""))
+        if login_status and login_status != "200":
+            findings.append({"severity": "fail", "message": f"Jenkins public login returned HTTP {login_status}"})
+            status = "fail"
+        app = jenkins.get("argocd_app", {})
+        if app.get("available") and (app.get("sync") != "Synced" or app.get("health") != "Healthy"):
+            findings.append(
+                {
+                    "severity": "fail",
+                    "message": f"Jenkins Argo app is {app.get('sync')}/{app.get('health')}",
+                }
+            )
+            status = "fail"
+        pod = jenkins.get("pod", {})
+        if pod.get("available") and pod.get("ready") != pod.get("total"):
+            findings.append(
+                {
+                    "severity": "fail",
+                    "message": f"Jenkins controller containers ready {pod.get('ready')}/{pod.get('total')}",
+                }
+            )
+            status = "fail"
+        missing_pins = [
+            f"{name}:{state['required']}"
+            for name, state in (jenkins.get("required_plugin_pins") or {}).items()
+            if not state.get("present")
+        ]
+        if missing_pins:
+            findings.append(
+                {
+                    "severity": "fail",
+                    "message": "Jenkins required plugin pins missing: " + ", ".join(missing_pins),
+                }
+            )
+            status = "fail"
+        logs = jenkins.get("startup_log_signatures", {})
+        if logs.get("failed_loading_plugins") or logs.get("update_required") or logs.get("failed_plugin_health"):
+            findings.append({"severity": "fail", "message": "Jenkins startup logs contain plugin failure signatures"})
+            status = "fail"
+
     github = report["checks"]["github"]
     if github.get("available"):
         if github["issues"]:
@@ -469,11 +638,16 @@ def assess(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
+    global ACTIVE_KUBE_CONTEXT
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", default=DEFAULT_GITHUB_REPO, help="GitHub repo in owner/name form")
+    parser.add_argument("--jenkins-url", default=DEFAULT_JENKINS_URL, help="Public Jenkins controller URL")
+    parser.add_argument("--kube-context", default=DEFAULT_KUBE_CONTEXT, help="kubectl context for the OKE hub")
     parser.add_argument("--output-dir", default=str(REPO_ROOT / "reports"), help="Evidence output directory")
     parser.add_argument("--strict", action="store_true", help="Exit non-zero when assessment status is fail")
     args = parser.parse_args()
+    ACTIVE_KUBE_CONTEXT = args.kube_context.strip() or None
 
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -482,6 +656,7 @@ def main() -> int:
         "generated_at": now_utc(),
         "repo_root": str(REPO_ROOT),
         "github_repo": args.repo,
+        "kube_context": ACTIVE_KUBE_CONTEXT,
         "policy": {
             "mode": "read-only",
             "secret_values": "not read, decoded, or printed",
@@ -495,6 +670,7 @@ def main() -> int:
             "argocd_apps": collect_argocd_apps(),
             "pvcs": collect_pvcs(),
             "external_secrets": collect_external_secrets(),
+            "jenkins_controller": collect_jenkins_controller(args.jenkins_url),
             "resource_usage": collect_resource_usage(),
             "versions": collect_versions(),
             "github": collect_github(args.repo),
