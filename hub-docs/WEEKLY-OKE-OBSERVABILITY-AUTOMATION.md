@@ -6,9 +6,10 @@ This runbook defines the weekly Codex automation for the OKE observability hub i
 ## Purpose
 
 Once a week, check whether the OKE hub still works, identify updates or queued
-repo work, handle safe source-only maintenance, write a dark-first HTML report
-under `reports/`, send the result to Selene, and leave a searchable activity
-record in the second brain.
+repo work, handle safe source-only maintenance, remediate open issues and PRs
+when evidence supports the action, write a dark-first HTML report under
+`reports/`, send the result to Selene, and leave a searchable activity record
+in the second brain.
 
 The hub contains Grafana, Prometheus, Loki, Tempo, Argo CD, External Secrets,
 and related GitOps manifests. AKS data appears in this Grafana view, but the AKS
@@ -91,6 +92,22 @@ runbook says AKS should be online.
      and whether release notes suggest breaking changes
    - for issues, classify as fixed, actionable, blocked by approval, stale, or
      needs investigation
+   - every issue and PR needs a disposition in the same run: fixed with a
+     branch/PR, updated, merged, closed with evidence, explicitly blocked by a
+     named hard gate, routed to the owning repo, or left open with a concrete
+     next command and reason. "Needs triage" is not an acceptable final state
+     after the evidence needed for triage is available.
+   - when more than one independent queue item needs work, split the work into
+     parallel subagents with disjoint goals and write scopes; Mira remains
+     responsible for integration and final verification
+   - for PipelineHealer issues, run
+     `python3 scripts/pipelinehealer-triage.py --issue <number> --pretty` and
+     use `docs/JENKINS-PIPELINEHEALER-RUNBOOK.md` before deciding whether the
+     fix belongs in this repo, PipelineHealer, Jenkins, or a hosted GitHub
+     workflow
+   - for stale automated update PRs, either refresh the branch, supersede it
+     with a current verified branch, or comment/close it with evidence. Do not
+     leave stale update PRs as report-only findings.
    - public GitHub actions on Vincent's personal repos are allowed when
      evidence-backed: comments, labels, issue closure, branch pushes, and PR
      merges
@@ -168,6 +185,7 @@ The weekly report must include:
   evidence and verification
 - AKS expected-state classification and the source used for that classification
 - GitHub issue and PR queue, with recommended next action per item
+- GitHub issue and PR queue, with action taken or exact blocker per item
 - update candidates, grouped into safe, approval-gated, and blocked
 - changes made during the run, including local file paths and verification
 - Selene handoff id, or the exact blocker that prevented sending it
@@ -202,5 +220,12 @@ the action does not cross one of the hard gates above. In this GitOps repo,
 source-backed changes that Argo CD will reconcile into OKE are the preferred
 mutation path, not a live-mutation bypass. Direct cluster changes remain gated.
 
-Safe default work is read-only evidence collection, local report creation,
-source-backed GitOps changes with verification, and a concrete recommendation.
+Standing approval for future issue and PR remediation includes source-backed
+docs, scripts, tests, manifests, dashboards, chart pins, Helm values, workflow
+files, branch pushes, PR creation or updates, labels, comments, issue closure,
+and merging green mergeable PRs when the diff matches this repo's policy and no
+hard gate is crossed.
+
+Safe default work is evidence collection, local report creation, source-backed
+GitOps changes with verification, issue/PR remediation, and a concrete
+blocker only when a hard gate or unavailable external system prevents closure.

@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-03-13
+**Last Updated**: 2026-06-17
 
 ## Upgrade Status Legend
 
@@ -41,6 +41,11 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 - Loki 6.52.0 → 6.55.0 (minor)
 - Prometheus 28.9.0 → 28.13.0 (minor)
 - NGINX Ingress 4.14.3 → 4.15.0 (minor)
+
+**Just updated (2026-06-17)**:
+- Loki 6.55.0 → 7.0.0 (major chart update; app remains 3.6.7)
+- Prometheus 28.13.0 → 29.12.0 (major chart update; app v3.12.0)
+- NGINX Ingress 4.15.0 → 4.15.1 (patch)
 
 **Previously updated (2026-02-02)**:
 - Prometheus 28.7.0 → 28.8.0 (patch)
@@ -96,10 +101,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **Grafana** | `10.5.15` | `10.5.15` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Loki** | `6.55.0` | `6.55.0` | 🔄 **Just updated** (2026-03-13) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Loki** | `7.0.0` | `7.0.0` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `28.13.0` | `28.13.0` | 🔄 **Just updated** (2026-03-13) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `29.12.0` | `29.12.0` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 | **OpenTelemetry Collector** | `0.145.0` | ⚠️ **Check latest** | 🔄 **Just added** (2026-02-07) | `argocd/applications/otel-collector.yaml` | [OTel Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
@@ -111,6 +116,17 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 - Config compatibility: All existing settings in `helm/prometheus-values.yaml` remain valid
 - See GitHub issue #2 for detailed analysis and migration notes
 
+**🔄 June 2026 chart refresh (for #70)**: Updated the stale major-update backlog from Jenkins version-check runs.
+- Prometheus chart 28.13.0 → 29.12.0, app v3.12.0. Issue #70 mentioned 29.1.0, but `helm search repo prometheus-community/prometheus --versions` showed 29.12.0 as the current chart on 2026-06-17.
+- Prometheus chart dependency changes from 28.13.0 → 29.12.0: Alertmanager 1.33.* → 1.39.*, kube-state-metrics 7.2.* → 7.5.*, prometheus-node-exporter 4.52.* → 4.55.*, prometheus-pushgateway unchanged at 3.6.*.
+- Prometheus 29.0 migration note: upstream changed default `scrapeConfigs` service discovery roles from `endpoints` to `endpointslice` for `kubernetes-api-servers`, `kubernetes-service-endpoints`, and `kubernetes-service-endpoints-slow` because Kubernetes 1.33 deprecates the Endpoints API.
+- Repo impact: `helm/prometheus-values.yaml` disables the chart default `scrapeConfigs` and keeps explicit custom scrape jobs under `serverFiles.prometheus.yml.scrape_configs`. This upgrade does not rewrite those custom jobs. Before a Kubernetes 1.33 cluster upgrade, migrate the custom `role: endpoints` service-discovery jobs to `role: endpointslice` labels and verify Prometheus targets.
+- Render comparison: chart templates were unchanged between 28.13.0 and 29.12.0; default values changed for EndpointSlice discovery and dependency image versions.
+- Loki chart 6.55.0 → 7.0.0, app remains 3.6.7. The chart major version still requires post-merge Argo sync and ingestion checks.
+- NGINX Ingress chart 4.15.0 → 4.15.1, controller v1.15.1.
+- Local proof before PR: `helm template` rendered all three target charts with the repo values files.
+- Post-merge proof still required: Argo app health/sync, Prometheus targets, Loki ingestion, and ingress reachability.
+
 **💡 Tempo Note**: Currently using single binary mode (v1.24.4). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
 
 ---
@@ -119,7 +135,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
-| **NGINX Ingress Controller** | `4.15.0` | `4.15.0` | 🔄 **Just updated** (2026-03-13) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
+| **NGINX Ingress Controller** | `4.15.1` | `4.15.1` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
 | **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
 
 ---
@@ -412,6 +428,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-03-13
-**Next Scheduled Review**: 2026-04-13
+**Document Last Updated**: 2026-06-17
+**Next Scheduled Review**: 2026-07-17
 **Maintained By**: Infrastructure Team

@@ -88,3 +88,6 @@ jobs:
             yamllint -d "{extends: relaxed}" $app
           done
 
+      - name: Validate PipelineHealer triage helpers
+        run: python3 scripts/test-pipelinehealer-triage.py
+
