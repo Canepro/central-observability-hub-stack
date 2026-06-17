@@ -110,6 +110,8 @@ controller:
     # Transitive pins that have drifted on the persistent JENKINS_HOME plugin volume.
     - asm-api:9.10.1-216.va_9256d3b_844b_
     - durable-task:671.v340ff7959010
+    - checks-api:373.vfe7645102093
+    - echarts-api:6.0.0-1146.v5c8f3b_8f0573
     - git-client:6.6.0
     - gson-api:2.14.0-201.v8eefe5515533
     - jackson2-api:2.21.2-436.v29efdb_7418ff

@@ -115,7 +115,7 @@ Use this flow for plugin updates without UI drift:
 Notes:
 - This repo intentionally avoids plugin install/uninstall from UI as source of truth.
 - `JENKINS_HOME/plugins` can preserve older plugin artifacts on PVC; cleanup is sometimes required after code-managed plugin changes.
-- If startup logs say `Update required` for a dependency plugin such as `prism-api` or `bouncycastle-api`, compare the version loaded from `$JENKINS_HOME/plugins` with the version in `/usr/share/jenkins/ref/plugins/` before changing anything else. That exact mismatch is a strong stale-PVC signal.
+- If startup logs say `Update required` for a dependency plugin such as `prism-api`, `bouncycastle-api`, `checks-api`, or `echarts-api`, compare the version loaded from `$JENKINS_HOME/plugins` with the version in `/usr/share/jenkins/ref/plugins/` before changing anything else. That exact mismatch is a strong stale-PVC signal. If the image reference plugin is also below the requirement, add an explicit `installPlugins` pin so the chart downloads the needed version during init.
 
 ---
 
