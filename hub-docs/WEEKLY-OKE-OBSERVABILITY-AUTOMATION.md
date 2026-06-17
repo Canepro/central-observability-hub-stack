@@ -48,6 +48,9 @@ runbook says AKS should be online.
    - confirm critical Jenkins plugin pins are present in the rendered ConfigMap,
      especially transitive pins such as `checks-api` and `echarts-api` that can
      break `junit`, `matrix-project`, and `ws-cleanup` after a GitOps rollout
+   - do not look for the static Jenkins `aks-agent` inside OKE. The controller
+     runs in OKE; the static `jenkins-static-agent` deployment runs in Azure AKS
+     and is checked by the Rocket.Chat AKS maintenance runner.
 5. Escalate to `k8s-sre-triage` when the evidence shows a Kubernetes runtime
    issue, not just an observability symptom:
    - non-ready OKE nodes, unschedulable pods, `CrashLoopBackOff`, `Error`,
@@ -157,6 +160,9 @@ The weekly report must include:
 - OKE Jenkins controller health, including public HTTP status, Argo app state,
   controller pod readiness, startup-log plugin signatures, and required plugin
   pin presence
+- Jenkins topology note: this OKE automation verifies the controller only. The
+  Azure AKS static `aks-agent` is verified by the Rocket.Chat AKS maintenance
+  runner while AKS is online.
 - Grafana MCP evidence for Prometheus, Loki, and Tempo
 - Kubernetes escalation decision: `k8s-sre-triage` not needed, or used with
   evidence and verification
