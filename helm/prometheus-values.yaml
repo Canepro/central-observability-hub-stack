@@ -1,6 +1,6 @@
 # Prometheus Standalone Helm Chart Values
 # Chart: prometheus-community/prometheus
-# Version: 27.47.0+
+# Version: 29.12.0
 
 # --- 🚨 CRITICAL: TOP LEVEL CONFIGURATION 🚨 ---
 # serverFiles must be at the top level, NOT nested under 'server:'
@@ -29,7 +29,7 @@ scrapeConfigs:
   prometheus-pushgateway:
     enabled: false
 
-# The prometheus chart (28.x) ClusterRole no longer includes `nodes/proxy`.
+# The prometheus chart (28.x and later) ClusterRole no longer includes `nodes/proxy`.
 # Our custom scrape job `kubernetes-nodes-cadvisor` uses the apiserver proxy path
 # `/api/v1/nodes/<node>/proxy/metrics/cadvisor`, which requires this permission.
 # Without it, targets go `DOWN` with `403 Forbidden` and container/cAdvisor metrics are missing.

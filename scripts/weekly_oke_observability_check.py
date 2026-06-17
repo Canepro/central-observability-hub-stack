@@ -621,14 +621,14 @@ def assess(report: dict[str, Any]) -> dict[str, Any]:
             findings.append(
                 {
                     "severity": "info",
-                    "message": f"{len(github['issues'])} open GitHub issues need triage",
+                    "message": f"{len(github['issues'])} open GitHub issues require remediation or a recorded blocker",
                 }
             )
         if github["prs"]:
             findings.append(
                 {
                     "severity": "info",
-                    "message": f"{len(github['prs'])} open GitHub PRs need review",
+                    "message": f"{len(github['prs'])} open GitHub PRs require review, merge, refresh, closure, or a recorded blocker",
                 }
             )
     else:
