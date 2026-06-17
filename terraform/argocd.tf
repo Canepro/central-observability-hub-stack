@@ -28,12 +28,6 @@ resource "helm_release" "argocd" {
             "nginx.ingress.kubernetes.io/ssl-redirect"     = "true"
             "nginx.ingress.kubernetes.io/backend-protocol" = "HTTP"
           }
-          extraTls = [
-            {
-              secretName = "argocd-server-tls"
-              hosts      = ["argocd.canepro.me"]
-            }
-          ]
         }
         resources = {
           limits   = { cpu = "500m", memory = "512Mi" }

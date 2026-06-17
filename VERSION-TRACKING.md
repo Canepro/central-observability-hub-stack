@@ -46,6 +46,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 - Loki 6.55.0 → 7.0.0 (major chart update; app remains 3.6.7)
 - Prometheus 28.13.0 → 29.12.0 (major chart update; app v3.12.0)
 - NGINX Ingress 4.15.0 → 4.15.1 (patch)
+- Metrics Server 3.13.0 → 3.13.1 (patch; app v0.8.1)
 
 **Previously updated (2026-02-02)**:
 - Prometheus 28.7.0 → 28.8.0 (patch)
@@ -136,7 +137,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **NGINX Ingress Controller** | `4.15.1` | `4.15.1` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/nginx-ingress.yaml` | [Ingress-NGINX Releases](https://github.com/kubernetes/ingress-nginx/releases) |
-| **Metrics Server** | `3.13.0` | `3.13.0` | 🔄 **Just updated** (2026-01-19) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
+| **Metrics Server** | `3.13.1` | `3.13.1` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/metrics-server.yaml` | [Metrics Server Releases](https://github.com/kubernetes-sigs/metrics-server/releases) |
 
 ---
 
