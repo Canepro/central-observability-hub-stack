@@ -79,10 +79,10 @@
 <body>
   <header>
     <h1>OKE Observability Weekly Maintenance - 2026-06-22</h1>
-    <p class="lede">Status: <span class="status warning">warning</span>. The OKE hub is healthy from deterministic Kubernetes checks and Grafana MCP evidence. The run remains warning because AKS is currently running and <code>aks-cert-manager</code> is still <code>Healthy/OutOfSync</code>, and PR <code>#101</code> was updated but is waiting on Jenkins before merge.</p>
+    <p class="lede">Status: <span class="status warning">warning</span>. The OKE hub is healthy from deterministic Kubernetes checks and Grafana MCP evidence. PR <code>#101</code> was updated, merged, and reconciled through Argo CD. The run remains warning because AKS is currently running and <code>aks-cert-manager</code> is still <code>Healthy/OutOfSync</code>.</p>
     <div class="grid">
       <div class="card"><div class="label">Automation</div><div class="value">oke-observability-weekly-maintenance</div></div>
-      <div class="card"><div class="label">Source revision</div><div class="value"><code>b015d06</code></div></div>
+      <div class="card"><div class="label">Source revision</div><div class="value"><code>77578d7</code></div></div>
       <div class="card"><div class="label">Collector JSON</div><div class="value"><code>2026-06-22-weekly-oke-observability-check.json</code></div></div>
       <div class="card"><div class="label">Selene handoff</div><div class="value"><code>058709a1</code></div></div>
     </div>
@@ -95,7 +95,7 @@
         <tr><td>OKE health</td><td><span class="status ok">healthy</span></td><td>Collector found 2 OKE nodes ready, no OKE Argo CD problems, all watched PVCs bound, and no watched OKE pod failures.</td></tr>
         <tr><td>Grafana MCP</td><td><span class="status ok">healthy</span></td><td>Datasources present: <code>prometheus</code>, <code>loki</code>, <code>tempo</code>. Prometheus scrape-down query returned no series. Tempo span ingest returned about <code>1054</code> spans over 5 minutes.</td></tr>
         <tr><td>AKS expected state</td><td><span class="status warning">live drift</span></td><td>Azure MCP shows <code>rg-canepro-aks/aks-canepro</code> <code>powerState=Running</code>, <code>provisioningState=Succeeded</code>, <code>nodeCount=2</code>. <code>aks-cert-manager</code> remains <code>Healthy/OutOfSync</code>.</td></tr>
-        <tr><td>GitHub queue</td><td><span class="status warning">blocked</span></td><td>No open issues. PR <code>#101</code> was updated with commit <code>169fac1</code> and commented, but Jenkins <code>continuous-integration/jenkins/pr-merge</code> is still pending.</td></tr>
+        <tr><td>GitHub queue</td><td><span class="status ok">cleared</span></td><td>No open issues. PR <code>#101</code> was updated with commit <code>169fac1</code>, then merged as squash commit <code>77578d7</code> after Jenkins turned green.</td></tr>
       </table>
     </section>
 
@@ -151,8 +151,8 @@
       <table>
         <tr><th>Item</th><th>Disposition</th><th>Proof</th></tr>
         <tr><td>Open issues</td><td>No open issues</td><td><code>gh issue list</code> returned <code>[]</code>. Prior AKS drift issue <code>#88</code> is closed.</td></tr>
-        <tr><td>PR #101</td><td>Updated, not merged</td><td>Pushed <code>169fac1</code> to <code>chore/helm-version-updates-20260619</code> to sync Prometheus version tracking. Commented at <code>https://github.com/Canepro/central-observability-hub-stack/pull/101#issuecomment-4768643269</code>.</td></tr>
-        <tr><td>PR #101 checks</td><td>Blocked on Jenkins</td><td>GitHub Actions <code>argocd-validator</code> and <code>lint-and-validate</code> passed; <code>oci-storage-audit</code> skipped; CodeRabbit reported success but also rate-limit text in the latest comment; Jenkins <code>pr-merge</code> remains pending.</td></tr>
+        <tr><td>PR #101</td><td>Merged</td><td>Pushed <code>169fac1</code> to <code>chore/helm-version-updates-20260619</code> to sync Prometheus version tracking. Commented at <code>https://github.com/Canepro/central-observability-hub-stack/pull/101#issuecomment-4768643269</code>. Merged at <code>2026-06-22T13:15:55Z</code> as <code>77578d78b55ecb70aefed9b82ae011810810d1f8</code>.</td></tr>
+        <tr><td>PR #101 checks</td><td>Green before merge</td><td>GitHub Actions <code>argocd-validator</code> and <code>lint-and-validate</code> passed; <code>oci-storage-audit</code> skipped; CodeRabbit passed; Jenkins <code>pr-merge</code> passed.</td></tr>
       </table>
     </section>
 
@@ -160,7 +160,7 @@
       <h2>Post-run records</h2>
       <table>
         <tr><th>Record</th><th>Status</th><th>Locator</th></tr>
-        <tr><td>Selene handoff</td><td><span class="status ok">sent</span></td><td><code>handoff-20260622T131329Z-058709a1</code>, thread <code>thread-20260622T131329Z-14c66c14</code>.</td></tr>
+        <tr><td>Selene handoff</td><td><span class="status ok">sent</span></td><td>Initial: <code>handoff-20260622T131329Z-058709a1</code>, thread <code>thread-20260622T131329Z-14c66c14</code>. Final update: <code>handoff-20260622T132307Z-475b9758</code>, thread <code>thread-20260622T132307Z-08132389</code>.</td></tr>
         <tr><td>Second-brain activity record</td><td><span class="status ok">created</span></td><td><code>/Users/canepro/src/second_brain/memory/2026-06-22-grafanalocal-oke-weekly-maintenance-2026-06-22.md</code>.</td></tr>
         <tr><td>Second-brain doctor</td><td><span class="status warning">pre-existing drift</span></td><td>Write succeeded; <code>doctor</code> failed on <code>refresh-drift</code> with <code>7 expected imported notes missing</code>.</td></tr>
       </table>
@@ -170,7 +170,7 @@
       <h2>Update candidates</h2>
       <table>
         <tr><th>Candidate</th><th>Status</th><th>Action</th></tr>
-        <tr><td>Prometheus chart <code>29.12.0 -> 29.13.0</code></td><td>Current automated PR exists</td><td>PR <code>#101</code> updated with missing docs and render validation; merge waits for Jenkins.</td></tr>
+        <tr><td>Prometheus chart <code>29.12.0 -> 29.13.0</code></td><td>Merged and reconciled</td><td>PR <code>#101</code> updated with missing docs and render validation, then merged. Argo CD reconciled <code>prometheus</code> to target revision <code>29.13.0</code>.</td></tr>
         <tr><td>Promtail deprecation</td><td>Known long-term migration</td><td>No source change in this weekly run.</td></tr>
         <tr><td>Jenkins Helm chart</td><td><code>VERSION-TRACKING.md</code> still says check latest</td><td>No safe bump made in this run; Jenkins controller health is clean.</td></tr>
       </table>
@@ -182,8 +182,9 @@
         <li>Ran <code>python3 scripts/weekly_oke_observability_check.py</code>; JSON evidence written to <code>reports/2026-06-22-weekly-oke-observability-check.json</code>.</li>
         <li>Queried Grafana MCP datasources, alert rules, Prometheus health, Tempo ingest, and Loki high-signal errors.</li>
         <li>Used Azure MCP read-only AKS cluster and nodepool checks to classify AKS as running.</li>
-        <li>Updated PR <code>#101</code> with commit <code>169fac1</code>; did not merge because Jenkins is pending.</li>
-        <li>Sent Selene handoff <code>handoff-20260622T131329Z-058709a1</code>.</li>
+        <li>Updated PR <code>#101</code> with commit <code>169fac1</code>; merged it as <code>77578d7</code> after Jenkins passed.</li>
+        <li>Allowed Argo CD to reconcile <code>prometheus</code> to chart target revision <code>29.13.0</code>; final app status is <code>Synced/Healthy</code>.</li>
+        <li>Sent Selene handoff <code>handoff-20260622T131329Z-058709a1</code> and final update <code>handoff-20260622T132307Z-475b9758</code>.</li>
         <li>Created second-brain record <code>memory/2026-06-22-grafanalocal-oke-weekly-maintenance-2026-06-22.md</code>.</li>
         <li>No Terraform apply, no Argo CD refresh/sync/resync, and no direct Kubernetes live mutation were performed.</li>
       </ul>
@@ -199,6 +200,8 @@
         <tr><td><code>python3 scripts/test-pipelinehealer-triage.py</code></td><td>Passed.</td></tr>
         <tr><td><code>bash scripts/test-pipelinehealer-bridge.sh</code></td><td>Passed.</td></tr>
         <tr><td><code>curl https://jenkins.canepro.me/login</code></td><td>HTTP <code>200</code>.</td></tr>
+        <tr><td><code>kubectl --context oke-cluster -n argocd get application prometheus</code></td><td>After merge, target revision <code>29.13.0</code>, <code>Synced/Healthy</code>, operation <code>Succeeded</code>.</td></tr>
+        <tr><td><code>kubectl --context oke-cluster -n monitoring get pod -l app.kubernetes.io/name=prometheus</code></td><td><code>prometheus-server-cd44c895-wjzkv</code> is <code>Running</code>, containers ready <code>true true</code>, restart counts <code>0 0</code>.</td></tr>
       </table>
     </section>
 
@@ -206,7 +209,7 @@
       <h2>Residual risks and gates</h2>
       <ul>
         <li>AKS is running and <code>aks-cert-manager</code> remains <code>Healthy/OutOfSync</code>. This run did not take Azure cost-changing actions, Argo syncs, or direct AKS mutations.</li>
-        <li>PR <code>#101</code> still needs Jenkins to complete before merge. Current next command: <code>gh pr checks 101 --repo Canepro/central-observability-hub-stack --watch --interval 10</code>.</li>
+        <li>Prometheus span-ingest proof changed after the Prometheus rollout: <code>sum(increase(tempo_distributor_spans_received_total[5m]))</code> was empty immediately after the rollout, while the <code>30m</code> window returned about <code>6784</code> spans. Recheck the 5-minute window on the next pass.</li>
         <li>Grafana-managed alert rules returned <code>null</code>; Prometheus alert rules in <code>helm/prometheus-values.yaml</code> remain the source-backed rule set.</li>
         <li>Secret values were not read, decoded, printed, committed, or stored.</li>
       </ul>
