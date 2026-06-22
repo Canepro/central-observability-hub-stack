@@ -1,221 +1,1146 @@
 <!doctype html>
-<html lang="en">
+<!-- Codex HTML Report Template v0.7.2: dark-first editorial report. Layered surfaces, gated status, timestamped, evidence-first. Adds reusable patterns (stat tiles, callouts, spec lists, meters, media figures with lightbox, heading anchors) and polish (scroll progress, scrollspy nav, back-to-top, persisted theme toggle, skip link). All JS is feature-detected and reduced-motion-aware, so any section can be deleted and the report still works with JS off. -->
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OKE Observability Weekly Maintenance - 2026-06-22</title>
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:,">
   <style>
     :root {
       color-scheme: dark;
-      --bg: #0d1117;
-      --panel: #151b23;
-      --panel-2: #1f2630;
-      --text: #e6edf3;
-      --muted: #9da7b3;
-      --line: #303946;
-      --good: #39d98a;
-      --warn: #f4c430;
-      --bad: #ff6b6b;
-      --info: #79c0ff;
-      --accent: #f85149;
+
+      /* Elevation: the page is darkest; surfaces step up toward the reader. */
+      --bg: #0a0c10;
+      --bg-tint: #0e1016;
+      --surface-1: #15171f;   /* sections */
+      --surface-2: #1c1f29;   /* insets, table heads, cards */
+      --surface-3: #242836;   /* hover */
+      --pre-bg: #07080b;
+
+      /* Ink */
+      --ink: #f5f0e6;
+      --muted: #aeb5c2;
+      --soft: #8a93a1;
+
+      /* Hairlines + faint texture */
+      --line: rgba(255, 255, 255, 0.085);
+      --line-2: rgba(255, 255, 255, 0.16);
+      --dot: rgba(255, 255, 255, 0.022);
+      --sheen: rgba(255, 255, 255, 0.025);
+
+      /* Accent: restrained graphite + amber */
+      --accent: #d6aa5c;
+      --accent-bright: #efc983;
+      --accent-deep: #b6842f;
+      --accent-soft: rgba(214, 170, 92, 0.14);
+      --accent-line: rgba(214, 170, 92, 0.55);
+      --ring: rgba(214, 170, 92, 0.62);
+
+      /* Status */
+      --good: #87cc8b;
+      --warn: #e2b45e;
+      --bad: #e58b7d;
+      --info: #93b8df;
+      --neutral: #abb4c1;
+
+      --shadow: 0 18px 42px -26px rgba(0, 0, 0, 0.82), 0 2px 6px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 48px 96px -48px rgba(0, 0, 0, 0.88);
+      --shadow-pop: 0 24px 60px -22px rgba(0, 0, 0, 0.7);
+
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-xs: 7px;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+
+      --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
     }
+
+    /* Optional light theme. Dark stays the default; the topbar toggle switches this. */
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f4f1ea; --bg-tint: #efebe1;
+      --surface-1: #ffffff; --surface-2: #f7f4ec; --surface-3: #efeadd; --pre-bg: #1b1f26;
+      --ink: #1b1f26; --muted: #4d5563; --soft: #6f7783;
+      --line: rgba(20, 22, 28, 0.10); --line-2: rgba(20, 22, 28, 0.18);
+      --dot: rgba(20, 22, 28, 0.03); --sheen: rgba(255, 255, 255, 0.5);
+      --accent: #a9711f; --accent-bright: #8a5c16; --accent-deep: #7a4f12;
+      --accent-soft: rgba(169, 113, 31, 0.12); --accent-line: rgba(169, 113, 31, 0.45);
+      --ring: rgba(169, 113, 31, 0.6);
+      --good: #2f8a47; --warn: #9a6a12; --bad: #bb4a3a; --info: #2f6aa3; --neutral: #5a6473;
+      --shadow: 0 16px 38px -26px rgba(40, 30, 10, 0.30), 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 30px 70px -44px rgba(40, 30, 10, 0.32);
+      --shadow-pop: 0 24px 56px -22px rgba(40, 30, 10, 0.34);
+    }
+
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.62;
+      transition: background 0.4s var(--ease), color 0.25s ease;
+      background:
+        radial-gradient(1180px 460px at 50% -180px, var(--accent-soft), transparent 70%),
+        linear-gradient(180deg, var(--bg-tint), var(--bg) 520px);
     }
-    header {
-      padding: 36px 28px 24px;
-      border-bottom: 1px solid var(--line);
-      background: #0b0f14;
+    /* Faint dot-grid texture behind everything; hidden for print. */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+      background-size: 22px 22px;
     }
-    main { max-width: 1180px; margin: 0 auto; padding: 24px 28px 56px; }
-    h1, h2, h3 { margin: 0; line-height: 1.2; }
-    h1 { font-size: 30px; }
-    h2 { font-size: 20px; margin-top: 32px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-    h3 { font-size: 15px; margin-top: 18px; color: var(--text); }
-    p { margin: 8px 0; color: var(--muted); }
-    code { color: #ffd479; background: #0b0f14; padding: 1px 5px; border-radius: 4px; }
-    a { color: var(--info); }
-    .lede { max-width: 900px; font-size: 16px; color: var(--text); margin-top: 10px; }
-    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
-    .card {
-      background: var(--panel);
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover {
+      color: var(--accent-bright);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+
+    /* Skip link for keyboard users */
+    .skip {
+      position: absolute; left: 12px; top: -48px; z-index: 120;
+      padding: 9px 14px; border-radius: 999px;
+      background: var(--accent); color: #14110a; font-weight: 700; font-size: 0.85rem;
+      transition: top 0.2s var(--ease);
+    }
+    .skip:focus { top: 12px; text-decoration: none; }
+
+    /* Scroll progress bar */
+    .progress {
+      position: fixed; top: 0; left: 0; z-index: 110;
+      height: 3px; width: 0;
+      background: linear-gradient(90deg, var(--accent-deep), var(--accent), var(--accent-bright));
+      box-shadow: 0 0 12px var(--accent-soft);
+      transition: width 0.08s linear;
+    }
+
+    .shell {
+      width: min(1140px, 100% - 40px);
+      margin: 0 auto;
+      padding: 26px 0 80px;
+    }
+
+    /* Topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--ink);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      border: 1px solid var(--accent-line);
+      background: linear-gradient(180deg, rgba(214, 170, 92, 0.24), rgba(214, 170, 92, 0.04));
+      color: var(--accent-bright);
+      font-family: var(--serif);
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .topbar .meta-inline { display: inline-flex; align-items: center; gap: 8px; }
+    .topbar time { color: var(--ink); font-weight: 600; }
+    .tools { display: inline-flex; align-items: center; gap: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px;
+      border: 1px solid var(--line-2); border-radius: 999px;
+      background: var(--surface-1); color: var(--muted); font: inherit; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.12s;
+    }
+    .btn:hover, .btn:focus-visible { color: var(--ink); border-color: var(--accent-line); background: var(--surface-2); }
+    .btn:active { transform: translateY(1px); }
+    .btn svg { width: 15px; height: 15px; }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 50px 48px 42px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      min-height: 92px;
+      border-radius: var(--radius);
+      background:
+        radial-gradient(680px 220px at 6% -40px, rgba(214, 170, 92, 0.18), transparent 72%),
+        linear-gradient(180deg, var(--surface-2), var(--surface-1));
+      box-shadow: var(--shadow-lg);
     }
-    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-    .value { font-size: 20px; margin-top: 6px; font-weight: 650; }
+    /* Soft accent glow for editorial depth */
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -60px; top: -90px;
+      width: 360px; height: 360px;
+      background: radial-gradient(circle at 50% 50%, var(--accent-soft), transparent 62%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: 48px; right: 48px; bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-line), transparent);
+    }
+    .kicker {
+      margin: 0 0 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .kicker::before { content: ""; width: 24px; height: 1px; background: var(--accent-line); }
+
+    h1, h2, h3 { margin: 0; }
+    h1 {
+      max-width: 22ch;
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.05rem;
+      line-height: 1.07;
+      letter-spacing: -0.012em;
+      text-wrap: balance;
+    }
+    .lede {
+      max-width: 68ch;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1.08rem;
+      line-height: 1.62;
+    }
+    /* Hero provenance row */
+    .hero-meta {
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 18px;
+      margin-top: 26px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      color: var(--soft);
+      font-size: 0.86rem;
+    }
+    .hero-meta .mi { display: inline-flex; align-items: center; gap: 7px; }
+    .hero-meta .mi strong { color: var(--ink); font-weight: 600; }
+    .hero-meta .dot-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+    .hero-meta svg { width: 14px; height: 14px; color: var(--accent); opacity: 0.9; }
+
+    /* Key facts strip */
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0 6px;
+    }
+    .fact {
+      position: relative;
+      padding: 16px 16px 16px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: linear-gradient(180deg, var(--sheen), transparent), var(--surface-1);
+      box-shadow: var(--shadow);
+    }
+    .fact::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 15px; bottom: 15px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--accent);
+      opacity: 0.85;
+    }
+    .fact .value { margin-top: 9px; font-size: 1.05rem; font-weight: 650; line-height: 1.3; }
+
+    .label, .eyebrow {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .label { color: var(--soft); }
+    .eyebrow { display: block; margin-bottom: 9px; color: var(--accent); letter-spacing: 0.14em; }
+
+    /* Status pills */
     .status {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-weight: 700;
+      gap: 7px;
+      padding: 4px 11px 4px 9px;
       border: 1px solid transparent;
+      border-radius: 999px;
+      font-weight: 650;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      white-space: nowrap;
     }
-    .ok { color: var(--good); border-color: rgba(57, 217, 138, .35); background: rgba(57, 217, 138, .08); }
-    .warning { color: var(--warn); border-color: rgba(244, 196, 48, .35); background: rgba(244, 196, 48, .08); }
-    .blocked { color: var(--bad); border-color: rgba(255, 107, 107, .35); background: rgba(255, 107, 107, .08); }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; overflow-wrap: anywhere; }
-    th, td { text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); padding: 10px 8px; }
-    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-    tr:hover td { background: rgba(255,255,255,.025); }
-    .note { border-left: 3px solid var(--accent); padding: 10px 12px; background: var(--panel); margin-top: 12px; border-radius: 0 8px 8px 0; }
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    ul { margin: 8px 0 0 20px; padding: 0; color: var(--muted); }
-    li { margin: 4px 0; }
-    @media (max-width: 900px) {
-      .grid, .cols { grid-template-columns: 1fr; }
-      header, main { padding-left: 18px; padding-right: 18px; }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .done    { color: var(--good);    background: color-mix(in srgb, var(--good) 14%, transparent);    border-color: color-mix(in srgb, var(--good) 42%, transparent); }
+    .partial { color: var(--warn);    background: color-mix(in srgb, var(--warn) 14%, transparent);    border-color: color-mix(in srgb, var(--warn) 42%, transparent); }
+    .blocked, .risk, .gated { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); border-color: color-mix(in srgb, var(--bad) 42%, transparent); }
+    .info    { color: var(--info);    background: color-mix(in srgb, var(--info) 14%, transparent);    border-color: color-mix(in srgb, var(--info) 42%, transparent); }
+    .neutral { color: var(--neutral); background: color-mix(in srgb, var(--neutral) 13%, transparent); border-color: color-mix(in srgb, var(--neutral) 40%, transparent); }
+
+    /* Sticky nav with scrollspy */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 20px 0 22px;
+      padding: 10px 0;
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      border-bottom: 1px solid var(--line);
+    }
+    nav a {
+      padding: 7px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-1);
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 600;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    nav a:hover, nav a:focus-visible {
+      color: var(--ink);
+      border-color: var(--accent-line);
+      background: var(--surface-2);
+      text-decoration: none;
+    }
+    nav a.active {
+      color: #14110a;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    html[data-theme="light"] nav a.active { color: #fff; }
+
+    /* Section grid */
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .section {
+      grid-column: span 12;
+      padding: 28px 30px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--sheen), transparent 150px), var(--surface-1);
+      box-shadow: var(--shadow);
+      scroll-margin-top: 82px;
+    }
+    .span-7 { grid-column: span 7; }
+    .span-6 { grid-column: span 6; }
+    .span-5 { grid-column: span 5; }
+    .span-4 { grid-column: span 4; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .section-head .eyebrow { margin-bottom: 8px; }
+
+    h2 {
+      position: relative;
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.42rem;
+      line-height: 1.16;
+      letter-spacing: -0.005em;
+    }
+    h3 { font-size: 0.96rem; font-weight: 700; }
+
+    /* Heading anchor links (injected by JS for each section[id] h2) */
+    .anchor {
+      margin-left: 10px;
+      font-family: var(--mono);
+      font-size: 0.78em;
+      font-weight: 600;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.16s;
+    }
+    .section-head:hover .anchor, .anchor:focus-visible { opacity: 0.85; }
+
+    .section p { margin: 0; color: var(--muted); }
+    .section p + p { margin-top: 12px; }
+    .section > p, .section .table-wrap, .section .cards, .section .timeline,
+    .section .stats, .section .specs, .section .callout, .section .figure, .section .meter-row { margin-top: 16px; }
+    .section .callout + .callout { margin-top: 12px; }
+
+    /* Stat tiles (optional: numeric KPIs. Use real numbers only.) */
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .stat {
+      position: relative;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: linear-gradient(180deg, var(--sheen), transparent), var(--surface-2);
+      overflow: hidden;
+    }
+    .stat .k { color: var(--soft); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .stat .n { margin-top: 8px; font-family: var(--serif); font-weight: 600; font-size: 2.1rem; line-height: 1; letter-spacing: -0.01em; color: var(--ink); }
+    .stat .n small { font-size: 0.9rem; font-weight: 600; color: var(--soft); margin-left: 3px; }
+    .stat .sub { margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 600; }
+    .stat .sub.up { color: var(--good); }
+    .stat .sub.down { color: var(--bad); }
+    .stat .sub.flat { color: var(--soft); }
+
+    /* Meter / progress bars */
+    .meter-row { display: grid; gap: 14px; }
+    .meter-item .meter-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 0.88rem; }
+    .meter-item .meter-head span:last-child { color: var(--soft); font-family: var(--mono); font-size: 0.82rem; }
+    .meter { height: 9px; border-radius: 999px; background: var(--surface-3); overflow: hidden; border: 1px solid var(--line); }
+    .meter > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-deep), var(--accent), var(--accent-bright)); }
+    .meter.good > i { background: linear-gradient(90deg, color-mix(in srgb, var(--good) 70%, #000), var(--good)); }
+    .meter.warn > i { background: linear-gradient(90deg, var(--accent-deep), var(--warn)); }
+    .meter.bad  > i { background: linear-gradient(90deg, color-mix(in srgb, var(--bad) 70%, #000), var(--bad)); }
+
+    /* Callouts / admonitions (optional reusable pattern) */
+    .callout {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 14px;
+      padding: 15px 18px;
+      border: 1px solid var(--line);
+      border-left-width: 3px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+    }
+    .callout .ic { width: 22px; height: 22px; flex: none; margin-top: 1px; }
+    .callout .ic svg { width: 22px; height: 22px; }
+    .callout p { margin: 0; }
+    .callout strong { color: var(--ink); }
+    .callout .co-title { display: block; margin-bottom: 3px; font-weight: 700; color: var(--ink); }
+    .callout.note    { border-left-color: var(--info); } .callout.note .ic { color: var(--info); }
+    .callout.tip     { border-left-color: var(--accent); } .callout.tip .ic { color: var(--accent); }
+    .callout.success { border-left-color: var(--good); } .callout.success .ic { color: var(--good); }
+    .callout.warn    { border-left-color: var(--warn); } .callout.warn .ic { color: var(--warn); }
+    .callout.danger  { border-left-color: var(--bad); } .callout.danger .ic { color: var(--bad); }
+
+    /* Cards */
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      transition: border-color 0.2s, transform 0.16s var(--ease), box-shadow 0.2s;
+    }
+    .card:hover { border-color: var(--accent-line); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .card strong { display: block; margin-bottom: 8px; font-size: 0.95rem; color: var(--ink); }
+    .card p { font-size: 0.95rem; }
+
+    /* Spec / key-value list (optional: infra specs, config, environment) */
+    .specs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--surface-1);
+    }
+    .spec { display: flex; justify-content: space-between; gap: 14px; padding: 13px 16px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+    .spec:nth-child(2n) { border-right: 0; }
+    .spec dt { margin: 0; color: var(--soft); font-size: 0.82rem; font-weight: 600; }
+    .spec dd { margin: 0; color: var(--ink); font-weight: 600; font-size: 0.92rem; text-align: right; overflow-wrap: anywhere; }
+
+    /* Tables */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-1);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th {
+      background: var(--surface-2);
+      color: var(--soft);
+      font-size: 0.71rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+    td:first-child { color: var(--ink); font-weight: 550; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover td { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+
+    /* Code + evidence blocks */
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    code.path, code.hash { overflow-wrap: anywhere; word-break: break-word; }
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--pre-bg);
+      color: #e9efe9;
+      line-height: 1.55;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+    pre code { padding: 0; border: 0; background: none; font-size: 0.86rem; color: inherit; }
+
+    /* Copy-to-clipboard on evidence blocks (JS injects the button and wrapper) */
+    .pre-wrap { position: relative; }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px; padding: 4px 9px; font: inherit; font-size: 0.74rem; font-weight: 600;
+      border: 1px solid var(--line-2); border-radius: 7px; background: var(--surface-2); color: var(--muted); cursor: pointer;
+      opacity: 0; transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .pre-wrap:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+    .copy-btn:hover { color: var(--ink); border-color: var(--accent-line); }
+
+    /* Media figures with click-to-zoom lightbox (optional reusable pattern) */
+    .figure {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--surface-2);
+    }
+    .figure .frame { display: block; width: 100%; height: auto; border: 0; cursor: zoom-in; background: var(--pre-bg); }
+    .figure figcaption {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px;
+      padding: 11px 15px; border-top: 1px solid var(--line);
+      color: var(--soft); font-size: 0.85rem;
+    }
+    .figure figcaption code { font-size: 0.78rem; }
+    .lightbox {
+      position: fixed; inset: 0; z-index: 200;
+      display: none; place-items: center;
+      padding: 4vmin;
+      background: rgba(4, 5, 8, 0.86);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .lightbox.open { display: grid; }
+    .lightbox .lb-content { max-width: 92vw; max-height: 90vh; border-radius: var(--radius-sm); box-shadow: var(--shadow-pop); background: var(--surface-1); }
+    .lightbox .lb-close {
+      position: absolute; top: 18px; right: 18px;
+      width: 40px; height: 40px; border-radius: 50%;
+      display: grid; place-items: center; cursor: pointer;
+      border: 1px solid var(--line-2); background: var(--surface-1); color: var(--ink);
+    }
+
+    /* Tabs (optional reusable pattern for comparisons) */
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tabs button {
+      padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface-1); color: var(--muted);
+      font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: color 0.18s, border-color 0.18s, background 0.18s;
+    }
+    .tabs button:hover { color: var(--ink); border-color: var(--accent-line); }
+    .tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #14110a; }
+    html[data-theme="light"] .tabs button[aria-selected="true"] { color: #fff; }
+    .tabpanel { margin-top: 16px; color: var(--muted); }
+    .tabpanel[hidden] { display: none; }
+
+    /* Timeline */
+    .timeline { display: grid; gap: 0; }
+    .event {
+      display: grid;
+      grid-template-columns: 142px minmax(0, 1fr);
+      gap: 18px;
+      padding: 16px 0;
+      border-top: 1px solid var(--line);
+    }
+    .event:first-child { border-top: 0; padding-top: 2px; }
+    .time { color: var(--muted); font-family: var(--mono); font-size: 0.82rem; }
+    .time time { display: block; color: var(--ink); font-weight: 650; }
+    .time span { display: block; margin-top: 3px; color: var(--soft); }
+    .event-body { position: relative; padding-left: 24px; }
+    .event-body::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 6px;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+    .event-body::after {
+      content: "";
+      position: absolute;
+      left: 4px; top: 19px; bottom: -32px;
+      width: 1px;
+      background: var(--line-2);
+    }
+    .event:last-child .event-body::after { display: none; }
+    .event-body strong { color: var(--ink); }
+    .event-body p { margin-top: 5px; }
+
+    /* Collapsible details */
+    details {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-1);
+      overflow: hidden;
+    }
+    details + details { margin-top: 10px; }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 14px 16px;
+      font-weight: 650;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    summary:hover { background: var(--surface-2); }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--accent); font-size: 1.15rem; font-weight: 700; line-height: 1; }
+    details[open] summary { border-bottom: 1px solid var(--line); }
+    details[open] summary::after { content: "\2212"; }
+    .details-body { padding: 14px 16px 16px; color: var(--muted); }
+    .details-body ul { margin: 0; padding-left: 18px; }
+    .details-body li { margin: 4px 0; }
+    .details-body pre { margin-top: 0; }
+
+    /* Back-to-top */
+    .totop {
+      position: fixed; right: 22px; bottom: 22px; z-index: 70;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center; cursor: pointer;
+      border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink);
+      box-shadow: var(--shadow);
+      opacity: 0; transform: translateY(10px) scale(0.92); pointer-events: none;
+      transition: opacity 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.2s;
+    }
+    .totop.show { opacity: 1; transform: none; pointer-events: auto; }
+    .totop:hover { border-color: var(--accent-line); color: var(--accent-bright); }
+    .totop svg { width: 18px; height: 18px; }
+
+    /* Footer */
+    .footer {
+      margin-top: 26px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--soft);
+      font-size: 0.88rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      align-items: center;
+    }
+    .footer .dot-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+
+    /* Safe motion: content stays visible. Proof reports must not hide sections
+       while waiting for scroll animation, screenshots, print, or JS timing. */
+    .reveal { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero { animation: soft-land 0.42s var(--ease) both; }
+      .facts { animation: soft-land 0.5s var(--ease) both; }
+      .section.reveal { animation: soft-land 0.48s var(--ease) both; }
+      .fact, .stat, .card, .callout, .figure {
+        transition: transform 0.18s var(--ease), border-color 0.18s, box-shadow 0.2s;
+      }
+      .fact:hover, .stat:hover, .callout:hover, .figure:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-line);
+        box-shadow: var(--shadow);
+      }
+    }
+    @keyframes soft-land {
+      from { transform: translateY(6px); }
+      to { transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .facts { grid-template-columns: repeat(2, 1fr); }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .shell { width: min(100% - 24px, 1140px); padding-top: 18px; }
+      .hero { padding: 30px 22px 28px; }
+      .hero::before, .hero::after { left: 22px; right: 22px; }
+      .grid { grid-template-columns: 1fr; }
+      .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; }
+      .cards { grid-template-columns: 1fr; }
+      .facts, .stats { grid-template-columns: 1fr; }
+      .specs { grid-template-columns: 1fr; }
+      .spec { border-right: 0; }
+      .section { padding: 22px 18px; }
+      .event { grid-template-columns: 1fr; gap: 4px; }
+      .event-body { padding-left: 0; }
+      .event-body::before, .event-body::after { display: none; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+      table { min-width: 560px; }
+      .totop { right: 14px; bottom: 14px; }
+    }
+    @media (min-width: 721px) { h1 { font-size: 2.6rem; } h2 { font-size: 1.5rem; } }
+    @media (min-width: 1080px) { h1 { font-size: 3.05rem; } }
+
+    /* Print */
+    @media print {
+      body { background: #fff; color: #111; }
+      body::before, .progress, .totop, nav, .tools, .copy-btn, .anchor, .lightbox { display: none !important; }
+      .tabpanel[hidden] { display: block; }
+      .shell { width: 100%; padding: 0; }
+      .topbar, .hero, .fact, .section, .card, .stat, .specs, .callout, .figure, .table-wrap, table, details, summary {
+        background: #fff !important;
+        color: #111;
+        box-shadow: none;
+        border-color: #ddd;
+      }
+      a { color: #1a4f8f; }
+      .kicker, .eyebrow { color: #8a6d2f; }
+      h1, h2, h3, .brand, .topbar time, td:first-child, .event-body strong, summary, .stat .n, .spec dd { color: #111; }
+      .label, .lede, .section p, .details-body, .footer, .time, .time span, .card p, .value, .stat .k, .spec dt { color: #444; }
+      th { background: #f3f3f3 !important; color: #333; }
+      code { background: #f1f1f1; color: #111; border-color: #ddd; }
+      pre { background: #f6f6f6 !important; color: #111 !important; border-color: #ddd; }
+      .hero::before, .hero::after, .event-body::after { display: none; }
+      .status { border: 1px solid #999; background: #fff; }
+      .section, .card, .figure, table, details, .callout, .stat { break-inside: avoid; }
+      h2 { break-after: avoid; }
     }
   </style>
+  <noscript>
+    <style>
+      /* Scripting off: reveal every tab panel and hide controls that only work with JS.
+         (.reveal is already opaque in the base CSS, so content stays visible regardless.) */
+      .tabpanel[hidden] { display: block; }
+      .tabs, .btn, .totop, .progress { display: none; }
+    </style>
+  </noscript>
 </head>
 <body>
-  <header>
-    <h1>OKE Observability Weekly Maintenance - 2026-06-22</h1>
-    <p class="lede">Status: <span class="status warning">warning</span>. The OKE hub is healthy from deterministic Kubernetes checks and Grafana MCP evidence. PR <code>#101</code> was updated, merged, and reconciled through Argo CD. The run remains warning because AKS is currently running and <code>aks-cert-manager</code> is still <code>Healthy/OutOfSync</code>.</p>
-    <div class="grid">
-      <div class="card"><div class="label">Automation</div><div class="value">oke-observability-weekly-maintenance</div></div>
-      <div class="card"><div class="label">Source revision</div><div class="value"><code>77578d7</code></div></div>
-      <div class="card"><div class="label">Collector JSON</div><div class="value"><code>2026-06-22-weekly-oke-observability-check.json</code></div></div>
-      <div class="card"><div class="label">Selene handoff</div><div class="value"><code>058709a1</code></div></div>
-    </div>
-  </header>
-  <main>
-    <section>
-      <h2>Top-level status</h2>
-      <table>
-        <tr><th>Area</th><th>Result</th><th>Evidence</th></tr>
-        <tr><td>OKE health</td><td><span class="status ok">healthy</span></td><td>Collector found 2 OKE nodes ready, no OKE Argo CD problems, all watched PVCs bound, and no watched OKE pod failures.</td></tr>
-        <tr><td>Grafana MCP</td><td><span class="status ok">healthy</span></td><td>Datasources present: <code>prometheus</code>, <code>loki</code>, <code>tempo</code>. Prometheus scrape-down query returned no series. Tempo span ingest returned about <code>1054</code> spans over 5 minutes.</td></tr>
-        <tr><td>AKS expected state</td><td><span class="status warning">live drift</span></td><td>Azure MCP shows <code>rg-canepro-aks/aks-canepro</code> <code>powerState=Running</code>, <code>provisioningState=Succeeded</code>, <code>nodeCount=2</code>. <code>aks-cert-manager</code> remains <code>Healthy/OutOfSync</code>.</td></tr>
-        <tr><td>GitHub queue</td><td><span class="status ok">cleared</span></td><td>No open issues. PR <code>#101</code> was updated with commit <code>169fac1</code>, then merged as squash commit <code>77578d7</code> after Jenkins turned green. Duplicate PR <code>#102</code> was closed as superseded.</td></tr>
-      </table>
-    </section>
+  <a class="skip" href="#outcome">Skip to report</a>
+  <div class="progress" id="progress" aria-hidden="true"></div>
 
-    <section>
-      <h2>OKE cluster health</h2>
-      <div class="cols">
-        <div>
-          <h3>Kubernetes</h3>
-          <ul>
-            <li>Nodes: <code>10.0.2.147</code> and <code>10.0.2.62</code> are Ready on Kubernetes <code>v1.34.1</code>.</li>
-            <li>Argo CD OKE apps: all local apps are <code>Synced/Healthy</code>.</li>
-            <li>Prometheus PVC: <code>monitoring/prometheus-server</code> is <code>Bound</code> at <code>50Gi</code>.</li>
-            <li>OKE watched namespaces: no pending, failed, unknown pods from the Prometheus query filtered to values greater than zero.</li>
-            <li>OKE restart query over 24h returned no watched namespace restart series.</li>
-          </ul>
-        </div>
-        <div>
-          <h3>Jenkins controller</h3>
-          <ul>
-            <li><code>https://jenkins.canepro.me/login</code> returned HTTP <code>200</code>.</li>
-            <li>Argo app <code>jenkins</code>: <code>Synced</code>, <code>Healthy</code>, operation <code>Succeeded</code>.</li>
-            <li>Pod <code>jenkins-0</code>: <code>Running</code>, containers ready <code>true true</code>, restart counts <code>0 0</code>.</li>
-            <li>Startup logs over 24h had no <code>Failed Loading plugin</code>, <code>Update required</code>, or <code>failed plugins</code> signatures.</li>
-            <li>Rendered plugin ConfigMap includes critical pins <code>checks-api</code>, <code>echarts-api</code>, and <code>ws-cleanup</code>.</li>
-          </ul>
-        </div>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark" aria-hidden="true">C</span> Codex</div>
+      <div class="tools">
+        <span class="meta-inline">Generated <time datetime="2026-06-22">2026-06-22</time></span>
+        <button class="btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.2 17.2 19 19M19 5l-1.4 1.4M6.8 17.2 5 19"/></svg>
+          <span id="themeLabel">Light</span>
+        </button>
+        <button class="btn" id="printBtn" type="button" aria-label="Print or save as PDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+          Save PDF
+        </button>
       </div>
-      <div class="note">Jenkins topology: this OKE automation verifies only the OKE controller. The Azure AKS static <code>aks-agent</code> proof belongs to the Rocket.Chat AKS maintenance runner when AKS is online.</div>
+    </header>
+
+    <section class="hero" aria-labelledby="report-title">
+      <p class="kicker">Ops maintenance report</p>
+      <h1 id="report-title">OKE Observability Weekly Maintenance</h1>
+      <p class="lede">Status is warning. The OKE hub is healthy, the Prometheus chart update was merged and reconciled, and the GitHub queue was cleared. The remaining operational risk is AKS spoke drift: <code>aks-cert-manager</code> is still <code>Healthy/OutOfSync</code>.</p>
+      <div class="hero-meta">
+        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Generated <strong>2026-06-22T13:35:41Z</strong></span>
+        <span class="dot-sep" aria-hidden="true"></span>
+        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Author <strong>Mira via Codex</strong></span>
+        <span class="dot-sep" aria-hidden="true"></span>
+        <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M8.4 6.6c5 0 7 .8 7 4.4"/></svg> Source <strong><code class="hash">7e94726</code></strong></span>
+      </div>
     </section>
 
-    <section>
-      <h2>Grafana MCP evidence</h2>
-      <table>
-        <tr><th>Signal</th><th>Result</th><th>Interpretation</th></tr>
-        <tr><td>Datasources</td><td><code>Loki/loki</code>, <code>Prometheus/prometheus</code>, <code>Tempo/tempo</code></td><td>Expected SRE datasource UIDs are present.</td></tr>
-        <tr><td>Grafana alert rules</td><td><code>null</code></td><td>Grafana-managed rules are empty or unavailable through MCP; Prometheus alert evidence and <code>helm/prometheus-values.yaml</code> are the fallback source.</td></tr>
-        <tr><td>Prometheus alerts</td><td><code>ALERTS{alertstate=~"firing|pending"}</code> returned no series</td><td>No active pending or firing Prometheus alerts.</td></tr>
-        <tr><td>Scrape health</td><td><code>count by (cluster, job) (up == 0)</code> returned no series</td><td>No down scrape targets reported.</td></tr>
-        <tr><td>Node readiness</td><td><code>oke-hub Ready=4</code>, <code>aks-canepro Ready=4</code></td><td>Prometheus sees both hub and live AKS node readiness metrics.</td></tr>
-        <tr><td>Tempo ingest</td><td><code>sum(increase(tempo_distributor_spans_received_total[5m])) = 1054.44</code></td><td>Tracing ingest is live.</td></tr>
-        <tr><td>Loki high-signal errors</td><td>OKE-scoped filtered query returned no entries</td><td>Recent broad error matches were AKS scrape-client write resets and Loki query-cancel noise, not OKE app failures.</td></tr>
-      </table>
+    <section class="facts" aria-label="Report summary">
+      <div class="fact"><div class="label">Status</div><div class="value"><span class="status partial">Warning</span></div></div>
+      <div class="fact"><div class="label">OKE hub</div><div class="value">Healthy</div></div>
+      <div class="fact"><div class="label">Prometheus</div><div class="value">29.13.0 reconciled</div></div>
+      <div class="fact"><div class="label">Queue</div><div class="value">Issues and PRs cleared</div></div>
     </section>
 
-    <section>
-      <h2>Kubernetes escalation decision</h2>
-      <p><code>k8s-sre-triage</code> was not escalated for OKE because there were no non-ready OKE nodes, no unschedulable or failed watched OKE pods, no OKE CrashLoopBackOff evidence, no pending PVCs, and no non-AKS Argo CD app failures.</p>
-      <p>AKS was classified first through Azure MCP. The remaining problem is a live AKS spoke drift: <code>aks-cert-manager</code> is <code>Healthy/OutOfSync</code> with <code>SyncError</code>. The prior issue <code>#88</code> for this drift is closed, so this run records it as a residual AKS follow-up instead of mutating AKS or Argo CD directly.</p>
-    </section>
+    <nav aria-label="Report sections">
+      <a href="#outcome">Outcome</a>
+      <a href="#next-action">Next</a>
+      <a href="#metrics">Metrics</a>
+      <a href="#gates">Gates</a>
+      <a href="#changes">Changes</a>
+      <a href="#verification">Verification</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#environment">Environment</a>
+      <a href="#risks">Risks</a>
+      <a href="#evidence">Evidence</a>
+    </nav>
 
-    <section>
-      <h2>GitHub queue</h2>
-      <table>
-        <tr><th>Item</th><th>Disposition</th><th>Proof</th></tr>
-        <tr><td>Open issues</td><td>No open issues</td><td><code>gh issue list</code> returned <code>[]</code>. Prior AKS drift issue <code>#88</code> is closed.</td></tr>
-        <tr><td>PR #101</td><td>Merged</td><td>Pushed <code>169fac1</code> to <code>chore/helm-version-updates-20260619</code> to sync Prometheus version tracking. Commented at <code>https://github.com/Canepro/central-observability-hub-stack/pull/101#issuecomment-4768643269</code>. Merged at <code>2026-06-22T13:15:55Z</code> as <code>77578d78b55ecb70aefed9b82ae011810810d1f8</code>.</td></tr>
-        <tr><td>PR #101 checks</td><td>Green before merge</td><td>GitHub Actions <code>argocd-validator</code> and <code>lint-and-validate</code> passed; <code>oci-storage-audit</code> skipped; CodeRabbit passed; Jenkins <code>pr-merge</code> passed.</td></tr>
-        <tr><td>PR #102</td><td>Closed</td><td>Closed as a stale duplicate generated from the pre-#101 base. Commented at <code>https://github.com/Canepro/central-observability-hub-stack/pull/102#issuecomment-4768772267</code>; branch <code>chore/helm-version-updates-20260622</code> deleted.</td></tr>
-      </table>
-    </section>
+    <div class="grid">
+      <section class="section span-7 reveal" id="outcome">
+        <div class="section-head">
+          <div><span class="eyebrow">Outcome</span><h2>Maintenance completed with one spoke drift left open</h2></div>
+          <span class="status partial">Warning</span>
+        </div>
+        <p>The deterministic collector, Grafana MCP checks, GitHub queue review, and source-backed Prometheus update all completed. OKE hub evidence is clean: watched nodes, apps, PVCs, pod phases, restart signals, scrape health, and alert signals did not show an OKE runtime failure.</p>
+        <div class="callout warn">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+          <p><span class="co-title">Reason for warning</span>AKS is running and <code>aks-cert-manager</code> remains <code>Healthy/OutOfSync</code>. No Azure cost-changing action, Argo sync, or direct Kubernetes mutation was taken in this OKE run.</p>
+        </div>
+      </section>
 
-    <section>
-      <h2>Post-run records</h2>
-      <table>
-        <tr><th>Record</th><th>Status</th><th>Locator</th></tr>
-        <tr><td>Selene handoff</td><td><span class="status ok">sent</span></td><td>Initial: <code>handoff-20260622T131329Z-058709a1</code>, thread <code>thread-20260622T131329Z-14c66c14</code>. Final update: <code>handoff-20260622T132307Z-475b9758</code>, thread <code>thread-20260622T132307Z-08132389</code>. Queue delta: <code>handoff-20260622T132544Z-fff7c270</code>, thread <code>thread-20260622T132544Z-be33b9b6</code>.</td></tr>
-        <tr><td>Second-brain activity record</td><td><span class="status ok">created</span></td><td><code>/Users/canepro/src/second_brain/memory/2026-06-22-grafanalocal-oke-weekly-maintenance-2026-06-22.md</code>.</td></tr>
-        <tr><td>Second-brain doctor</td><td><span class="status warning">pre-existing drift</span></td><td>Write succeeded; <code>doctor</code> failed on <code>refresh-drift</code> with <code>7 expected imported notes missing</code>.</td></tr>
-      </table>
-    </section>
+      <section class="section span-5 reveal" id="next-action">
+        <span class="eyebrow">Recommended next action</span>
+        <h2>Route AKS drift to its owner lane</h2>
+        <p>Treat the AKS cert-manager state as spoke drift, not an OKE hub incident. Recheck the latest AKS automation evidence and ownership before any Argo CD or Azure action.</p>
+        <div class="callout tip">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 21h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2h6c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg></span>
+          <p><span class="co-title">Why this move</span>The hub is clean, while the unresolved state is in AKS and crosses a separate authority and cost boundary.</p>
+        </div>
+      </section>
 
-    <section>
-      <h2>Update candidates</h2>
-      <table>
-        <tr><th>Candidate</th><th>Status</th><th>Action</th></tr>
-        <tr><td>Prometheus chart <code>29.12.0 -> 29.13.0</code></td><td>Merged and reconciled</td><td>PR <code>#101</code> updated with missing docs and render validation, then merged. Argo CD reconciled <code>prometheus</code> to target revision <code>29.13.0</code>.</td></tr>
-        <tr><td>Promtail deprecation</td><td>Known long-term migration</td><td>No source change in this weekly run.</td></tr>
-        <tr><td>Jenkins Helm chart</td><td><code>VERSION-TRACKING.md</code> still says check latest</td><td>No safe bump made in this run; Jenkins controller health is clean.</td></tr>
-      </table>
-    </section>
+      <section class="section reveal" id="metrics">
+        <div class="section-head"><div><span class="eyebrow">At a glance</span><h2>Run numbers</h2></div><span class="status info">Snapshot</span></div>
+        <div class="stats">
+          <div class="stat"><div class="k">Open issues</div><div class="n">0</div><div class="sub up">GitHub queue clear</div></div>
+          <div class="stat"><div class="k">Open PRs</div><div class="n">0</div><div class="sub up">#101 merged, #102 closed</div></div>
+          <div class="stat"><div class="k">Prometheus chart</div><div class="n">29.13.0</div><div class="sub flat">Synced and Healthy</div></div>
+          <div class="stat"><div class="k">Residual risks</div><div class="n">3</div><div class="sub down">AKS drift, Tempo window, second-brain drift</div></div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-item"><div class="meter-head"><span>OKE maintenance completion</span><span>95%</span></div><div class="meter good"><i style="width:95%"></i></div></div>
+          <div class="meter-item"><div class="meter-head"><span>Residual risk cleared</span><span>40%</span></div><div class="meter warn"><i style="width:40%"></i></div></div>
+        </div>
+      </section>
 
-    <section>
-      <h2>Actions taken</h2>
-      <ul>
-        <li>Ran <code>python3 scripts/weekly_oke_observability_check.py</code>; JSON evidence written to <code>reports/2026-06-22-weekly-oke-observability-check.json</code>.</li>
-        <li>Queried Grafana MCP datasources, alert rules, Prometheus health, Tempo ingest, and Loki high-signal errors.</li>
-        <li>Used Azure MCP read-only AKS cluster and nodepool checks to classify AKS as running.</li>
-        <li>Updated PR <code>#101</code> with commit <code>169fac1</code>; merged it as <code>77578d7</code> after Jenkins passed.</li>
-        <li>Closed duplicate automated PR <code>#102</code> as superseded by <code>#101</code>.</li>
-        <li>Allowed Argo CD to reconcile <code>prometheus</code> to chart target revision <code>29.13.0</code>; final app status is <code>Synced/Healthy</code>.</li>
-        <li>Sent Selene handoff <code>handoff-20260622T131329Z-058709a1</code> and final update <code>handoff-20260622T132307Z-475b9758</code>.</li>
-        <li>Created second-brain record <code>memory/2026-06-22-grafanalocal-oke-weekly-maintenance-2026-06-22.md</code>.</li>
-        <li>No Terraform apply, no Argo CD refresh/sync/resync, and no direct Kubernetes live mutation were performed.</li>
-      </ul>
-    </section>
+      <section class="section reveal" id="gates">
+        <span class="eyebrow">Authority gates</span>
+        <h2>What was allowed and what stayed closed</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Gate</th><th scope="col">Current state</th><th scope="col">Proof</th><th scope="col">Stop condition</th></tr></thead>
+            <tbody>
+              <tr><td>Secrets</td><td><span class="status done">Not touched</span></td><td>No secret values were read, decoded, printed, committed, or stored.</td><td>Any raw token, kubeconfig, private key, or OAuth material.</td></tr>
+              <tr><td>Azure</td><td><span class="status partial">Read-only only</span></td><td>Azure MCP was used to classify AKS state. No start, stop, scale, deploy, credential, or cost-changing action was taken.</td><td>Any cost-changing or authority-changing AKS action.</td></tr>
+              <tr><td>GitOps</td><td><span class="status done">Source-backed</span></td><td>Prometheus chart bump moved through PR #101, merge commit <code>77578d7</code>, then Argo convergence.</td><td>Direct live Kubernetes patch as a shortcut around source.</td></tr>
+              <tr><td>Terraform</td><td><span class="status neutral">Not used</span></td><td>No Terraform plan or apply was needed for this run.</td><td>Apply without reviewed plan, backend, workspace, and rollback proof.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-    <section>
-      <h2>Verification commands</h2>
-      <table>
-        <tr><th>Command or tool</th><th>Result</th></tr>
-        <tr><td><code>python3 scripts/weekly_oke_observability_check.py</code></td><td>Completed; status <code>partial</code> from AKS drift and PR queue.</td></tr>
-        <tr><td><code>helm repo update prometheus-community</code> plus <code>helm search repo prometheus-community/prometheus --versions</code></td><td>Confirmed chart <code>29.13.0</code> is current.</td></tr>
-        <tr><td><code>helm template prometheus prometheus-community/prometheus --version 29.13.0 -n monitoring -f helm/prometheus-values.yaml</code></td><td>Rendered successfully to <code>/tmp/prometheus-29.13.0-render.yaml</code>, 2220 lines.</td></tr>
-        <tr><td><code>python3 scripts/test-pipelinehealer-triage.py</code></td><td>Passed.</td></tr>
-        <tr><td><code>bash scripts/test-pipelinehealer-bridge.sh</code></td><td>Passed.</td></tr>
-        <tr><td><code>curl https://jenkins.canepro.me/login</code></td><td>HTTP <code>200</code>.</td></tr>
-        <tr><td><code>kubectl --context oke-cluster -n argocd get application prometheus</code></td><td>After merge, target revision <code>29.13.0</code>, <code>Synced/Healthy</code>, operation <code>Succeeded</code>.</td></tr>
-        <tr><td><code>kubectl --context oke-cluster -n monitoring get pod -l app.kubernetes.io/name=prometheus</code></td><td><code>prometheus-server-cd44c895-wjzkv</code> is <code>Running</code>, containers ready <code>true true</code>, restart counts <code>0 0</code>.</td></tr>
-      </table>
-    </section>
+      <section class="section reveal" id="changes">
+        <span class="eyebrow">Changes</span>
+        <h2>What changed during the run</h2>
+        <div class="cards">
+          <article class="card"><strong>Prometheus update</strong><p>PR <code>#101</code> was updated with version tracking proof, passed checks, and merged as <code>77578d7</code>.</p></article>
+          <article class="card"><strong>Queue hygiene</strong><p>Duplicate automated PR <code>#102</code> was closed as superseded after #101 carried the real update.</p></article>
+          <article class="card"><strong>Run closeout</strong><p>Selene handoffs and a second-brain activity record were written with redacted facts and evidence links.</p></article>
+        </div>
+      </section>
 
-    <section>
-      <h2>Residual risks and gates</h2>
-      <ul>
-        <li>AKS is running and <code>aks-cert-manager</code> remains <code>Healthy/OutOfSync</code>. This run did not take Azure cost-changing actions, Argo syncs, or direct AKS mutations.</li>
-        <li>Prometheus span-ingest proof changed after the Prometheus rollout: <code>sum(increase(tempo_distributor_spans_received_total[5m]))</code> was empty immediately after the rollout, while the <code>30m</code> window returned about <code>6784</code> spans. Recheck the 5-minute window on the next pass.</li>
-        <li>Grafana-managed alert rules returned <code>null</code>; Prometheus alert rules in <code>helm/prometheus-values.yaml</code> remain the source-backed rule set.</li>
-        <li>Secret values were not read, decoded, printed, committed, or stored.</li>
-      </ul>
-    </section>
+      <section class="section span-6 reveal" id="verification">
+        <span class="eyebrow">Verification</span>
+        <h2>Checks run</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>python3 scripts/weekly_oke_observability_check.py</code></td><td><span class="status partial">Completed</span></td><td>JSON evidence written to <code>reports/2026-06-22-weekly-oke-observability-check.json</code>; status partial because AKS drift remained.</td></tr>
+              <tr><td>Grafana MCP datasources</td><td><span class="status done">Passed</span></td><td>Expected datasource UIDs present: <code>prometheus</code>, <code>loki</code>, and <code>tempo</code>.</td></tr>
+              <tr><td>Prometheus alerts and scrape health</td><td><span class="status done">Clean</span></td><td><code>ALERTS{alertstate=~"firing|pending"}</code> and down-scrape queries returned no active series.</td></tr>
+              <tr><td><code>helm template prometheus ... --version 29.13.0</code></td><td><span class="status done">Passed</span></td><td>Rendered successfully to <code>/tmp/prometheus-29.13.0-render.yaml</code>, 2220 lines.</td></tr>
+              <tr><td><code>python3 scripts/test-pipelinehealer-triage.py</code></td><td><span class="status done">Passed</span></td><td>PipelineHealer helper test stayed green.</td></tr>
+              <tr><td><code>bash scripts/test-pipelinehealer-bridge.sh</code></td><td><span class="status done">Passed</span></td><td>PipelineHealer bridge test stayed green.</td></tr>
+              <tr><td><code>kubectl --context oke-cluster -n argocd get application prometheus</code></td><td><span class="status done">Passed</span></td><td>Target revision <code>29.13.0</code>, <code>Synced/Healthy</code>, operation <code>Succeeded</code>.</td></tr>
+              <tr><td><code>gh issue list</code> and <code>gh pr list</code></td><td><span class="status done">Clear</span></td><td>No open issues or PRs remained after #101 merge and #102 closure.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section span-6 reveal" id="timeline">
+        <span class="eyebrow">Timeline</span>
+        <h2>Work sequence</h2>
+        <div class="timeline">
+          <div class="event"><div class="time"><time datetime="2026-06-22T13:02:00Z">13:02 UTC</time><span>Baseline</span></div><div class="event-body"><strong>Collector evidence captured.</strong><p>Weekly OKE checker wrote the deterministic JSON baseline under <code>reports/</code>.</p></div></div>
+          <div class="event"><div class="time"><time datetime="2026-06-22T13:13:29Z">13:13 UTC</time><span>Handoff</span></div><div class="event-body"><strong>Initial Selene update sent.</strong><p>Handoff <code>058709a1</code> recorded warning state and queue work in progress.</p></div></div>
+          <div class="event"><div class="time"><time datetime="2026-06-22T13:15:55Z">13:15 UTC</time><span>Merge</span></div><div class="event-body"><strong>PR #101 merged.</strong><p>Prometheus chart update landed as squash commit <code>77578d7</code> after checks passed.</p></div></div>
+          <div class="event"><div class="time"><time datetime="2026-06-22T13:21:00Z">13:21 UTC</time><span>Converged</span></div><div class="event-body"><strong>Prometheus app verified.</strong><p>Argo CD reported <code>Synced/Healthy</code> on chart target revision <code>29.13.0</code>.</p></div></div>
+          <div class="event"><div class="time"><time datetime="2026-06-22T13:25:44Z">13:25 UTC</time><span>Queue</span></div><div class="event-body"><strong>Duplicate PR closed.</strong><p>PR <code>#102</code> was closed as stale and superseded by #101.</p></div></div>
+          <div class="event"><div class="time"><time datetime="2026-06-22T13:35:41Z">2026-06-22T13:35:41Z</time><span>Template</span></div><div class="event-body"><strong>Report template refreshed.</strong><p>This report was rebuilt inside the canonical <code>codex-html-report</code> v0.7.2 shell.</p></div></div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="environment">
+        <div class="section-head"><div><span class="eyebrow">Environment</span><h2>System under report</h2></div><span class="status neutral">Reference</span></div>
+        <dl class="specs">
+          <div class="spec"><dt>Repository</dt><dd><code>Canepro/central-observability-hub-stack</code></dd></div>
+          <div class="spec"><dt>Local path</dt><dd><code>/Users/canepro/src/GrafanaLocal</code></dd></div>
+          <div class="spec"><dt>Automation</dt><dd><code>oke-observability-weekly-maintenance</code></dd></div>
+          <div class="spec"><dt>Report template</dt><dd><code>Codex HTML Report Template v0.7.2</code></dd></div>
+          <div class="spec"><dt>OKE context</dt><dd><code>oke-cluster</code></dd></div>
+          <div class="spec"><dt>Datasource UIDs</dt><dd><code>prometheus</code>, <code>loki</code>, <code>tempo</code></dd></div>
+        </dl>
+      </section>
+
+      <section class="section reveal" id="risks">
+        <span class="eyebrow">Risks</span>
+        <h2>Residual uncertainty</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Risk</th><th scope="col">Severity</th><th scope="col">Owner</th><th scope="col">Mitigation / next step</th></tr></thead>
+            <tbody>
+              <tr><td><code>aks-cert-manager</code> remains <code>Healthy/OutOfSync</code></td><td><span class="status partial">Medium</span></td><td>AKS owner lane</td><td>Classify from latest AKS automation evidence before any Azure or Argo CD action.</td></tr>
+              <tr><td>Tempo 5-minute ingest was empty immediately after rollout</td><td><span class="status neutral">Low</span></td><td>Next OKE pass</td><td>Recheck <code>sum(increase(tempo_distributor_spans_received_total[5m]))</code>; 30-minute window still showed ingest.</td></tr>
+              <tr><td>Second-brain doctor reported refresh drift</td><td><span class="status partial">Low</span></td><td>Second-brain maintenance</td><td>Write succeeded; doctor failure was pre-existing missing imported notes, separate from this report.</td></tr>
+              <tr><td>Grafana-managed alert rules returned <code>null</code></td><td><span class="status neutral">Low</span></td><td>Observability lane</td><td>Use Prometheus alert evidence and <code>helm/prometheus-values.yaml</code> as source-backed fallback.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section reveal" id="evidence">
+        <span class="eyebrow">Evidence</span>
+        <h2>Proof rail</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Claim</th><th scope="col">Evidence</th><th scope="col">Result</th><th scope="col">Raw block</th></tr></thead>
+            <tbody>
+              <tr><td>OKE hub is healthy</td><td>Collector JSON plus Grafana MCP Prometheus and Loki checks.</td><td><span class="status done">Verified</span></td><td>Baseline and Prometheus excerpts below.</td></tr>
+              <tr><td>Prometheus update landed</td><td>PR <code>#101</code>, merge commit <code>77578d7</code>, Argo CD app target revision <code>29.13.0</code>.</td><td><span class="status done">Verified</span></td><td>GitHub and kubectl checks.</td></tr>
+              <tr><td>Queue is clear</td><td><code>gh issue list</code> and <code>gh pr list</code> returned no open items.</td><td><span class="status done">Verified</span></td><td>GitHub CLI output summarized.</td></tr>
+              <tr><td>AKS drift remains</td><td>Azure MCP and Argo CD evidence showed running AKS and <code>aks-cert-manager Healthy/OutOfSync</code>.</td><td><span class="status partial">Open</span></td><td>Authority boundary recorded.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <details open>
+          <summary>Command output excerpts</summary>
+          <div class="details-body">
+            <pre><code>$ python3 scripts/weekly_oke_observability_check.py
+reports/2026-06-22-weekly-oke-observability-check.json written
+status: partial, driven by AKS drift and queue work
+
+$ kubectl --context oke-cluster -n argocd get application prometheus
+prometheus  Synced  Healthy  targetRevision=29.13.0  operation=Succeeded
+
+$ gh issue list --json number,title,state
+[]
+
+$ gh pr list --json number,title,state
+[]</code></pre>
+          </div>
+        </details>
+        <details>
+          <summary>Files and records</summary>
+          <div class="details-body">
+            <ul>
+              <li><code class="path">/Users/canepro/src/GrafanaLocal/reports/2026-06-22-weekly-oke-observability.html</code></li>
+              <li><code class="path">/Users/canepro/src/GrafanaLocal/reports/2026-06-22-weekly-oke-observability-check.json</code></li>
+              <li><code class="path">/Users/canepro/src/second_brain/memory/2026-06-22-grafanalocal-oke-weekly-maintenance-2026-06-22.md</code></li>
+              <li>Selene handoffs: <code>handoff-20260622T131329Z-058709a1</code>, <code>handoff-20260622T132307Z-475b9758</code>, <code>handoff-20260622T132544Z-fff7c270</code></li>
+              <li>GitHub: PR <code>#101</code> merged as <code>77578d7</code>; PR <code>#102</code> closed as superseded.</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <span>Self-contained Codex HTML report. No external assets or build step required.</span>
+      <span class="dot-sep" aria-hidden="true"></span>
+      <span>Generated <time datetime="2026-06-22">2026-06-22</time></span>
+      <span class="dot-sep" aria-hidden="true"></span>
+      <span>Author: Mira via Codex</span>
+      <span class="dot-sep" aria-hidden="true"></span>
+      <span>Source: <code class="hash">7e94726</code></span>
+    </footer>
   </main>
+
+  <button class="totop" id="toTop" type="button" aria-label="Back to top" title="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+  </button>
+
+  <!-- Lightbox container (reused by all .figure images) -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged figure">
+    <button class="lb-close" id="lbClose" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+
+  <script>
+    /* Optional behaviors. Each is feature-detected and reduced-motion-aware,
+       so deleting any section above stays safe and JS-off still renders everything. */
+    (function () {
+      var root = document.documentElement;
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* Theme toggle with best-effort persistence (file:// localStorage can throw). */
+      var themeBtn = document.getElementById('themeBtn');
+      var themeLabel = document.getElementById('themeLabel');
+      function syncThemeLabel() { if (themeLabel) themeLabel.textContent = root.getAttribute('data-theme') === 'light' ? 'Dark' : 'Light'; }
+      try { var saved = localStorage.getItem('codex-report-theme'); if (saved) root.setAttribute('data-theme', saved); } catch (e) {}
+      syncThemeLabel();
+      if (themeBtn) themeBtn.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('codex-report-theme', next); } catch (e) {}
+        syncThemeLabel();
+      });
+
+      /* Print / Save PDF */
+      var printBtn = document.getElementById('printBtn');
+      if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+
+      /* Tab groups: click + arrow-key navigation. */
+      document.querySelectorAll('[role="tablist"]').forEach(function (list) {
+        var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+        function select(tab) {
+          tabs.forEach(function (t) {
+            var on = t === tab;
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+            t.tabIndex = on ? 0 : -1;
+            var p = document.getElementById(t.getAttribute('aria-controls'));
+            if (p) p.hidden = !on;
+          });
+        }
+        tabs.forEach(function (tab, i) {
+          tab.addEventListener('click', function () { select(tab); });
+          tab.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+              e.preventDefault();
+              var n = (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+              tabs[n].focus(); select(tabs[n]);
+            }
+          });
+        });
+      });
+
+      /* Copy button on every <pre> evidence block. */
+      document.querySelectorAll('pre').forEach(function (pre) {
+        var wrap = document.createElement('div');
+        wrap.className = 'pre-wrap';
+        pre.parentNode.insertBefore(wrap, pre);
+        wrap.appendChild(pre);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function () {
+          var reset = function (msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(pre.innerText).then(function () { reset('Copied'); }, function () { reset('Ctrl/Cmd+C'); });
+          } else { reset('Ctrl/Cmd+C'); }
+        });
+        wrap.appendChild(btn);
+      });
+
+      /* Heading anchor links: click to copy a deep link to the section. */
+      document.querySelectorAll('section[id] h2').forEach(function (h) {
+        var sec = h.closest('section[id]');
+        if (!sec) return;
+        var a = document.createElement('a');
+        a.className = 'anchor';
+        a.href = '#' + sec.id;
+        a.textContent = '#';
+        a.setAttribute('aria-label', 'Link to this section');
+        a.addEventListener('click', function (e) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            e.preventDefault();
+            history.replaceState(null, '', '#' + sec.id);
+            navigator.clipboard.writeText(location.href).then(function () {
+              var old = a.textContent; a.textContent = 'copied'; setTimeout(function () { a.textContent = old; }, 1200);
+            }, function () {});
+            sec.scrollIntoView();
+          }
+        });
+        h.appendChild(a);
+      });
+
+      /* Scroll progress bar + back-to-top visibility. */
+      var bar = document.getElementById('progress');
+      var toTop = document.getElementById('toTop');
+      function onScroll() {
+        var st = window.pageYOffset || root.scrollTop;
+        var h = root.scrollHeight - root.clientHeight;
+        if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + '%';
+        if (toTop) toTop.classList.toggle('show', st > 600);
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      if (toTop) toTop.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      });
+
+      /* Scrollspy: highlight the nav link for the section in view. */
+      var navLinks = {};
+      document.querySelectorAll('nav a[href^="#"]').forEach(function (a) { navLinks[a.getAttribute('href').slice(1)] = a; });
+      if ('IntersectionObserver' in window && Object.keys(navLinks).length) {
+        var spy = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting && navLinks[en.target.id]) {
+              Object.keys(navLinks).forEach(function (k) { navLinks[k].classList.remove('active'); });
+              navLinks[en.target.id].classList.add('active');
+            }
+          });
+        }, { rootMargin: '-45% 0px -50% 0px' });
+        document.querySelectorAll('section[id]').forEach(function (s) { if (navLinks[s.id]) spy.observe(s); });
+      }
+
+      /* Lightbox: click any .figure .frame to enlarge a clone. */
+      var lb = document.getElementById('lightbox');
+      var lbClose = document.getElementById('lbClose');
+      function closeLb() { if (!lb) return; lb.classList.remove('open'); var c = lb.querySelector('.lb-content'); if (c) c.remove(); }
+      if (lb) {
+        document.querySelectorAll('.figure .frame').forEach(function (img) {
+          img.addEventListener('click', function () {
+            var clone = img.cloneNode(true);
+            clone.classList.remove('frame'); clone.classList.add('lb-content');
+            clone.removeAttribute('style'); clone.style.cursor = 'zoom-out';
+            lb.appendChild(clone);
+            lb.classList.add('open');
+          });
+        });
+        lb.addEventListener('click', function (e) { if (e.target === lb || e.target.closest('.lb-close')) closeLb(); });
+        if (lbClose) lbClose.addEventListener('click', closeLb);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLb(); });
+      }
+    })();
+  </script>
 </body>
 </html>
