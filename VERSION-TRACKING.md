@@ -24,6 +24,9 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 
 ## Quick Upgrade Reference
 
+**Just updated (2026-06-22)**:
+- Prometheus 29.12.0 -> 29.13.0 (patch; app remains v3.12.0)
+
 **Just updated (2026-02-05)**:
 - Loki 6.51.0 → 6.52.0 (patch)
 - Prometheus 28.8.0 → 28.8.1 (patch)
@@ -105,7 +108,7 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | **Loki** | `7.0.0` | `7.0.0` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `29.12.0` | `29.12.0` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `29.13.0` | `29.13.0` | 🔄 **Just updated** (2026-06-22) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 | **OpenTelemetry Collector** | `0.145.0` | ⚠️ **Check latest** | 🔄 **Just added** (2026-02-07) | `argocd/applications/otel-collector.yaml` | [OTel Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
