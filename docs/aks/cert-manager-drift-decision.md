@@ -1,6 +1,6 @@
 # AKS cert-manager drift decision
 
-Status: Routed out of this repo; needs live diff in the owner repo
+Status: Routed out of this repo; field-level diff identified
 
 Issue: [#88](https://github.com/Canepro/central-observability-hub-stack/issues/88)
 
@@ -11,9 +11,9 @@ Closing reference: Closes #88 for the GrafanaLocal tracker.
 `aks-cert-manager` is a live AKS GitOps drift, but this repo is not the source
 owner for the `aks-cert-manager` Argo CD Application manifest.
 
-Current classification: needs live diff before a source fix. Do not add an
-`ignoreDifferences` rule or force-sync from this repo based only on the app
-summary. The known drifted resource is cluster-scoped:
+Current classification: needs source-backed handling in the owner repo. Do not
+add an `ignoreDifferences` rule in this repo. The known drifted resource is
+cluster-scoped:
 `admissionregistration.k8s.io/ValidatingWebhookConfiguration/cert-manager-webhook`.
 
 ## Evidence
@@ -40,6 +40,18 @@ summary. The known drifted resource is cluster-scoped:
 - `/Users/canepro/src/rocketchat-k8s/reports/2026-06-17-weekly-aks-maintenance.html`
   says the app was not force-synced because it includes cluster-scoped
   cert-manager resources and has prune-capable policy.
+- The 2026-06-29 OKE maintenance run verified Azure MCP state:
+  `rg-canepro-aks/aks-canepro` was `Running`, provisioning `Succeeded`, with
+  node pool `system2` running 2 nodes.
+- A hard Argo refresh plus a non-prune Argo sync against `v1.20.0` cleared the
+  stale March DNS sync failure, but the app remained `Healthy/OutOfSync`.
+- Read-only AKS live evidence showed the live webhook matches desired webhook
+  behavior: service `cert-manager-webhook`, path `/validate`, `failurePolicy:
+  Fail`, `matchPolicy: Equivalent`, `sideEffects: None`, and `timeoutSeconds:
+  30`.
+- The remaining known diff is the injected `webhooks[].clientConfig.caBundle`
+  on the live webhook. That field is populated by cert-manager CA injection and
+  is absent from the rendered Helm desired state.
 
 ## Decision
 
@@ -47,25 +59,25 @@ Do not edit `argocd/applications/*` in this repo for this drift. This repo owns
 the OKE observability hub and the AppProject permission boundary for the AKS
 spoke. It does not own the `aks-cert-manager` Application desired state.
 
-Do not classify the drift as harmless controller-managed/defaulted noise yet.
-The current evidence identifies the drifted resource, but it does not include
-the desired-vs-live field diff. Without that field-level diff, a narrow
-`ignoreDifferences` rule would be a guess.
+The current evidence supports treating the remaining diff as cert-manager
+CA-injection drift, not webhook behavior drift. The source-backed fix still
+belongs in the owner repo, because this repo does not own the
+`aks-cert-manager` Application manifest.
 
 ## Gated next step
 
-Run the next investigation from the owner repo, read-only first:
+Run the next fix from the owner repo:
 
 ```bash
 cd /Users/canepro/src/rocketchat-k8s
 argocd app diff aks-cert-manager --resource admissionregistration.k8s.io:ValidatingWebhookConfiguration:cert-manager-webhook
-argocd app get aks-cert-manager -o json
 ```
 
-If the diff is limited to controller-managed or Kubernetes-defaulted fields,
-add a narrow `ignoreDifferences` rule in
+If the diff is still limited to `webhooks[].clientConfig.caBundle`, add a
+narrow `ignoreDifferences` rule in
 `GrafanaLocal/argocd/applications/aks-cert-manager.yaml` in the
-`rocketchat-k8s` repo. Ignore only the exact diffed fields.
+`rocketchat-k8s` repo. Ignore only that field on
+`admissionregistration.k8s.io/ValidatingWebhookConfiguration/cert-manager-webhook`.
 
 If the diff changes webhook semantics, CA injection, service reference, failure
 policy, namespace/object selectors, or admission rules, treat it as a real
