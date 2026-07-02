@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-07-01
+**Last Updated**: 2026-07-02
 
 ## Upgrade Status Legend
 
@@ -432,6 +432,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-07-01
+**Document Last Updated**: 2026-07-02
 **Next Scheduled Review**: 2026-07-17
 **Maintained By**: Infrastructure Team
