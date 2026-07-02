@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OKE observability weekly maintenance - 2026-06-15</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d11;
+      --panel: #141821;
+      --panel-2: #1a202b;
+      --line: rgba(255,255,255,0.09);
+      --text: #ece7da;
+      --muted: #a6afbd;
+      --soft: #7f8898;
+      --accent: #d2a657;
+      --good: #89c98f;
+      --warn: #e0b35d;
+      --bad: #de8e82;
+      --info: #92b6db;
+      --shadow: 0 20px 50px -30px rgba(0,0,0,0.8);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: ui-serif, Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(700px 260px at 15% -10%, rgba(210,166,87,0.12), transparent 70%),
+        linear-gradient(180deg, #0e1117, var(--bg));
+      line-height: 1.55;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre { font-family: var(--mono); }
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 56px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .hero, .section {
+      background: linear-gradient(180deg, rgba(255,255,255,0.025), transparent), var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: 36px 38px; }
+    .kicker {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 34px;
+      line-height: 1.08;
+    }
+    .lede {
+      max-width: 78ch;
+      color: var(--muted);
+      margin: 16px 0 0;
+      font-size: 17px;
+    }
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .fact {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 15px 16px;
+    }
+    .label {
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .value { margin-top: 8px; font-size: 18px; font-weight: 650; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid currentColor;
+    }
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .warn { color: var(--warn); background: rgba(224,179,93,0.12); }
+    .good { color: var(--good); background: rgba(137,201,143,0.12); }
+    .bad { color: var(--bad); background: rgba(222,142,130,0.12); }
+    .info { color: var(--info); background: rgba(146,182,219,0.12); }
+    nav {
+      position: sticky;
+      top: 0;
+      margin: 18px 0;
+      padding: 10px 0;
+      backdrop-filter: blur(10px);
+      background: rgba(11,13,17,0.86);
+      border-bottom: 1px solid var(--line);
+      z-index: 10;
+    }
+    nav a {
+      display: inline-block;
+      margin: 0 8px 8px 0;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .section { padding: 24px 26px; margin-top: 16px; }
+    h2 { margin: 0 0 14px; font-size: 22px; }
+    p, li { color: var(--muted); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--text); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    td code { font-size: 12px; }
+    .callout {
+      border-left: 3px solid var(--accent);
+      padding: 12px 14px;
+      background: rgba(210,166,87,0.08);
+      border-radius: 0 10px 10px 0;
+      color: var(--text);
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 12px;
+      background: #090b0f;
+      border: 1px solid var(--line);
+      overflow: auto;
+      color: #d8e0eb;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    details { margin-top: 12px; }
+    summary { cursor: pointer; color: var(--text); font-weight: 600; }
+    .foot {
+      margin-top: 18px;
+      color: var(--soft);
+      font-size: 13px;
+    }
+    @media (max-width: 900px) {
+      .facts, .grid-2 { grid-template-columns: 1fr; }
+      .shell { width: min(100% - 24px, 1120px); }
+      .hero, .section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div>Mira weekly maintenance report</div>
+      <div>Generated 2026-06-15 13:08 UTC</div>
+    </div>
+
+    <section class="hero" id="summary">
+      <div class="kicker">OKE observability weekly maintenance</div>
+      <h1>OKE hub healthy. One AKS Argo drift still needs repo-level follow-through.</h1>
+      <p class="lede">
+        The OKE observability hub is healthy from live Grafana and Kubernetes evidence. Azure control plane shows
+        <code>rg-canepro-aks/aks-canepro</code> is currently <code>Running</code>, so the remaining <code>aks-cert-manager</code>
+        <code>Healthy/OutOfSync</code> state is not a parked-cluster blind spot. It is a narrow AKS-side GitOps drift, not an OKE runtime incident.
+      </p>
+      <div class="facts">
+        <div class="fact">
+          <div class="label">Top-level status</div>
+          <div class="value"><span class="status warn">Warning</span></div>
+        </div>
+        <div class="fact">
+          <div class="label">OKE hub</div>
+          <div class="value"><span class="status good">Healthy</span></div>
+        </div>
+        <div class="fact">
+          <div class="label">AKS control plane</div>
+          <div class="value"><span class="status info">Running</span></div>
+        </div>
+        <div class="fact">
+          <div class="label">GitHub queue</div>
+          <div class="value">6 issues, 1 PR</div>
+        </div>
+      </div>
+    </section>
+
+    <nav>
+      <a href="#health">Health</a>
+      <a href="#grafana">Grafana MCP</a>
+      <a href="#aks">AKS classification</a>
+      <a href="#queue">GitHub queue</a>
+      <a href="#changes">Changes</a>
+      <a href="#verification">Verification</a>
+      <a href="#gates">Risks and gates</a>
+      <a href="#handoff">Handoff and memory</a>
+    </nav>
+
+    <section class="section" id="health">
+      <h2>OKE health</h2>
+      <div class="grid-2">
+        <div>
+          <table>
+            <tr><th>Area</th><th>Result</th></tr>
+            <tr><td>Nodes</td><td>Deterministic script and live Prometheus agree the OKE hub is healthy. No OKE node readiness failure was observed.</td></tr>
+            <tr><td>Watched pods</td><td>No watched OKE pod was flagged as non-running by the deterministic script.</td></tr>
+            <tr><td>Argo CD</td><td>All OKE-local apps are <code>Healthy/Synced</code>. The only drifted app is AKS-targeted <code>aks-cert-manager</code>.</td></tr>
+            <tr><td>External Secrets</td><td>No non-ready External Secrets or ClusterSecretStores were flagged by the baseline script.</td></tr>
+            <tr><td>Storage</td><td>Monitoring PVCs remained bound in the deterministic baseline.</td></tr>
+          </table>
+        </div>
+        <div>
+          <div class="callout">
+            <strong>Escalation decision:</strong> <code>k8s-sre-triage</code> was not used for OKE. The live evidence did not show an OKE node, pod, PVC, ingress, DNS, or rollout failure. The remaining problem is Argo CD convergence on an AKS-targeted app, so this stayed in the GitOps lane.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="grafana">
+      <h2>Grafana MCP evidence</h2>
+      <table>
+        <tr><th>Check</th><th>Evidence</th><th>Conclusion</th></tr>
+        <tr><td>Datasources</td><td><code>prometheus</code>, <code>loki</code>, and <code>tempo</code> listed with the expected fixed UIDs.</td><td>Good</td></tr>
+        <tr><td>Grafana-managed alert rules</td><td><code>alerting_manage_rules list</code> returned <code>null</code>.</td><td>Fallback used: Prometheus <code>ALERTS</code> query plus repo alerting config.</td></tr>
+        <tr><td>Scrape failures</td><td><code>count by (cluster, job) (up == 0)</code> returned no series.</td><td>No current scrape-down targets from this view.</td></tr>
+        <tr><td>Node readiness</td><td><code>kube_node_status_condition{condition="Ready",status="true"}</code> returned <code>oke-hub=4</code> and <code>aks-canepro=4</code>.</td><td>Both clusters are currently reporting Ready node samples.</td></tr>
+        <tr><td>Argo app state</td><td><code>argocd_app_info{sync_status!="Synced"}</code> returned one series: <code>aks-cert-manager</code> with <code>health=Healthy</code> and <code>sync=OutOfSync</code>.</td><td>One narrow AKS GitOps drift.</td></tr>
+        <tr><td>Firing alerts</td><td><code>ALERTS{alertstate=~"firing|pending"}</code> returned no series.</td><td>No current firing or pending Prometheus alerts.</td></tr>
+        <tr><td>Restarts</td><td>24h restart increases appeared only on AKS-side Rocket.Chat services: <code>account</code>, <code>authorization</code>, <code>ddp-streamer</code>, and <code>presence</code>.</td><td>Matches the AKS weekly maintenance startup churn noted earlier today.</td></tr>
+        <tr><td>Tempo ingest</td><td><code>sum(increase(tempo_distributor_spans_received_total[5m])) = 1345.56</code>.</td><td>Trace ingest is active.</td></tr>
+        <tr><td>Loki high-signal errors</td><td>Recent error lines were dominated by AKS <code>node-exporter</code> connection reset messages. No fresh Argo DNS failure was found in the last hour.</td><td>Some AKS observability noise, but no current OKE-local failure pattern.</td></tr>
+      </table>
+      <details>
+        <summary>Sample Loki evidence</summary>
+        <pre>2026-06-15T13:04:56Z node-exporter on aks-canepro:
+error encoding and sending metric family: write tcp 10.244.1.2:9100-&gt;10.0.1.4:53146:
+write: connection reset by peer</pre>
+      </details>
+    </section>
+
+    <section class="section" id="aks">
+      <h2>AKS expected-state classification</h2>
+      <table>
+        <tr><th>Source</th><th>Observed state</th><th>Why it matters</th></tr>
+        <tr><td>Azure MCP</td><td><code>rg-canepro-aks/aks-canepro</code> is <code>Running</code>, <code>provisioningState=Succeeded</code>, <code>kubernetesVersion=1.34.3</code>, <code>nodeCount=2</code>.</td><td>This removes the parked-cluster exemption for AKS Argo drift during this run.</td></tr>
+        <tr><td>Rocket.Chat AKS weekly report</td><td>Today&apos;s AKS maintenance report says AKS stayed running and remained on the normal auto-shutdown path.</td><td>Fresh repo-local proof confirms Azure control-plane truth.</td></tr>
+        <tr><td>Argo CD app state</td><td>Only <code>aks-cert-manager</code> is <code>Healthy/OutOfSync</code>. Other AKS apps are <code>Healthy/Synced</code>.</td><td>This is not an AKS-wide connectivity failure.</td></tr>
+        <tr><td>Current owner repo</td><td>The AKS app manifests do not live in this repo. The active source for <code>aks-cert-manager</code> is the AKS GitOps surface under <code>/Users/canepro/src/rocketchat-k8s</code>.</td><td>The fix path is cross-repo, not an OKE hub manifest edit here.</td></tr>
+      </table>
+      <div class="callout">
+        <strong>Current call:</strong> no Azure cost-changing action was taken. No AKS start, stop, scale, deploy, or credential action was needed. The remaining follow-through is a repo-level AKS Argo drift check, likely around the self-managed <code>ValidatingWebhookConfiguration/cert-manager-webhook</code>.
+      </div>
+    </section>
+
+    <section class="section" id="queue">
+      <h2>GitHub queue decisions</h2>
+      <table>
+        <tr><th>Item</th><th>Classification</th><th>Decision</th></tr>
+        <tr><td><a href="https://github.com/Canepro/central-observability-hub-stack/pull/69">PR #69</a></td><td>Needs refresh</td><td>Green and mergeable, but stale. It only bumps NGINX to <code>4.15.1</code> and Prometheus to <code>28.14.0</code> on a branch last updated 2026-04-07. Official sources now show Prometheus chart <code>29.12.0</code> and Jenkins chart <code>5.9.25</code>. Not merged.</td></tr>
+        <tr><td><a href="https://github.com/Canepro/central-observability-hub-stack/issues/70">Issue #70</a></td><td>Stale but still relevant</td><td>Automated major-update issue kept open as a tracker, but its comment stream is noisy and old. Treat as a prompt to refresh the upgrade plan, not as current release proof.</td></tr>
+        <tr><td>Issues #82-84</td><td>Approval-gated</td><td>Security, ingress, and secret-rotation work crosses hard gates or needs product judgment. No live mutation attempted.</td></tr>
+        <tr><td><a href="https://github.com/Canepro/central-observability-hub-stack/issues/85">Issue #85</a></td><td>Actionable</td><td>Still a valid documentation task. No direct evidence this week closes it.</td></tr>
+        <tr><td><a href="https://github.com/Canepro/central-observability-hub-stack/issues/87">Issue #87</a></td><td>Needs investigation</td><td>PipelineHealer correctly stopped at env-specific context. No workflow rerun or credentials change was attempted in this pass.</td></tr>
+      </table>
+    </section>
+
+    <section class="section" id="changes">
+      <h2>Actions taken</h2>
+      <table>
+        <tr><th>Type</th><th>Action</th><th>Proof</th></tr>
+        <tr><td>Source change</td><td>Patched <code>scripts/weekly_oke_observability_check.py</code> so AKS Argo drift is reported separately from OKE app failures.</td><td>Committed and pushed as <code>3a1494f</code>.</td></tr>
+        <tr><td>Read-only runtime checks</td><td>Ran the weekly collector, Azure AKS control-plane read, Grafana MCP queries, Loki checks, and GitHub queue inspection.</td><td>Evidence saved in <code>reports/2026-06-15-weekly-oke-observability-check.json</code> and summarized here.</td></tr>
+        <tr><td>Public GitHub mutation</td><td>No PR merge, issue close, comment, label, or Argo/Terraform live action was taken.</td><td>Skipped because the queue did not present a safe ready-to-land item.</td></tr>
+      </table>
+    </section>
+
+    <section class="section" id="verification">
+      <h2>Verification</h2>
+      <table>
+        <tr><th>Command or check</th><th>Result</th></tr>
+        <tr><td><code>python3 scripts/weekly_oke_observability_check.py</code></td><td>Re-ran after the patch. Result: <code>status=partial</code> with one AKS warning instead of a misleading non-AKS fail.</td></tr>
+        <tr><td><code>python3 -m py_compile scripts/weekly_oke_observability_check.py</code></td><td>Pass.</td></tr>
+        <tr><td><code>git diff --check</code></td><td>Pass before commit.</td></tr>
+        <tr><td>Grafana MCP datasources</td><td>Prometheus, Loki, and Tempo confirmed.</td></tr>
+        <tr><td>Azure MCP AKS read</td><td><code>powerState=Running</code> for <code>rg-canepro-aks/aks-canepro</code>.</td></tr>
+        <tr><td>GitHub queue refresh</td><td>Open issues and PRs re-read before queue decisions.</td></tr>
+      </table>
+      <details>
+        <summary>Command highlights</summary>
+        <pre>git commit -m "fix: classify AKS Argo drift separately in weekly check"
+git push origin main
+
+Grafana MCP:
+- list_datasources
+- alerting_manage_rules list
+- query_prometheus for up, argocd_app_info, ALERTS, restarts, tempo spans
+- query_loki_stats and query_loki_logs
+
+Azure MCP:
+- aks_cluster_get resource-group=rg-canepro-aks cluster=aks-canepro</pre>
+      </details>
+    </section>
+
+    <section class="section" id="gates">
+      <h2>Residual risks and approval gates</h2>
+      <table>
+        <tr><th>Item</th><th>Status</th><th>Notes</th></tr>
+        <tr><td>AKS cert-manager drift</td><td><span class="status warn">Open</span></td><td>Needs AKS-side GitOps follow-through in <code>/Users/canepro/src/rocketchat-k8s</code> or a current-source explanation for the webhook drift.</td></tr>
+        <tr><td>Major dependency upgrades</td><td><span class="status warn">Open</span></td><td>Prometheus 29.x, Loki 7.x, Jenkins chart 5.9.25, and newer OTel collector chart work remain unplanned here.</td></tr>
+        <tr><td>Security and ingress issues</td><td><span class="status bad">Approval-gated</span></td><td>Issues #82-84 remain behind security, ingress, or secret-handling gates.</td></tr>
+        <tr><td>Hard gates not crossed</td><td><span class="status good">Respected</span></td><td>No secret-value reads, no Azure cost-changing action, no direct Kubernetes mutation, no Terraform apply, and no Argo CD sync or prune.</td></tr>
+      </table>
+    </section>
+
+    <section class="section" id="handoff">
+      <h2>Selene handoff and second-brain writeback</h2>
+      <table>
+        <tr><th>Artifact</th><th>Status</th></tr>
+        <tr><td>Selene handoff id</td><td><code>handoff-20260615T131213Z-706789f3</code> via topic <code>oke-observability-weekly-maintenance</code></td></tr>
+        <tr><td>Second-brain activity record</td><td><code>memory/2026-06-15-grafanalocal-oke-weekly-maintenance-2026-06-15.md</code> created with fingerprint <code>32b553118ddacb826e6e2c5153d4a2c0318300df727accab8100f56b3c6fe2d3</code>.</td></tr>
+        <tr><td>Second-brain doctor</td><td><span class="status bad">Pre-existing fail</span> Writeback succeeded, but <code>doctor --json</code> reported <code>graph-resolution: 1 unresolved graph edges</code> and <code>refresh-drift: 47 expected imported notes missing</code>.</td></tr>
+      </table>
+    </section>
+
+    <div class="foot">
+      Report author: Mira. Source revision: <code>3a1494f</code> on <code>main</code>.
+      Repo: <code>/Users/canepro/src/GrafanaLocal</code>.
+    </div>
+  </div>
+</body>
+</html>
