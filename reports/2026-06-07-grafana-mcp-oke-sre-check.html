@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OKE SRE Check - Grafana MCP - 2026-06-07</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1115;
+      --panel: #171a20;
+      --panel-2: #20242c;
+      --ink: #f3f1e8;
+      --muted: #b9b5aa;
+      --line: #343843;
+      --accent: #d1a85b;
+      --good: #8fcf91;
+      --warn: #e2b15e;
+      --bad: #e07b73;
+      --info: #9bb5d6;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: #0f1115;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+    a { color: var(--accent); }
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 24px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .headline, .card, .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .headline { padding: 28px; }
+    h1, h2, h3 { margin: 0; line-height: 1.14; letter-spacing: 0; }
+    h1 { font-size: clamp(2rem, 4vw, 4.4rem); }
+    h2 { font-size: 1.35rem; }
+    h3 { font-size: 1rem; }
+    p { color: var(--muted); }
+    .lede { max-width: 760px; font-size: 1.06rem; }
+    .meta { display: grid; gap: 12px; }
+    .card { padding: 16px; }
+    .label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .value { margin-top: 6px; font-size: 1.12rem; font-weight: 760; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      font-weight: 780;
+      font-size: 0.86rem;
+    }
+    .status:before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .partial { color: var(--warn); }
+    .done { color: var(--good); }
+    .risk { color: var(--bad); }
+    .info { color: var(--info); }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 0 14px;
+      background: rgba(15, 17, 21, 0.9);
+      backdrop-filter: blur(10px);
+    }
+    nav a {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .section {
+      grid-column: span 12;
+      padding: 22px;
+      scroll-margin-top: 76px;
+    }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.95rem;
+    }
+    th { color: var(--ink); background: var(--panel-2); }
+    td { color: var(--muted); }
+    tr:last-child td { border-bottom: 0; }
+    code, pre {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+    }
+    pre {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #101318;
+      color: #ded8c9;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .pill {
+      display: inline-flex;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: #121419;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .callout {
+      border-left: 4px solid var(--warn);
+      padding: 12px 14px;
+      background: #1b1810;
+      color: var(--muted);
+      border-radius: 6px;
+    }
+    @media (max-width: 820px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .section, .span-4, .span-6, .span-8 { grid-column: span 1; }
+      .topbar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <div><strong>Grafana MCP SRE check</strong></div>
+      <div>Observed around 2026-06-07 22:17 UTC</div>
+    </div>
+
+    <section class="hero">
+      <div class="headline">
+        <div class="status done">Healthy</div>
+        <h1>OKE is healthy. AKS is parked on purpose.</h1>
+        <p class="lede">Prometheus, Kubernetes state metrics, and Loki all point to a quiet OKE hub. Argo CD cannot reach the AKS destination hostname, but the repo docs say the AKS spoke is on-demand and may be auto-shutdown to control cost.</p>
+      </div>
+      <div class="meta">
+        <div class="card">
+          <div class="label">Cluster</div>
+          <div class="value">oke-hub</div>
+        </div>
+        <div class="card">
+          <div class="label">Datasources</div>
+          <div class="value">Prometheus, Loki, Tempo</div>
+        </div>
+        <div class="card">
+          <div class="label">Scope</div>
+          <div class="value">Read-only Grafana MCP queries</div>
+        </div>
+      </div>
+    </section>
+
+    <nav>
+      <a href="#summary">Summary</a>
+      <a href="#checks">Checks</a>
+      <a href="#finding">Finding</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#next">Next</a>
+    </nav>
+
+    <div class="grid">
+      <section id="summary" class="section">
+        <h2>Summary</h2>
+        <table>
+          <thead>
+            <tr><th>Area</th><th>Status</th><th>Evidence</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Nodes</td><td><span class="pill">Healthy</span></td><td>4 Ready node series reported for <code>oke-hub</code>. The duplicate series are from local and federated labels, representing 2 node names.</td></tr>
+            <tr><td>Scrape health</td><td><span class="pill">Healthy</span></td><td><code>count by (cluster, job) (up == 0)</code> returned no data. Prometheus sees 23 <code>oke-hub</code> targets plus 1 unlabeled target.</td></tr>
+            <tr><td>Pods</td><td><span class="pill">Healthy</span></td><td>86 current pods across monitored namespaces, and 86 Running pods. No Pending, Failed, or Unknown pods returned.</td></tr>
+            <tr><td>Workloads</td><td><span class="pill">Healthy</span></td><td>No unavailable Deployments, StatefulSets, or DaemonSets returned.</td></tr>
+            <tr><td>Capacity</td><td><span class="pill">Low pressure</span></td><td>CPU: 1.8 to 2.2 percent per node. Memory: 11.5 to 19.5 percent per node. Root filesystem: about 67.7 to 68.0 percent used.</td></tr>
+            <tr><td>Restarts and waits</td><td><span class="pill">Quiet</span></td><td>No container restarts above zero over 6 hours. No waiting containers. No current OOMKilled last-terminated series returned.</td></tr>
+            <tr><td>Alerts</td><td><span class="pill">Quiet</span></td><td>Prometheus <code>ALERTS{alertstate="firing"}</code> returned no data. Grafana-managed firing or pending rule lookup returned <code>null</code>.</td></tr>
+            <tr><td>GitOps</td><td><span class="pill">Expected parked spoke</span></td><td>OKE-local Argo CD apps are Healthy/Synced. AKS-targeted apps are Healthy/Unknown because the AKS destination is unreachable, which is expected while the cost-saving AKS spoke is shut down.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="checks" class="section span-6">
+        <h2>Runtime Checks</h2>
+        <table>
+          <thead>
+            <tr><th>Check</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Datasource discovery</td><td>Prometheus UID <code>prometheus</code>, Loki UID <code>loki</code>, Tempo UID <code>tempo</code>.</td></tr>
+            <tr><td>Kubernetes dashboards</td><td>Found generic Kubernetes dashboards: <code>k8s_views_global</code> and <code>k8s_views_pods</code>. No OKE-specific dashboard returned.</td></tr>
+            <tr><td>Node conditions</td><td>No MemoryPressure, DiskPressure, PIDPressure, or NetworkUnavailable condition returned as active.</td></tr>
+            <tr><td>Storage</td><td>No unbound PVCs returned. Node root filesystems are below emergency thresholds but worth watching near 70 percent.</td></tr>
+            <tr><td>Loki volume</td><td>Last-hour log selector across namespaces saw 14 streams, 17 chunks, 13,335 entries, and about 3 MB.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="finding" class="section span-6">
+        <h2>Finding</h2>
+        <div class="callout">
+          Argo CD is still unable to resolve <code>aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io</code> from inside OKE DNS. With the repo docs included, this is expected when the AKS spoke is intentionally shut down and only becomes actionable if AKS was supposed to be online for work.
+        </div>
+        <p>The affected apps observed through <code>argocd_app_info</code> are <code>aks-cert-manager</code>, <code>aks-rocketchat-external-secrets</code>, <code>aks-rocketchat-helm</code>, <code>aks-rocketchat-mongodb-operator</code>, <code>aks-rocketchat-ops</code>, <code>aks-rocketchat-secrets</code>, and <code>aks-traefik</code>. Each reports <code>sync_status="Unknown"</code> against the AKS destination server. That is a blind spot during shutdown, not evidence that OKE is unhealthy.</p>
+      </section>
+
+      <section id="evidence" class="section">
+        <h2>Evidence</h2>
+        <h3>PromQL highlights</h3>
+        <pre>count by (cluster, job) (up == 0)
+=> no data
+
+sum by (namespace, phase) (kube_pod_status_phase{cluster="oke-hub", phase!="Running", phase!="Succeeded"} == 1)
+=> no data
+
+sum by (namespace) (kube_pod_status_phase{cluster="oke-hub", phase="Running"} == 1)
+=> monitoring 34, kube-system 24, argocd 14, cert-manager 6, external-secrets 6, ingress-nginx 2, jenkins 2
+
+100 * sum by (node) (rate(container_cpu_usage_seconds_total{cluster="oke-hub",container!="",pod!=""}[5m])) / sum by (node) (kube_node_status_allocatable{cluster="oke-hub",resource="cpu"})
+=> 10.0.2.147 2.225%, 10.0.2.62 1.800%
+
+100 * sum by (node) (container_memory_working_set_bytes{cluster="oke-hub",container!="",pod!=""}) / sum by (node) (kube_node_status_allocatable{cluster="oke-hub",resource="memory"})
+=> 10.0.2.147 11.544%, 10.0.2.62 19.528%</pre>
+
+        <h3>Argo CD status</h3>
+        <pre>argocd_app_info{cluster="oke-hub"}
+=> OKE-local apps: Healthy/Synced
+=> AKS-targeted apps: Healthy/Unknown while the AKS spoke is parked
+
+Recent Argo CD controller log:
+Failed to cache app resources: failed to get server version:
+Get "https://aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io:443/version?timeout=32s":
+dial tcp: lookup aks-canepro-pjvw5eyz.hcp.uksouth.azmk8s.io on 10.96.5.5:53: no such host</pre>
+
+        <h3>Repo context</h3>
+        <pre>argocd/applications/canepro-spoke-project.yaml
+description: "Management for the k8.canepro.me AKS cluster (may be auto-shutdown on a schedule)"
+
+hub-docs/JENKINS-SPLIT-AGENT-RUNBOOK.md
+Purpose: controller on OKE 24/7, static agent on AKS when cluster is up.
+Runbook includes scheduled AKS shutdown and startup steps.</pre>
+      </section>
+
+      <section id="next" class="section">
+        <h2>Next Checks</h2>
+        <table>
+          <thead>
+            <tr><th>Priority</th><th>Action</th><th>Reason</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>P1</td><td>Only test AKS DNS or API reachability when AKS is intentionally started for a job, migration, or spoke validation window.</td><td>During normal cost-saving shutdown, the Argo CD Unknown state is expected noise rather than an incident.</td></tr>
+            <tr><td>P2</td><td>Optionally tune dashboards or alert wording to mark AKS as on-demand/parked when no current <code>cluster="aks-canepro"</code> samples exist.</td><td>This prevents future checks from misclassifying the cost-control state as broken infrastructure.</td></tr>
+            <tr><td>P2</td><td>Watch OKE root filesystem usage on both nodes.</td><td>About 68 percent used is not urgent, but it is the highest resource ratio observed.</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
