@@ -139,7 +139,7 @@
 
     <section id="next-action">
       <h2>Next Action</h2>
-      <p>Watch the pending <code>HubNodeHighCPU</code> alert and route the AKS cert-manager drift to the owner repo. No user decision is needed for the completed OKE source fix.</p>
+      <p>Route the AKS cert-manager drift to the owner repo. The earlier pending <code>HubNodeHighCPU</code> alert returned no active series during post-run review, so no user decision is needed for the completed OKE source fix.</p>
       <pre>cd /Users/canepro/src/rocketchat-k8s
 argocd app diff aks-cert-manager --resource admissionregistration.k8s.io:ValidatingWebhookConfiguration:cert-manager-webhook</pre>
     </section>
@@ -181,7 +181,7 @@ argocd app diff aks-cert-manager --resource admissionregistration.k8s.io:Validat
           <h3>Prometheus</h3>
           <ul>
             <li><code>count by (cluster, job) (up == 0)</code>: no down targets.</li>
-            <li><code>ALERTS{alertstate=~"firing|pending"}</code>: one pending <code>HubNodeHighCPU</code> for node <code>10.0.2.62</code>, no firing alerts.</li>
+            <li><code>ALERTS{alertstate=~"firing|pending"}</code>: one pending <code>HubNodeHighCPU</code> for node <code>10.0.2.62</code>, no firing alerts during the maintenance run. Post-run review returned no active series for the same query.</li>
             <li>Node readiness: 4 ready series for <code>oke-hub</code>, 4 for <code>aks-canepro</code>.</li>
           </ul>
         </div>
@@ -228,7 +228,7 @@ argocd app diff aks-cert-manager --resource admissionregistration.k8s.io:Validat
       <table>
         <tr><th>Risk</th><th>Status</th><th>Owner or next action</th></tr>
         <tr><td>AKS cert-manager drift</td><td><span class="pill warn">Open</span></td><td>Owner repo <code>/Users/canepro/src/rocketchat-k8s</code>. Current Argo condition is <code>SyncError</code>: runtime nil pointer on <code>ValidatingWebhookConfiguration/cert-manager-webhook</code>.</td></tr>
-        <tr><td>Pending OKE CPU alert</td><td><span class="pill warn">Watch</span></td><td><code>HubNodeHighCPU</code> is pending for node <code>10.0.2.62</code>. Prometheus itself is low CPU after startup; temporary Jenkins jobs were active during the check.</td></tr>
+        <tr><td>OKE CPU alert</td><td><span class="pill ok">Cleared</span></td><td><code>HubNodeHighCPU</code> was pending for node <code>10.0.2.62</code> during the run, then returned no active series during post-run review. Keep a normal next-run watch because the cluster had recent CPU pressure.</td></tr>
         <tr><td>Prometheus request reduction</td><td><span class="pill info">Accepted</span></td><td>Request lowered from <code>500m</code> to <code>250m</code>; limit remains <code>2</code> CPU and memory remains <code>1Gi/2Gi</code>.</td></tr>
       </table>
     </section>
@@ -250,20 +250,20 @@ file: helm/prometheus-values.yaml
 change: server.resources.requests.cpu 500m -> 250m
 
 Argo CD
-oke-observability-stack: Healthy/Synced at d53ce9d
+oke-observability-stack: Healthy/Synced at 5f04683
 prometheus: Healthy/Synced chart 29.14.0
 prometheus pod: prometheus-server-69b597f49f-wtv9v 2/2 Running
 
 Grafana MCP
 datasources: prometheus OK, loki OK, tempo OK
 up == 0: no data
-ALERTS firing or pending: one pending HubNodeHighCPU, no firing alerts
+ALERTS firing or pending: one pending HubNodeHighCPU during run; no active series during post-run review
 Tempo spans: 518 in 5m, 6819 in 30m
 Loki OKE high-signal errors: no entries in last hour</pre>
     </section>
 
     <footer>
-      Generated at 2026-07-06 13:25 UTC by Mira. Source revisions: central repo <code>d53ce9d</code>, PR #103 merge <code>6616a7f</code>. Automation ID: <code>oke-observability-weekly-maintenance</code>.
+      Generated at 2026-07-06 13:20 UTC; reviewed at 2026-07-06 13:41 UTC by Mira. Source revisions: report commit <code>5f04683</code>, operational fix <code>d53ce9d</code>, PR #103 merge <code>6616a7f</code>. Automation ID: <code>oke-observability-weekly-maintenance</code>.
     </footer>
   </div>
 </body>
