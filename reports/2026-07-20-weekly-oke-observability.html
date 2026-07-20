@@ -1,0 +1,256 @@
+<!doctype html>
+<!-- Codex HTML Report Template v0.7.2: dark-first editorial report. Layered surfaces, gated status, timestamped, evidence-first. -->
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekly OKE Observability Maintenance - 2026-07-20</title>
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg:#0a0c10; --surface:#151821; --surface-2:#1d2230; --surface-3:#252b3a;
+      --ink:#f5f0e6; --muted:#b7bfcc; --soft:#8993a3; --line:rgba(255,255,255,.12);
+      --accent:#d6aa5c; --good:#87cc8b; --warn:#e2b45e; --bad:#e58b7d; --info:#93b8df;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
+    html[data-theme="light"] { --bg:#f4f1ea; --surface:#fff; --surface-2:#f7f4ec; --surface-3:#ece6d9; --ink:#1b1f26; --muted:#4d5563; --soft:#6f7783; --line:rgba(20,22,28,.14); --accent:#9a6418; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:radial-gradient(900px 360px at 50% -180px,rgba(214,170,92,.16),transparent 70%),var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.58; }
+    a { color:var(--accent); } code,pre { font-family:var(--mono); }
+    :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    .skip { position:absolute; left:12px; top:-48px; z-index:10; padding:8px 12px; border-radius:8px; background:var(--accent); color:#111; font-weight:800; }
+    .skip:focus { top:12px; }
+    .shell { width:min(1120px,calc(100% - 32px)); margin:0 auto; padding:24px 0 72px; }
+    .topbar { display:flex; justify-content:space-between; gap:16px; align-items:center; color:var(--muted); margin-bottom:18px; }
+    .brand { font-weight:800; color:var(--ink); } .tools { display:flex; gap:8px; }
+    button { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:7px 12px; cursor:pointer; }
+    .hero,section { background:linear-gradient(180deg,var(--surface-2),var(--surface)); border:1px solid var(--line); border-radius:16px; box-shadow:0 22px 60px -40px #000; }
+    .hero { padding:42px; margin-bottom:18px; }
+    .kicker { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:.76rem; font-weight:800; margin:0 0 10px; }
+    h1 { font-size:clamp(2rem,5vw,3.8rem); line-height:1.04; margin:0 0 14px; letter-spacing:0; max-width:20ch; }
+    .lede { max-width:880px; color:var(--muted); font-size:1.08rem; margin:0; }
+    .hero-meta { display:flex; flex-wrap:wrap; gap:10px 18px; margin-top:22px; padding-top:16px; border-top:1px solid var(--line); color:var(--soft); font-size:.87rem; }
+    nav { position:sticky; top:0; z-index:5; backdrop-filter:blur(10px); background:color-mix(in srgb,var(--bg) 84%,transparent); border:1px solid var(--line); border-radius:999px; padding:8px; margin:16px 0; overflow-x:auto; white-space:nowrap; }
+    nav a { display:inline-block; padding:7px 12px; color:var(--muted); text-decoration:none; font-size:.9rem; } nav a:hover { color:var(--ink); }
+    section { padding:28px; margin:16px 0; scroll-margin-top:78px; } h2 { margin:0 0 14px; font-size:1.45rem; } h3 { margin:18px 0 8px; font-size:1.05rem; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; } .grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card { background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:14px; }
+    .label { color:var(--soft); font-size:.76rem; text-transform:uppercase; letter-spacing:.1em; font-weight:800; } .value { font-size:1.25rem; font-weight:800; margin-top:4px; }
+    .status { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:4px 9px; font-size:.82rem; font-weight:750; white-space:nowrap; }
+    .status::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .done,.ok { color:var(--good); } .partial,.warn { color:var(--warn); } .gated,.bad { color:var(--bad); } .info { color:var(--info); }
+    .table-wrap { overflow-x:auto; } table { width:100%; border-collapse:collapse; margin-top:12px; overflow-wrap:anywhere; }
+    th,td { border-bottom:1px solid var(--line); padding:10px 9px; vertical-align:top; text-align:left; } th { color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }
+    pre { background:#080a0f; border:1px solid var(--line); border-radius:10px; padding:14px; overflow:auto; color:#dce4ef; white-space:pre-wrap; overflow-wrap:anywhere; }
+    ul { margin:8px 0 0; padding-left:20px; } .timeline { display:grid; gap:10px; }
+    .event { display:grid; grid-template-columns:170px 1fr; gap:12px; padding:12px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; }
+    .event time { color:var(--accent); font-family:var(--mono); font-size:.86rem; } footer { color:var(--soft); font-size:.88rem; margin-top:24px; }
+    @media (max-width:780px) { .hero,section { padding:22px; } .grid,.grid.two { grid-template-columns:1fr; } .event { grid-template-columns:1fr; } .topbar { align-items:flex-start; flex-direction:column; } .hero,.card { min-width:0; } h1 { overflow-wrap:anywhere; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+    @media print { body { background:#fff; color:#111; } nav,.tools,.skip { display:none; } .hero,section,.card { box-shadow:none; break-inside:avoid; } pre,.table-wrap { break-inside:avoid; } a::after { content:" (" attr(href) ")"; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to report</a>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Mira / OKE observability maintenance</div>
+      <div class="tools">
+        <button type="button" aria-label="Toggle light and dark theme" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">Theme</button>
+        <button type="button" aria-label="Print report" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <header class="hero">
+      <p class="kicker">Ops closeout / weekly maintenance</p>
+      <h1>The OKE rollout is healthy. Public access is still gated.</h1>
+      <p class="lede">Loki 7.1.0 and Prometheus 29.18.0 reconciled from PR #104 with every OKE-local Argo application Healthy and Synced. Internal Prometheus, Loki, Tempo, and Grafana datasource proof passed. Public Grafana, Argo CD, and Jenkins remain unreachable through normal DNS because canepro.me still delegates to parking infrastructure instead of the OKE ingress.</p>
+      <div class="hero-meta">
+        <span>Report type: <strong>ops incident and maintenance closeout</strong></span>
+        <span>Status: <strong class="warn">Partial</strong></span>
+        <span>Generated: <strong>2026-07-20 16:52 UTC</strong></span>
+        <span>Source: <strong>4fe164e</strong></span>
+      </div>
+    </header>
+
+    <nav aria-label="Report sections">
+      <a href="#outcome">Outcome</a><a href="#next-action">Next action</a><a href="#gates">Gates</a><a href="#changes">Changes</a><a href="#verification">Verification</a><a href="#timeline">Timeline</a><a href="#risks">Risks</a><a href="#evidence">Evidence</a>
+    </nav>
+
+    <main id="main">
+      <section id="outcome">
+        <h2>Outcome</h2>
+        <div class="grid">
+          <div class="card"><div class="label">Top status</div><div class="value warn">Partial</div></div>
+          <div class="card"><div class="label">OKE GitOps</div><div class="value ok">17/17 healthy</div></div>
+          <div class="card"><div class="label">GitHub queue</div><div class="value ok">0 open</div></div>
+          <div class="card"><div class="label">Public DNS</div><div class="value bad">Gated</div></div>
+        </div>
+        <div class="table-wrap"><table>
+          <caption>Maintenance outcome by surface</caption>
+          <tr><th>Surface</th><th>Result</th><th>Evidence</th></tr>
+          <tr><td>Deterministic baseline</td><td><span class="status partial">Superseded by live proof</span></td><td>The 15:02 UTC collector JSON reported public Jenkins unavailable, one AKS app progressing, and PR #104 open. The collector was not replayed. Each item was resolved or reclassified from current evidence.</td></tr>
+          <tr><td>Loki</td><td><span class="status done">Healthy/Synced</span></td><td>Argo revisions <code>7.1.0</code> and <code>4fe164e</code>. Pod <code>loki-0</code> is 2/2 Running with image <code>grafana/loki:3.6.8</code> and zero rollout restarts.</td></tr>
+          <tr><td>Prometheus</td><td><span class="status done">Healthy/Synced</span></td><td>Argo revisions <code>29.18.0</code> and <code>4fe164e</code>. Prometheus <code>3.13.1</code> is Ready with no down targets, active alerts, unavailable OKE deployments, or two-hour OKE restarts.</td></tr>
+          <tr><td>Grafana MCP</td><td><span class="status gated">Public route blocked</span></td><td>MCP calls returned EOF at <code>grafana.canepro.me</code>. Read-only in-cluster backend checks confirmed Prometheus, Loki, Tempo, and provisioned datasource UIDs <code>prometheus</code>, <code>loki</code>, and <code>tempo</code>.</td></tr>
+          <tr><td>AKS</td><td><span class="status info">Parked as expected</span></td><td>Azure control plane reports <code>ProvisioningState=Succeeded</code>, <code>PowerState=Stopped</code>, Kubernetes 1.34.3. AKS Argo Missing/Progressing noise is expected while parked.</td></tr>
+        </table></div>
+      </section>
+
+      <section id="next-action">
+        <h2>Next action</h2>
+        <p>Restore the domain's intended Cloudflare nameserver delegation from the Namecheap account, then verify public NS and A answers before rerunning Grafana MCP and ACME HTTP-01 checks. This is an account and DNS authority action and was not attempted.</p>
+        <pre>Expected post-fix proof
+dig +short NS canepro.me
+dig +short A grafana.canepro.me argocd.canepro.me jenkins.canepro.me
+curl -I https://grafana.canepro.me
+
+Current public answers
+NS: ns1.lander.d.parity.domains, ns2.lander.d.parity.domains
+A: 216.227.142.171
+OKE ingress public IP: 141.148.16.227</pre>
+      </section>
+
+      <section id="gates">
+        <h2>Authority gates</h2>
+        <div class="table-wrap"><table>
+          <caption>Actions kept outside this maintenance run</caption>
+          <tr><th>Boundary</th><th>Status</th><th>What happened</th></tr>
+          <tr><td>Registrar and DNS</td><td><span class="status gated">Gated</span></td><td>No renewal, nameserver, DNS record, firewall, or Cloudflare mutation. Registry expiry now shows 2027-07-17, but <code>autoRenewPeriod</code> remains and public delegation still points at parking nameservers.</td></tr>
+          <tr><td>Ingress</td><td><span class="status done">No change</span></td><td>No ingress resource or load balancer mutation. Origin-only HTTPS GETs through <code>141.148.16.227</code> returned Grafana 302, Argo CD 200, and Jenkins 403, proving the origin path is alive.</td></tr>
+          <tr><td>Secrets</td><td><span class="status done">Metadata only</span></td><td>No secret values were read, decoded, printed, rotated, or changed. ExternalSecret conditions were inspected with values excluded.</td></tr>
+          <tr><td>AKS and billing</td><td><span class="status done">Read-only</span></td><td>No start, stop, scale, deploy, credential, or cost-changing action. Azure power state was read once after the separate AKS automation returned the cluster to Stopped.</td></tr>
+          <tr><td>Kubernetes and GitOps</td><td><span class="status done">GitOps only</span></td><td>No kubectl patch, delete, scale, restart, prune, force sync, or Terraform action. Argo auto-sync reconciled the merged source.</td></tr>
+        </table></div>
+      </section>
+
+      <section id="changes">
+        <h2>Changes</h2>
+        <div class="table-wrap"><table>
+          <caption>Repository and public queue actions</caption>
+          <tr><th>Surface</th><th>Change</th><th>Reason</th></tr>
+          <tr><td>PR #104 branch</td><td>Added commit <code>6948fb7</code> to align <code>VERSION-TRACKING.md</code> with the final Loki and Prometheus pins, upstream changes, and next review date.</td><td>Jenkins advanced chart pins across daily runs without keeping the durable version table and PR metadata current.</td></tr>
+          <tr><td>PR #104 metadata</td><td>Updated the title and body, then added the required cause, root cause, change, and post-merge verification comment.</td><td>The old title, body, and review context did not match the final diff.</td></tr>
+          <tr><td>Main branch</td><td>Merged PR #104 as <code>4fe164e3150530b2fef16f3b5e556bee291abe2f</code>.</td><td>Final head was mergeable and all four reported checks were successful or intentionally skipped.</td></tr>
+          <tr><td>GitHub queue</td><td>Closed the only open queue item by merge. Final snapshot: zero open issues and zero open pull requests.</td><td>The automation contract requires disposition, not passive triage.</td></tr>
+        </table></div>
+      </section>
+
+      <section id="verification">
+        <h2>Verification</h2>
+        <div class="grid two">
+          <div class="card"><h3>Prometheus</h3><ul>
+            <li>Version <code>3.13.1</code>, readiness passed.</li>
+            <li>23 labeled OKE targets plus one unlabeled target; <code>up == 0</code> returned no series.</li>
+            <li>Two distinct OKE nodes Ready after deduplication.</li>
+            <li>No non-AKS unhealthy Argo series, active alerts, unavailable deployments, or two-hour OKE restart increases.</li>
+            <li>Root filesystem free ratios: 25.9% and 36.7%.</li>
+          </ul></div>
+          <div class="card"><h3>Loki and Tempo</h3><ul>
+            <li>Loki returned 125,948 ingested lines for the sampled five-minute window.</li>
+            <li>High-signal logs contained expected tail-duration noise, parked-AKS DNS noise, and OCI store validation uncertainty. No Loki or Prometheus rollout failure appeared.</li>
+            <li>Tempo readiness passed. Origin-only GETs produced a positive five-minute span increase after the previous idle 15-minute result was zero.</li>
+          </ul></div>
+          <div class="card"><h3>Kubernetes</h3><ul>
+            <li>Both OKE nodes Ready, Kubernetes 1.34.1.</li>
+            <li>Loki and every Prometheus component Ready after rollout, with zero new rollout restarts.</li>
+            <li>Prometheus PVC Bound. Node memory was 84% and 92%; root filesystem headroom remained above 25%.</li>
+            <li>All 17 OKE-local Argo applications Healthy/Synced.</li>
+          </ul></div>
+          <div class="card"><h3>Grafana and secrets</h3><ul>
+            <li>Live provisioning contains datasource UIDs <code>prometheus</code>, <code>loki</code>, and <code>tempo</code>.</li>
+            <li>Grafana-managed alert rule API was not reachable through MCP because public DNS is parked. Prometheus alert evidence and <code>helm/prometheus-values.yaml</code> remain the fallback proof.</li>
+            <li>All 11 listed ExternalSecrets reported <code>SecretSynced</code>. <code>ClusterSecretStore/oci-vault</code> remains <code>ValidationUnknown</code> since 2026-05-04.</li>
+          </ul></div>
+        </div>
+        <div class="table-wrap"><table>
+          <caption>Command-level proof</caption>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td><code>python3 scripts/weekly_oke_observability_check.py --kube-context oke-cluster</code></td><td>Original collector completed and wrote the July 20 JSON. It was not replayed during resume.</td></tr>
+          <tr><td><code>helm template</code> for Loki 7.1.0 and Prometheus 29.18.0</td><td>Passed with repository values before merge. YAML validation, <code>git diff --check</code>, and the repository PipelineHealer triage test also passed.</td></tr>
+          <tr><td>GitHub checks on <code>6948fb7</code></td><td><code>lint-and-validate</code> success, <code>argocd-validator</code> success, CodeRabbit success, OCI storage audit intentionally skipped.</td></tr>
+          <tr><td>Argo application readback</td><td>Loki and Prometheus Healthy/Synced at chart revisions 7.1.0 and 29.18.0 plus source revision <code>4fe164e</code>.</td></tr>
+          <tr><td>Read-only local port-forwards</td><td>Prometheus, Loki, and Tempo queries passed. All three sessions were terminated after evidence collection.</td></tr>
+        </table></div>
+      </section>
+
+      <section id="timeline">
+        <h2>Timeline</h2>
+        <div class="timeline">
+          <div class="event"><time>15:02 UTC</time><div>The deterministic collector completed once and wrote <code>reports/2026-07-20-weekly-oke-observability-check.json</code>.</div></div>
+          <div class="event"><time>15:06 UTC</time><div>Azure showed AKS temporarily Running after the separate weekly AKS maintenance run. Public DNS was localized to registrar parking while the OKE ingress origin remained live.</div></div>
+          <div class="event"><time>15:10 UTC</time><div>Pushed <code>6948fb7</code> to repair PR #104 documentation and metadata.</div></div>
+          <div class="event"><time>15:14 UTC</time><div>Merged PR #104 as <code>4fe164e</code> after the required review comment and green checks.</div></div>
+          <div class="event"><time>16:44 UTC</time><div>Loki and Prometheus were Healthy/Synced at the merged revision with all replacement pods Ready.</div></div>
+          <div class="event"><time>16:47 UTC</time><div>Internal Prometheus, Loki, Tempo, datasource provisioning, DNS, origin, and External Secrets checks completed. Port-forwards were closed.</div></div>
+          <div class="event"><time>16:50 UTC</time><div>Azure confirmed AKS had returned to its expected Stopped state. Final GitHub snapshot showed no open issues or pull requests.</div></div>
+          <div class="event"><time>16:56 UTC</time><div>Sent the redacted Selene host-bridge handoff and wrote the searchable Mira-to-Selene second-brain activity record.</div></div>
+        </div>
+      </section>
+
+      <section id="risks">
+        <h2>Risks</h2>
+        <div class="table-wrap"><table>
+          <caption>Residual risks and owners</caption>
+          <tr><th>Risk</th><th>Status</th><th>Owner and next action</th></tr>
+          <tr><td>Public DNS and ACME HTTP-01</td><td><span class="status gated">Open gate</span></td><td>Vincent or the Namecheap account owner must restore the intended Cloudflare delegation, then verify public A records and pending certificate challenges. No DNS mutation is authorized in this run.</td></tr>
+          <tr><td>OCI store validation uncertainty</td><td><span class="status partial">Observe</span></td><td>OKE secrets owner should inspect <code>ClusterSecretStore/oci-vault</code> provider validation during the next approved secrets window. Active ExternalSecrets remain synced, so no emergency value action is justified.</td></tr>
+          <tr><td>Node headroom</td><td><span class="status partial">Watch</span></td><td>OKE operator should watch node memory, currently 84% and 92%, and minimum root free space, currently 25.9%. No alert or workload unavailability was active.</td></tr>
+          <tr><td>Parked AKS visibility</td><td><span class="status info">Expected</span></td><td>Recheck AKS Argo resources during the next intended-online window. Do not treat Missing/Progressing state as an outage while Azure reports Stopped.</td></tr>
+          <tr><td>Update backlog</td><td><span class="status info">Candidate</span></td><td>Jenkins chart 5.9.39 and OpenTelemetry Collector chart 0.165.0 are current upstream candidates. They require separate release-note review and rollout proof, so this run did not bundle them into PR #104.</td></tr>
+          <tr><td>Second-brain maintenance debt</td><td><span class="status partial">Pre-existing</span></td><td>The activity write succeeded. <code>doctor</code> still reports three unresolved graph edges and 45 expected imported notes missing, plus index freshness after the new note. This is separate from the OKE maintenance outcome.</td></tr>
+        </table></div>
+      </section>
+
+      <section id="evidence">
+        <h2>Evidence</h2>
+        <pre>Repository
+/Users/canepro/src/GrafanaLocal
+main: 4fe164e3150530b2fef16f3b5e556bee291abe2f
+PR: https://github.com/Canepro/central-observability-hub-stack/pull/104
+required review comment: https://github.com/Canepro/central-observability-hub-stack/pull/104#issuecomment-5023859114
+queue: 0 open issues, 0 open pull requests
+
+Collector evidence
+/Users/canepro/src/GrafanaLocal/reports/2026-07-20-weekly-oke-observability-check.json
+generated_at: 2026-07-20T15:02:58Z
+collector replayed after resume: no
+
+Argo and runtime
+loki: Healthy/Synced, revisions 7.1.0 and 4fe164e, image grafana/loki:3.6.8
+prometheus: Healthy/Synced, revisions 29.18.0 and 4fe164e, version 3.13.1
+OKE-local application problems: 0
+down scrape targets: 0
+active pending/firing alerts: 0
+unavailable OKE deployments: 0
+OKE restart increase over 2h: 0
+
+Logs and traces
+Loki sampled ingestion: 125948 lines in 5m
+Tempo: Ready; positive 5m span increase after origin-only GETs
+Grafana datasource UIDs: prometheus, loki, tempo
+
+Authority proof
+AKS: ProvisioningState Succeeded, PowerState Stopped
+public NS: ns1.lander.d.parity.domains, ns2.lander.d.parity.domains
+public A: 216.227.142.171
+OKE ingress public IP: 141.148.16.227
+secret values handled: none
+Terraform actions: none
+manual Argo actions: none</pre>
+        <pre>Closeout coordination
+Selene handoff: handoff-20260720T165614Z-fdd4a38e
+handoff status at send: pending
+second-brain note: /Users/canepro/src/second_brain/vault/handoffs/2026-07-20-oke-observability-weekly-maintenance-2026-07-20.md
+second-brain write: succeeded
+second-brain doctor: failed on pre-existing graph-resolution and refresh-drift debt</pre>
+      </section>
+    </main>
+
+    <footer>Generated by Mira at 2026-07-20 16:52 UTC and finalized after closeout coordination at 16:56 UTC. Automation ID: <code>oke-observability-weekly-maintenance</code>. Source revision: <code>4fe164e</code>. The final report commit and schema-v1 manifest are recorded in the task closeout.</footer>
+  </div>
+</body>
+</html>
