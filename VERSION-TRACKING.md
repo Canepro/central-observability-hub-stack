@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-07-06
+**Last Updated**: 2026-07-20
 
 ## Upgrade Status Legend
 
@@ -23,6 +23,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 **Grafana.com (gnet) revision policy**: the Grafana Helm chart defaults to downloading **revision 1** unless `revision:` is explicitly set. Use `revision: latest` for latest-first behavior, and pin a numeric revision only when you have a specific reason (document why and update it during regular version reviews).
 
 ## Quick Upgrade Reference
+
+**Just updated (2026-07-20)**:
+- Loki 7.0.0 -> 7.1.0 (minor chart; app 3.6.7 -> 3.6.8)
+- Prometheus 29.14.0 -> 29.18.0 (minor chart; app v3.13.0 -> v3.13.1)
 
 **Just updated (2026-07-06)**:
 - Prometheus 29.13.0 -> 29.14.0 (minor chart; app v3.13.0)
@@ -105,10 +109,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **Grafana** | `10.5.15` | `10.5.15` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Loki** | `7.0.0` | `7.0.0` | 🔄 **Just updated** (2026-06-17) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Loki** | `7.1.0` | `7.1.0` | 🔄 **Just updated** (2026-07-20) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `29.14.0` | `29.14.0` | 🔄 **Just updated** (2026-07-06) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `29.18.0` | `29.18.0` | 🔄 **Just updated** (2026-07-20) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 | **OpenTelemetry Collector** | `0.145.0` | ⚠️ **Check latest** | 🔄 **Just added** (2026-02-07) | `argocd/applications/otel-collector.yaml` | [OTel Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
@@ -130,6 +134,12 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 - NGINX Ingress chart 4.15.0 → 4.15.1, controller v1.15.1.
 - Local proof before PR: `helm template` rendered all three target charts with the repo values files.
 - Post-merge proof still required: Argo app health/sync, Prometheus targets, Loki ingestion, and ingress reachability.
+
+**🔄 July 2026 patch refresh**:
+- Prometheus chart 29.14.0 -> 29.18.0 updates Prometheus v3.13.0 -> v3.13.1, Alertmanager v0.33.0 -> v0.33.1, kube-state-metrics chart 7.5.1 -> 7.8.1, node-exporter v1.11.1 -> v1.12.1, and pushgateway chart 3.6.1 -> 3.7.0.
+- Prometheus v3.13.1 fixes incorrect or missing range-query samples after head-chunk truncation.
+- Loki chart 7.0.0 -> 7.1.0 updates Loki 3.6.7 -> 3.6.8. Loki 3.6.8 includes dependency security fixes for JSON parsing, OpenTelemetry, and gRPC.
+- Local `helm template` comparisons with this repo's values showed patch-level image, dependency, label, and generated probe-field changes only. Post-merge proof still requires Argo health/sync, scrape health, Loki ingestion, and alert evaluation.
 
 **💡 Tempo Note**: Currently using single binary mode (v1.24.4). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
 
@@ -432,6 +442,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-07-06
-**Next Scheduled Review**: 2026-07-17
+**Document Last Updated**: 2026-07-20
+**Next Scheduled Review**: 2026-08-03
 **Maintained By**: Infrastructure Team
