@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<!-- Codex HTML Report Template v0.7.2: dark-first editorial report. Layered surfaces, gated status, timestamped, evidence-first. -->
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekly OKE Observability Maintenance - 2026-07-27</title>
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg:#0a0c10; --surface:#151821; --surface-2:#1d2230; --surface-3:#252b3a;
+      --ink:#f5f0e6; --muted:#b7bfcc; --soft:#8993a3; --line:rgba(255,255,255,.12);
+      --accent:#d6aa5c; --good:#87cc8b; --warn:#e2b45e; --bad:#e58b7d; --info:#93b8df;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
+    html[data-theme="light"] { --bg:#f4f1ea; --surface:#fff; --surface-2:#f7f4ec; --surface-3:#ece6d9; --ink:#1b1f26; --muted:#4d5563; --soft:#6f7783; --line:rgba(20,22,28,.14); --accent:#9a6418; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:radial-gradient(900px 360px at 50% -180px,rgba(214,170,92,.16),transparent 70%),var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.58; }
+    a { color:var(--accent); }
+    code,pre { font-family:var(--mono); }
+    :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    .skip { position:absolute; left:12px; top:-48px; z-index:10; padding:8px 12px; border-radius:8px; background:var(--accent); color:#111; font-weight:800; }
+    .skip:focus { top:12px; }
+    .shell { width:min(1120px,calc(100% - 32px)); margin:0 auto; padding:24px 0 72px; }
+    .topbar { display:flex; justify-content:space-between; gap:16px; align-items:center; color:var(--muted); margin-bottom:18px; }
+    .brand { font-weight:800; color:var(--ink); }
+    .tools { display:flex; gap:8px; }
+    button { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:7px 12px; cursor:pointer; }
+    .hero,section { background:linear-gradient(180deg,var(--surface-2),var(--surface)); border:1px solid var(--line); border-radius:16px; box-shadow:0 22px 60px -40px #000; }
+    .hero { padding:42px; margin-bottom:18px; }
+    .kicker { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:.76rem; font-weight:800; margin:0 0 10px; }
+    h1 { font-size:clamp(2rem,5vw,3.8rem); line-height:1.04; margin:0 0 14px; max-width:20ch; }
+    .lede { max-width:880px; color:var(--muted); font-size:1.08rem; margin:0; }
+    .hero-meta { display:flex; flex-wrap:wrap; gap:10px 18px; margin-top:22px; padding-top:16px; border-top:1px solid var(--line); color:var(--soft); font-size:.87rem; }
+    nav { position:sticky; top:0; z-index:5; backdrop-filter:blur(10px); background:color-mix(in srgb,var(--bg) 84%,transparent); border:1px solid var(--line); border-radius:999px; padding:8px; margin:16px 0; overflow-x:auto; white-space:nowrap; }
+    nav a { display:inline-block; padding:7px 12px; color:var(--muted); text-decoration:none; font-size:.9rem; }
+    nav a:hover { color:var(--ink); }
+    section { padding:28px; margin:16px 0; scroll-margin-top:78px; }
+    h2 { margin:0 0 14px; font-size:1.45rem; }
+    h3 { margin:18px 0 8px; font-size:1.05rem; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card { background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:14px; }
+    .label { color:var(--soft); font-size:.76rem; text-transform:uppercase; letter-spacing:.1em; font-weight:800; }
+    .value { font-size:1.25rem; font-weight:800; margin-top:4px; }
+    .status { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:4px 9px; font-size:.82rem; font-weight:750; white-space:nowrap; }
+    .status::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .done,.ok { color:var(--good); }
+    .partial,.warn { color:var(--warn); }
+    .gated,.bad { color:var(--bad); }
+    .info { color:var(--info); }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; overflow-wrap:anywhere; }
+    th,td { border-bottom:1px solid var(--line); padding:10px 9px; vertical-align:top; text-align:left; }
+    th { color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }
+    pre { background:#080a0f; border:1px solid var(--line); border-radius:10px; padding:14px; overflow:auto; color:#dce4ef; white-space:pre-wrap; overflow-wrap:anywhere; }
+    ul { margin:8px 0 0; padding-left:20px; }
+    .timeline { display:grid; gap:10px; }
+    .event { display:grid; grid-template-columns:170px 1fr; gap:12px; padding:12px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; }
+    .event time { color:var(--accent); font-family:var(--mono); font-size:.86rem; }
+    footer { color:var(--soft); font-size:.88rem; margin-top:24px; }
+    @media (max-width:780px) { .hero,section { padding:22px; } .grid,.grid.two { grid-template-columns:1fr; } .event { grid-template-columns:1fr; } .topbar { align-items:flex-start; flex-direction:column; } .hero,.card { min-width:0; } h1 { overflow-wrap:anywhere; } .table-wrap table { min-width:720px; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+    @media print { body { background:#fff; color:#111; } nav,.tools,.skip { display:none; } .hero,section,.card { box-shadow:none; break-inside:avoid; } pre,.table-wrap { break-inside:avoid; } a::after { content:" (" attr(href) ")"; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to report</a>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Mira / OKE observability maintenance</div>
+      <div class="tools">
+        <button type="button" aria-label="Toggle light and dark theme" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">Theme</button>
+        <button type="button" aria-label="Print report" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <header class="hero">
+      <p class="kicker">Ops closeout / weekly maintenance</p>
+      <h1>OKE is healthy. A trace-export timeout burst recovered.</h1>
+      <p class="lede">All 17 OKE-local Argo CD applications are Healthy and Synced, both nodes are Ready, Prometheus has no down targets or active alerts, and Loki is ingesting. A four-minute Tempo compaction coincided with transient ingress and collector deadline errors; the errors stopped, Tempo resumed receiving spans, and no failed or refused span counter increased.</p>
+      <div class="hero-meta">
+        <span>Report type: <strong>weekly ops verification</strong></span>
+        <span>Status: <strong class="warn">Warning</strong></span>
+        <span>Generated: <strong>2026-07-27 15:25 UTC / 16:25 BST</strong></span>
+        <span>Observed source: <strong>4121e0c</strong></span>
+      </div>
+    </header>
+
+    <nav aria-label="Report sections">
+      <a href="#outcome">Outcome</a><a href="#next-action">Next action</a><a href="#gates">Gates</a><a href="#changes">Changes</a><a href="#verification">Verification</a><a href="#timeline">Timeline</a><a href="#risks">Risks</a><a href="#evidence">Evidence</a>
+    </nav>
+
+    <main id="main">
+      <section id="outcome">
+        <h2>Outcome</h2>
+        <div class="grid">
+          <div class="card"><div class="label">Top status</div><div class="value warn">Warning</div></div>
+          <div class="card"><div class="label">OKE GitOps</div><div class="value ok">17/17 healthy</div></div>
+          <div class="card"><div class="label">Active alerts</div><div class="value ok">0</div></div>
+          <div class="card"><div class="label">GitHub queue</div><div class="value ok">0 open</div></div>
+        </div>
+        <div class="table-wrap"><table>
+          <caption>Maintenance outcome by surface</caption>
+          <tbody>
+          <tr><th>Surface</th><th>Result</th><th>Evidence</th></tr>
+          <tr><td>Deterministic baseline</td><td><span class="status done">OK</span></td><td>The collector completed at 15:06:06 UTC with status <code>ok</code> and no findings. It used kube context <code>oke-cluster</code> and was not replayed after recovery.</td></tr>
+          <tr><td>Prometheus</td><td><span class="status done">Healthy/Synced</span></td><td>Chart <code>29.19.0</code>, application <code>v3.13.1</code>. All selected Prometheus pods are Ready with zero restarts. <code>up == 0</code>, active alerts, unavailable deployments, and OKE monitored-namespace restart increases returned no series.</td></tr>
+          <tr><td>Loki</td><td><span class="status done">Ingesting</span></td><td>Grafana MCP counted 6,974 OKE log lines in five minutes. Prometheus duplicate-sample warnings were absent. Broad error queries were classified to avoid expected AKS shutdown noise and the query text feeding back into Loki logs.</td></tr>
+          <tr><td>Tempo and OpenTelemetry</td><td><span class="status partial">Recovered</span></td><td>Tempo's 15:08–15:12 UTC compaction coincided with 24 ingress exporter deadline errors and one collector retry. No matching ingress errors occurred after 15:12:26 UTC. Tempo later received 73 spans in five minutes and 5,825 in 30 minutes; failed and refused span counters stayed at zero.</td></tr>
+          <tr><td>AKS spoke</td><td><span class="status info">Auto-shutdown expected</span></td><td>The owning AKS run started a previously Stopped cluster and chose <code>leave-auto</code>. Azure later showed the node pool <code>Stopping/Stopped</code> while the control plane still reported <code>Running/Succeeded</code>. Current AKS Argo Missing/Progressing and DNS-watch noise are expected during that shutdown transition.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="next-action">
+        <h2>Next action</h2>
+        <p>No immediate live intervention is justified. Keep the existing GitOps state, watch the next Tempo compaction window for another multi-minute distributor-health stall, and review the Jenkins and OpenTelemetry chart candidates as separate changes with release-note, render, and rollout proof.</p>
+        <pre>Recommended follow-up checks
+sum(increase(tempo_distributor_spans_received_total[5m]))
+sum(increase(otelcol_exporter_send_failed_spans_total[1h]))
+sum(increase(otelcol_receiver_refused_spans_total[1h]))
+
+Current update candidates
+jenkins/jenkins: 5.8.0 -> 5.9.45
+open-telemetry/opentelemetry-collector: 0.145.0 -> 0.165.0
+Promtail: deprecated and past its documented 2026-03-02 EOL</pre>
+      </section>
+
+      <section id="gates">
+        <h2>Authority gates</h2>
+        <div class="table-wrap"><table>
+          <caption>Actions kept outside this maintenance run</caption>
+          <tbody>
+          <tr><th>Boundary</th><th>Status</th><th>What happened</th></tr>
+          <tr><td>AKS and billing</td><td><span class="status done">Read-only</span></td><td>No start, stop, scale, deploy, credential, or cost-changing action. Azure control-plane and node-pool state were read only.</td></tr>
+          <tr><td>Secrets</td><td><span class="status done">Conditions only</span></td><td>No secret values were read, decoded, printed, rotated, copied, or changed. ExternalSecret and ClusterSecretStore readiness conditions were inspected with values excluded.</td></tr>
+          <tr><td>Kubernetes and GitOps</td><td><span class="status done">No mutation</span></td><td>No kubectl patch, delete, scale, rollout restart, Argo refresh/sync/prune, or Terraform action. OKE convergence was already healthy.</td></tr>
+          <tr><td>Network and ingress</td><td><span class="status done">No change</span></td><td>No DNS, OCI, firewall, load balancer, certificate, or ingress mutation.</td></tr>
+          <tr><td>Public GitHub state</td><td><span class="status done">No queue mutation needed</span></td><td>The refreshed queue contained no open issue or pull request, so no comment, label, branch, close, or merge action was required.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="changes">
+        <h2>Changes</h2>
+        <div class="table-wrap"><table>
+          <caption>Repository and coordination changes</caption>
+          <tbody>
+          <tr><th>Surface</th><th>Change</th><th>Reason</th></tr>
+          <tr><td><code>VERSION-TRACKING.md</code></td><td>Corrected Prometheus current/latest chart from <code>29.18.0</code> to <code>29.19.0</code>, documented the kube-state-metrics dependency constraint change, and recorded Jenkins <code>5.9.45</code> plus OpenTelemetry Collector <code>0.165.0</code> as verified candidates.</td><td>PR #105 changed the GitOps pin but only refreshed document dates, leaving the durable version table inconsistent with source and live state.</td></tr>
+          <tr><td>Weekly report</td><td>Created this self-contained dark-first report from the canonical template.</td><td>The automation contract requires durable, browser-readable evidence and explicit residual-risk ownership.</td></tr>
+          <tr><td>GitHub queue</td><td>No public mutation.</td><td>The 15:20:11 UTC deterministic snapshot and direct refresh both returned zero open issues and zero open pull requests.</td></tr>
+          <tr><td>Live infrastructure</td><td>No mutation.</td><td>Runtime evidence did not show a current failure needing GitOps reconciliation or Kubernetes remediation.</td></tr>
+          <tr><td>Selene and second brain</td><td><span id="coordination-status">Handoff queued; activity note written.</span></td><td>Selene handoff <code>handoff-20260727T153046Z-7a97cb00</code> is present in the live bridge thread and awaits acknowledgement. The searchable automation note was written at <code>/Users/canepro/src/second_brain/vault/memory/2026-07-27-oke-observability-weekly-maintenance-completed-on-2026-07-27.md</code>.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="verification">
+        <h2>Verification</h2>
+        <div class="grid two">
+          <div class="card"><h3>Prometheus and alerting</h3><ul>
+            <li>Three Grafana datasources present: UIDs <code>prometheus</code>, <code>loki</code>, and <code>tempo</code>.</li>
+            <li>Grafana-managed alert-rule listing returned <code>null</code>; the fallback Prometheus <code>ALERTS</code> query returned no pending or firing series.</li>
+            <li>The repository provisions 42 Prometheus alerts in <code>helm/prometheus-values.yaml</code>.</li>
+            <li>No down targets, unavailable monitored deployments, problem pod phases, or 24-hour OKE restart increases.</li>
+            <li>Deduplicated node readiness is 2/2. The broad count exposed duplicate kube-state-metrics series and was not used as the node total.</li>
+          </ul></div>
+          <div class="card"><h3>Loki and Tempo</h3><ul>
+            <li>OKE Loki ingestion: 6,974 lines in the sampled five-minute window.</li>
+            <li>No Prometheus duplicate-sample warning from <code>job="monitoring/prometheus"</code> in one hour.</li>
+            <li>AKS DNS and Argo cache errors align with the authorized auto-shutdown transition and are not an OKE incident.</li>
+            <li>Tempo and the collector are Running/Ready with zero restarts.</li>
+            <li>Ingress trace deadline failures stopped after 15:12:26 UTC; collector failed/refused span increases were both zero.</li>
+          </ul></div>
+          <div class="card"><h3>Kubernetes and storage</h3><ul>
+            <li>Both OKE nodes Ready on Kubernetes <code>v1.34.1</code>.</li>
+            <li>No pod outside Running/Succeeded and no unbound PVC.</li>
+            <li>Prometheus PVC <code>prometheus-server</code> is Bound at 50 GiB.</li>
+            <li>Metrics Server reported node memory at 88% and 93%; Prometheus root filesystem headroom was 40.0% and 20.6%.</li>
+            <li>Kubernetes escalation decision: <code>k8s-sre-triage</code> not triggered because no runtime failure was present.</li>
+          </ul></div>
+          <div class="card"><h3>Jenkins and secrets</h3><ul>
+            <li>Jenkins public login returned HTTP 200; Argo app <code>jenkins</code> is Healthy/Synced.</li>
+            <li><code>jenkins-0</code> is 2/2 Ready with zero restarts and no plugin failure signatures in the sampled startup logs.</li>
+            <li>Required <code>checks-api</code> and <code>echarts-api</code> pins are present.</li>
+            <li>All 11 ExternalSecrets report <code>SecretSynced</code>. Four Infisical stores are Valid; <code>oci-vault</code> remains <code>ValidationUnknown</code>.</li>
+            <li>This OKE run verifies only the Jenkins controller. The AKS static <code>aks-agent</code> belongs to the Rocket.Chat AKS maintenance runner while AKS is online.</li>
+          </ul></div>
+        </div>
+        <div class="table-wrap"><table>
+          <caption>Command-level proof</caption>
+          <tbody>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td><code>python3 scripts/weekly_oke_observability_check.py --kube-context oke-cluster</code></td><td>Completed once; JSON parsed successfully; assessment <code>ok</code> with no findings.</td></tr>
+          <tr><td>Grafana MCP datasource, Prometheus, Loki, and alert queries</td><td>Passed. Datasources resolved; active alerts and down-target queries were empty; Tempo and Loki returned current data.</td></tr>
+          <tr><td><code>kubectl --context oke-cluster</code> node, pod, Argo, Prometheus, Tempo, collector, Jenkins, PVC, and External Secrets reads</td><td>Passed read-only checks. All OKE-local Argo apps Healthy/Synced and no runtime failure found.</td></tr>
+          <tr><td>Azure MCP AKS cluster and node-pool reads</td><td>Passed read-only checks. State matched the owning run's <code>leave-auto</code> shutdown decision.</td></tr>
+          <tr><td>Maintainer queue snapshot plus direct <code>gh</code> refresh</td><td>Passed at 15:20:11 UTC: zero open issues and zero open pull requests.</td></tr>
+          <tr><td><code>helm repo update</code> and official-repository searches</td><td>Passed. Prometheus 29.19.0 is current; Jenkins 5.9.45 and OpenTelemetry Collector 0.165.0 are candidates.</td></tr>
+          <tr><td><code>git diff --check</code></td><td>Passed after the version-tracking correction.</td></tr>
+          <tr><td>Playwright desktop, 390 px mobile, anchor, and print-export QA</td><td>Passed after one mobile table correction. Desktop and mobile snapshots rendered, the Evidence anchor resolved, and Chromium produced a 13-page PDF.</td></tr>
+          <tr><td>Selene host-bridge send and thread readback</td><td>Passed. Handoff <code>handoff-20260727T153046Z-7a97cb00</code> is queued in thread <code>thread-20260727T153046Z-dc4661e1</code>; acknowledgement was not required to finish this report.</td></tr>
+          <tr><td>Second-brain <code>write-memory</code> and <code>doctor</code></td><td>The activity write and index passed. Doctor then failed on pre-existing maintenance debt: three unresolved graph edges and 57 expected imports missing. Vault validation, index freshness, risky-note scan, dashboards, and duplicate-import checks passed.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="timeline">
+        <h2>Timeline</h2>
+        <div class="timeline">
+          <div class="event"><time>15:01:58 UTC</time><div>The schema-v1 run manifest opened and preserved the pre-existing untracked July 6 collector JSON.</div></div>
+          <div class="event"><time>15:06:06 UTC</time><div>The deterministic OKE collector completed with status <code>ok</code> and no findings.</div></div>
+          <div class="event"><time>15:08–15:12 UTC</time><div>A Tempo single-binary compaction ran for about four minutes. Ingress and the collector logged retryable trace-export deadline failures.</div></div>
+          <div class="event"><time>15:12:26 UTC</time><div>The last matching ingress exporter failure occurred. The cutoff query after that timestamp returned no further matches.</div></div>
+          <div class="event"><time>15:18–15:20 UTC</time><div>Grafana MCP confirmed datasource, scrape, alert, log, and trace state. Azure showed the AKS auto-shutdown transition. The GitHub queue refreshed empty.</div></div>
+          <div class="event"><time>15:21–15:23 UTC</time><div>Official Helm indexes confirmed current and candidate charts. The Prometheus 29.19.0 tracking mismatch was corrected locally.</div></div>
+          <div class="event"><time>15:25–15:29 UTC</time><div>This report was generated and tested at desktop, 390 px mobile, anchor, and print surfaces. Mobile table compression was corrected and rechecked.</div></div>
+          <div class="event"><time>15:30 UTC</time><div>The redacted Selene handoff was queued through the live host bridge and read back from its thread.</div></div>
+          <div class="event"><time>15:31 UTC</time><div>The searchable second-brain activity note and index write succeeded. Doctor isolated its failure to pre-existing graph and refresh drift.</div></div>
+        </div>
+      </section>
+
+      <section id="risks">
+        <h2>Risks</h2>
+        <div class="table-wrap"><table>
+          <caption>Residual risks and owners</caption>
+          <tbody>
+          <tr><th>Risk</th><th>Status</th><th>Owner and next action</th></tr>
+          <tr><td>Tempo compaction latency</td><td><span class="status partial">Recovered, watch</span></td><td>OKE observability owner: watch the next compaction for another multi-minute distributor health-check failure. Escalate if exporter errors recur, span failure/refusal counters rise, or Tempo ingest reaches zero outside an idle period.</td></tr>
+          <tr><td>Node memory and disk headroom</td><td><span class="status partial">Watch</span></td><td>OKE operator: monitor Metrics Server memory at 88%/93% and minimum root filesystem headroom at 20.6%. No alert, eviction, or workload unavailability is active.</td></tr>
+          <tr><td>OCI store validation uncertainty</td><td><span class="status partial">Known</span></td><td>Secrets owner: inspect <code>ClusterSecretStore/oci-vault</code> during an approved secrets window. All active ExternalSecrets remain synced, so no secret-value action is justified in this run.</td></tr>
+          <tr><td>AKS visibility during shutdown</td><td><span class="status info">Expected</span></td><td>Rocket.Chat AKS automation owner: confirm the control plane reaches Stopped through the existing auto-shutdown schedule. Do not treat current Missing/Progressing Argo state as an OKE incident.</td></tr>
+          <tr><td>Update backlog</td><td><span class="status info">Separate change</span></td><td>Repo owner: review Jenkins 5.9.45 and OpenTelemetry Collector 0.165.0 release and render changes before opening a rollout PR. Keep Promtail-to-Alloy migration as a planned replacement, not a blind chart bump.</td></tr>
+          <tr><td>Second-brain maintenance health</td><td><span class="status partial">Known debt</span></td><td>Second-brain maintenance lane: repair three unresolved graph edges and refresh 57 missing imports separately. The July 27 activity write and index succeeded, and no broad refresh was attempted in the already-dirty worktree.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="evidence">
+        <h2>Evidence</h2>
+        <pre>Repository
+/Users/canepro/src/GrafanaLocal
+observed main/origin/main: 4121e0cd9ec895dc5fc57188ac70ed648053ddaa
+PR #105 merge: 4121e0cd9ec895dc5fc57188ac70ed648053ddaa
+queue snapshot: 2026-07-27T15:20:11.830325Z, 0 issues, 0 PRs
+
+Collector
+/Users/canepro/src/GrafanaLocal/reports/2026-07-27-weekly-oke-observability-check.json
+generated_at: 2026-07-27T15:06:06Z
+assessment: ok, findings: []
+
+OKE runtime
+nodes: 2/2 Ready, Kubernetes v1.34.1
+OKE-local Argo applications: 17 Healthy/Synced
+Prometheus: chart 29.19.0, app v3.13.1, Ready, 0 restarts
+Jenkins: HTTP 200, Healthy/Synced, 2/2 Ready, 0 restarts
+PVCs: prometheus-server Bound, 50Gi
+ExternalSecrets: 11/11 SecretSynced
+
+Grafana MCP
+datasource UIDs: prometheus, loki, tempo
+down targets: 0
+pending/firing alerts: 0
+problem pod phases: 0
+unavailable monitored deployments: 0
+OKE restart increases over 24h: 0
+Loki OKE lines in 5m: 6974
+Tempo spans: 73/5m, 5825/30m
+OTel failed spans increase over 1h: 0
+OTel refused spans increase over 1h: 0
+
+AKS expected state
+owning run: reports/weekly-aks-maintenance/20260727T120344Z
+mode: execute
+started by owning run: true
+shutdown mode: leave-auto
+Azure node pool: Stopping/Stopped at read time
+Azure control plane: Running/Succeeded at read time
+
+Mutations
+Terraform: none
+Argo refresh/sync/prune: none
+direct Kubernetes mutation: none
+Azure mutation: none
+secret-value handling: none
+public GitHub mutation: none</pre>
+        <pre id="coordination-evidence">Closeout coordination
+Selene handoff: handoff-20260727T153046Z-7a97cb00
+Selene thread: thread-20260727T153046Z-dc4661e1
+Selene readback: queued, pending acknowledgement
+second-brain activity record: /Users/canepro/src/second_brain/vault/memory/2026-07-27-oke-observability-weekly-maintenance-completed-on-2026-07-27.md
+second-brain write/index: passed
+second-brain doctor: failed on 3 unresolved graph edges and 57 missing imports; all other checks passed
+repository commit/push: recorded in the schema-v1 run manifest after report finalization
+schema-v1 run manifest: /Users/canepro/.codex/automations/oke-observability-weekly-maintenance/runs/oke-observability-weekly-maintenance-20260727T150158Z.manifest.json</pre>
+      </section>
+    </main>
+
+    <footer>Generated by Mira at 2026-07-27 15:25 UTC / 16:25 BST and finalized after coordination at 15:32 UTC / 16:32 BST. Automation ID: <code>oke-observability-weekly-maintenance</code>. Observed source revision: <code>4121e0c</code>. The final report commit and schema-v1 manifest are recorded in the task closeout.</footer>
+  </div>
+</body>
+</html>
