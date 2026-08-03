@@ -11,7 +11,8 @@ terraform {
 
   # OCI Object Storage backend (S3-compatible)
   # Bucket must be created first: oci os bucket create --name terraform-state --compartment-id <compartment_id>
-  # Configure via backend.hcl or environment variables (TF_VAR_*)
+  # Configure credentials via ignored backend.hcl or the AWS credential
+  # environment variables named below; TF_VAR_* does not configure a backend.
   backend "s3" {
     bucket = "terraform-state"
     key    = "oke-hub/terraform.tfstate"

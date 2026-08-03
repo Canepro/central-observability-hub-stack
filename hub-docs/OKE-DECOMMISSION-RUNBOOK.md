@@ -91,6 +91,37 @@ Do not display `terraform/backend.hcl`, `terraform.tfvars`, state files, saved
 plans, or environment variables during diagnosis. Inspect only existence,
 permissions, hashes, and redacted metadata.
 
+## Terraform backend credential rotation
+
+The S3-compatible Object Storage credential currently follows the historical,
+ignored `terraform/backend.hcl` path. It is not sourced from Infisical. OCI CLI
+authentication is a separate local profile, and the former Kubernetes runtime
+secrets were Infisical-backed through External Secrets. Moving the Terraform
+backend credential into Infisical is a separate secret-source cutover: stage
+and smoke-test the same consumer with rollback before removing the local path.
+
+Rotate an exposed Object Storage customer secret key without printing either
+half of the pair:
+
+1. Keep the original key active while creating and installing its replacement.
+2. Verify the replacement directly against the configured S3-compatible
+   endpoint. Record only success or failure, never the response credentials.
+3. Run `terraform init -reconfigure -backend-config=backend.hcl` with the two
+   checksum environment variables above.
+4. If the direct S3 check succeeds but Terraform returns HTTP 403 with
+   `SignatureDoesNotMatch`, inspect whether
+   `terraform/.terraform/terraform.tfstate` contains the replacement pair using
+   boolean match results only. This file is Terraform's local backend cache,
+   not the remote infrastructure state.
+5. If that cache still holds the previous pair, set it to mode 600, delete only
+   that cache file, and rerun `terraform init -reconfigure`. Do not delete
+   `terraform/terraform.tfstate`, remote state, or recovery state as a shortcut.
+6. Pull remote state to a mode-600 temporary file and prove lineage plus the
+   expected managed-resource count. Delete the temporary file immediately.
+7. Revoke the exposed original only after both the direct S3 check and Terraform
+   state read succeed with the replacement. Verify the original is absent and
+   the replacement remains active.
+
 ## Rebuild gate
 
 Recreating the historical stack is a new live-infrastructure decision. Before
