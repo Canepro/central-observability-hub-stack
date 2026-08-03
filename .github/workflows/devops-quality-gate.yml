@@ -91,3 +91,5 @@ jobs:
       - name: Validate PipelineHealer triage helpers
         run: python3 scripts/test-pipelinehealer-triage.py
 
+      - name: Validate version-check policy
+        run: python3 scripts/test-version-check-policy.py

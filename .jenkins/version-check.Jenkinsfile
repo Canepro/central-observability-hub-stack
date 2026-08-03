@@ -137,7 +137,6 @@ SCRIPT
             
             # Extract current versions from ArgoCD app manifests
             extract_version "argocd/applications/grafana.yaml" "GRAFANA"
-            extract_version "argocd/applications/loki.yaml" "LOKI"
             extract_version "argocd/applications/promtail.yaml" "PROMTAIL"
             extract_version "argocd/applications/tempo.yaml" "TEMPO"
             extract_version "argocd/applications/prometheus.yaml" "PROMETHEUS"
@@ -146,7 +145,10 @@ SCRIPT
             
             # Get latest versions from Helm repos
             echo "GRAFANA_LATEST=$(helm search repo grafana/grafana --versions 2>/dev/null | grep -v NAME | head -1 | awk '{print $2}' || echo '')" >> versions.env
-            echo "LOKI_LATEST=$(helm search repo grafana/loki --versions 2>/dev/null | grep -v NAME | head -1 | awk '{print $2}' || echo '')" >> versions.env
+            # Loki is intentionally excluded from automatic updates. The
+            # grafana/loki chart now tracks Grafana Enterprise Logs, while OSS
+            # Loki moved to grafana-community/loki and needs a reviewed source
+            # and major-chart migration before automation can resume.
             echo "PROMTAIL_LATEST=$(helm search repo grafana/promtail --versions 2>/dev/null | grep -v NAME | head -1 | awk '{print $2}' || echo '')" >> versions.env
             echo "TEMPO_LATEST=$(helm search repo grafana/tempo --versions 2>/dev/null | grep -v NAME | head -1 | awk '{print $2}' || echo '')" >> versions.env
             echo "PROMETHEUS_LATEST=$(helm search repo prometheus-community/prometheus --versions 2>/dev/null | grep -v NAME | head -1 | awk '{print $2}' || echo '')" >> versions.env
@@ -161,7 +163,7 @@ SCRIPT
           sh '''
             cat <<'SCRIPT' | sh "${WORKSPACE}/.jenkins/scripts/capture-pipelinehealer-bridge-excerpt.sh" "${WORKSPACE}/.pipelinehealer-log-excerpt.txt"
             set -e
-            components="GRAFANA LOKI PROMTAIL TEMPO PROMETHEUS NGINX METRICS_SERVER"
+            components="GRAFANA PROMTAIL TEMPO PROMETHEUS NGINX METRICS_SERVER"
             updates='[]'
 
             major_of() {
