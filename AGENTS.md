@@ -2,6 +2,18 @@
 
 These notes are local instructions for coding agents working in this repo.
 
+## Current State: Decommissioned
+
+- The OKE hub was decommissioned on 2026-08-03. Terraform remote state is
+  intentionally empty, the former public DNS records are absent, and the
+  weekly OKE maintenance automation is paused.
+- Treat manifests, Helm values, dashboards, and Terraform as historical source.
+  Do not run reconciliation, restore DNS, recreate infrastructure, or resume
+  OKE automation unless Vincent explicitly approves a new rebuild objective,
+  cost boundary, owner, and rollback plan.
+- Use `hub-docs/OKE-DECOMMISSION-RUNBOOK.md` for retained backup names,
+  provider-side verification, state recovery, and the rebuild gate.
+
 ## Principles
 
 - **GitOps first**: Treat this repo as the source of truth. Avoid in-cluster hotfixes that will drift and be reverted by ArgoCD self-heal.
@@ -58,10 +70,14 @@ These notes are local instructions for coding agents working in this repo.
 
 ## Quick Verification Checklist (Post-Change)
 
+This checklist applies only after an explicitly approved rebuild. For the
+current decommissioned state, verification is zero Terraform-managed resources,
+no active OKE/A1/NLB/VCN resources, retained backups `AVAILABLE`, and former OKE
+DNS records absent.
+
 - `kubectl -n argocd get applications` shows expected apps Healthy/Synced (or known/acceptable drift only).
 - Grafana dashboards load (especially provisioned Loki/Tempo dashboards if touched).
 - Prometheus targets:
   - `kubernetes-nodes-cadvisor` is `UP`
   - alert rules are loaded and evaluating
 - Tempo spans increment after ingress requests (PromQL): `sum(increase(tempo_distributor_spans_received_total[5m]))`
-

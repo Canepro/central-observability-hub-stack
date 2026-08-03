@@ -1,10 +1,19 @@
 # OKE Observability Hub
 
-A centralized observability platform deployed on Oracle Kubernetes Engine (OKE), designed to aggregate metrics, logs, and traces across multi-cluster environments. Optimized for the OCI Always Free Tier.
+> **Decommissioned 2026-08-03.** The live OKE hub, worker nodes, load balancers,
+> block volumes, and dedicated VCN were removed to release OCI Always Free
+> capacity. This repository is retained as historical GitOps source and as a
+> possible rebuild reference; pushing `main` no longer deploys anything.
+> See [OKE-DECOMMISSION-RUNBOOK.md](hub-docs/OKE-DECOMMISSION-RUNBOOK.md) for
+> recovery points, verification, and safe reconstruction notes.
+
+A historical centralized observability platform for Oracle Kubernetes Engine
+(OKE), designed to aggregate metrics, logs, and traces across multi-cluster
+environments.
 
 ## Overview
 
-This repository is the GitOps source of truth for a production-ready observability stack:
+This repository retains the former GitOps source for the observability stack:
 
 | Component | Purpose | Storage |
 |-----------|---------|---------|
@@ -65,16 +74,15 @@ flowchart LR
 
 ### Endpoints
 
-| Service | URL |
-|---------|-----|
-| Grafana | https://grafana.canepro.me |
-| ArgoCD | https://argocd.canepro.me |
-| Jenkins | https://jenkins.canepro.me |
-| Data Ingestion | https://observability.canepro.me |
+The former Grafana, Argo CD, Jenkins, and ingestion endpoints were retired with
+the cluster. Their DNS records must remain absent unless a replacement service
+is deliberately deployed and accepted.
 
 ## Quick Start
 
-See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a fast, end-to-end checklist.
+`docs/QUICKSTART.md` is a historical deployment checklist. Do not run it as a
+live operations procedure without first approving a new target architecture,
+cost boundary, DNS plan, and recovery path.
 
 ## Repository Structure
 
@@ -92,7 +100,9 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a fast, end-to-end checklist.
 
 ## GitOps Workflow
 
-This stack is managed declaratively via ArgoCD. All changes flow through Git:
+When the hub was active, the stack was managed declaratively via Argo CD. The
+repository currently has no live Argo CD consumer and Terraform remote state is
+intentionally empty.
 
 1. **Modify** - Edit manifests in `argocd/applications/` or values in `helm/`
 2. **Commit** - Push changes to `main` branch
@@ -110,6 +120,7 @@ This stack is managed declaratively via ArgoCD. All changes flow through Git:
 | Document | Description |
 |----------|-------------|
 | [hub-docs/README.md](hub-docs/README.md) | Component versions and architecture overview |
+| [hub-docs/OKE-DECOMMISSION-RUNBOOK.md](hub-docs/OKE-DECOMMISSION-RUNBOOK.md) | Current state, recovery points, teardown lessons, and rebuild gate |
 | [hub-docs/OPERATIONS-HUB.md](hub-docs/OPERATIONS-HUB.md) | Retention policies, storage management |
 | [hub-docs/TRACING-ROLLOUT-CHECKLIST.md](hub-docs/TRACING-ROLLOUT-CHECKLIST.md) | GitOps checklist for phased service tracing rollout |
 | [hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md](hub-docs/TRACING-SERVICE-ONBOARDING-TEMPLATE.md) | Per-service tracing onboarding template/checklist |
@@ -141,7 +152,9 @@ All jobs have timeout limits (5-15 minutes) to fail fast when runners are unavai
 
 ### Jenkins
 
-Jenkins runs on OKE at **https://jenkins.canepro.me** (split-agent hybrid: controller on OKE, optional static agent on AKS). Pipelines in `.jenkins/` provide:
+Jenkins no longer runs on OKE. Its former controller data is retained only in
+the named OCI full-volume backup recorded in the decommission runbook.
+Historical pipelines in `.jenkins/` provide:
 - Terraform format, validate, and (when OCI parameters are set) plan
 - Kubernetes manifest validation
 - Security scanning and version checking
@@ -150,13 +163,14 @@ PR and branch builds run format/validate only unless OCI job parameters are conf
 
 ## Infrastructure
 
-| Resource | Specification |
+| Resource | Current state |
 |----------|---------------|
-| Cluster | OKE Basic (Always Free) |
-| Region | us-ashburn-1 |
-| Nodes | 2x VM.Standard.A1.Flex (ARM64) |
-| Compute | 2 OCPU / 12GB RAM per node |
-| Storage | Block Volumes + Object Storage |
+| OKE cluster | Deleted |
+| A1 worker instances and boot volumes | Deleted |
+| Jenkins and Prometheus source volumes | Deleted after full backups became `AVAILABLE` |
+| OCI network load balancers and dedicated VCN | Deleted |
+| Terraform managed-resource count | `0` |
+| Loki/Tempo Object Storage and recovery backups | Retained; not part of the destroy plan |
 
 ## License
 
