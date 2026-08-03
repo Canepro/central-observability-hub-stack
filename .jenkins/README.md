@@ -23,6 +23,10 @@ The version-check pipeline compares Helm chart versions in `argocd/applications/
 **Stability notes:**
 - The pipeline updates both `**Last Updated**` and the `**Document Last Updated**` footer to keep timestamps aligned.
 - When updating an existing open PR branch, the pipeline retries `git push` with a `rebase` to avoid non-fast-forward failures from concurrent runs.
+- Loki is intentionally excluded from automated updates. `grafana/loki` now
+  tracks Grafana Enterprise Logs; OSS Loki moved to `grafana-community/loki`
+  and requires a separately reviewed repository-source and major-chart
+  migration before it can safely re-enter the automated update set.
 
 **Requirements for PR branch updates to work:**
 
