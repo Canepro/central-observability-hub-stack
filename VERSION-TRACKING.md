@@ -2,7 +2,7 @@
 
 This document tracks all software versions used in the OKE Observability Hub deployment. Update this file when upgrading any component.
 
-**Last Updated**: 2026-07-23
+**Last Updated**: 2026-08-03
 
 ## Upgrade Status Legend
 
@@ -23,6 +23,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 **Grafana.com (gnet) revision policy**: the Grafana Helm chart defaults to downloading **revision 1** unless `revision:` is explicitly set. Use `revision: latest` for latest-first behavior, and pin a numeric revision only when you have a specific reason (document why and update it during regular version reviews).
 
 ## Quick Upgrade Reference
+
+**Just updated (2026-08-03)**:
+- Prometheus 29.19.0 -> 29.21.0 (patch chart; app v3.13.1 -> v3.13.2)
+- Loki remains on 7.1.0. The automated 7.2.0 candidate belongs to the Grafana Enterprise Logs maintenance line; OSS Loki now requires a separately reviewed migration to the `grafana-community` chart repository.
 
 **Just updated (2026-07-23)**:
 - Prometheus 29.18.0 -> 29.19.0 (patch chart; app remains v3.13.1)
@@ -112,10 +116,10 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 | Component | Current Version | Latest Version | Upgrade Status | Location | Update Source |
 |-----------|----------------|----------------|----------------|----------|---------------|
 | **Grafana** | `10.5.15` | `10.5.15` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/grafana.yaml` | [Grafana Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Loki** | `7.1.0` | `7.1.0` | 🔄 **Just updated** (2026-07-20) | `argocd/applications/loki.yaml` | [Loki Helm Releases](https://github.com/grafana/helm-charts/releases) |
+| **Loki** | `7.1.0` | `18.7.1` | 🔍 **Needs investigation** (OSS chart source migration verified 2026-08-03) | `argocd/applications/loki.yaml` | [Grafana Community Helm Releases](https://github.com/grafana-community/helm-charts/releases) |
 | **Promtail** | `6.17.1` | `6.17.1` | 🔄 **Just updated** (2026-01-19) ⚠️ **Deprecated** | `argocd/applications/promtail.yaml` | [Promtail Helm Releases](https://github.com/grafana/helm-charts/releases) |
 | **Tempo** | `1.24.4` | `1.24.4` | 🔄 **Just updated** (2026-02-01) | `argocd/applications/tempo.yaml` | [Tempo Helm Releases](https://github.com/grafana/helm-charts/releases) |
-| **Prometheus** | `29.19.0` | `29.19.0` | 🔄 **Just updated** (2026-07-23) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
+| **Prometheus** | `29.21.0` | `29.21.0` | 🔄 **Just updated** (2026-08-03) | `argocd/applications/prometheus.yaml` | [Prometheus Community Charts](https://github.com/prometheus-community/helm-charts/releases) |
 | **OpenTelemetry Collector** | `0.145.0` | `0.165.0` | ⚠️ **Can upgrade** (verified 2026-07-27; review chart and collector changes) | `argocd/applications/otel-collector.yaml` | [OTel Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/releases) |
 
 **⚠️ Important Note on Promtail**: Promtail is deprecated in favor of Grafana Alloy. Promtail entered LTS (Long-Term Support) on February 13, 2025, and will reach **End of Life (EOL) on March 2, 2026**. Consider migrating to Grafana Alloy for long-term support. See [Promtail Deprecation Notice](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/) for details.
@@ -144,6 +148,12 @@ Grafana dashboards are provisioned via Helm values in `helm/grafana-values.yaml`
 - Loki chart 7.0.0 -> 7.1.0 updates Loki 3.6.7 -> 3.6.8. Loki 3.6.8 includes dependency security fixes for JSON parsing, OpenTelemetry, and gRPC.
 - Local `helm template` comparisons with this repo's values showed patch-level image, dependency, label, and generated probe-field changes only. Post-merge proof still requires Argo health/sync, scrape health, Loki ingestion, and alert evaluation.
 - Prometheus chart 29.18.0 -> 29.19.0 keeps Prometheus v3.13.1 and moves the kube-state-metrics dependency constraint from 7.8.* to 8.0.*. The live OKE app reconciled Healthy/Synced with all Prometheus pods Ready after PR #105 merged.
+
+**🔄 August 2026 patch refresh**:
+- Prometheus chart 29.19.0 -> 29.21.0 updates Prometheus v3.13.1 -> v3.13.2, Alertmanager chart 1.40.* -> 1.41.*, kube-state-metrics chart 8.0.* -> 8.1.*, and the Prometheus config reloader v0.92.1 -> v0.93.0.
+- Both Prometheus charts rendered successfully with `helm/prometheus-values.yaml`. The rendered object count stayed the same; the diff is limited to expected image, chart-label, dependency, and generated checksum changes.
+- The automated Loki 7.2.0 candidate was removed. Upstream now describes `grafana/loki` 7.2.0 as a Grafana Enterprise Logs chart, while OSS Loki moved to `grafana-community/loki` and is at chart 18.7.1. The current values render against 18.7.1, but the repository-source and major-chart migration requires a separate review, rollback plan, and post-sync ingestion proof.
+- Post-merge proof for Prometheus still requires Argo CD Healthy/Synced, all Prometheus pods Ready, `kubernetes-nodes-cadvisor` up, and alert rules evaluating.
 
 **💡 Tempo Note**: Currently using single binary mode (v1.24.4). The `tempo-distributed` chart has v1.57.0 available if you want to migrate to microservices architecture.
 
@@ -446,6 +456,6 @@ helm search repo rocketchat/rocketchat --versions | head -5
 
 ---
 
-**Document Last Updated**: 2026-07-23
-**Next Scheduled Review**: 2026-08-03
+**Document Last Updated**: 2026-08-03
+**Next Scheduled Review**: 2026-08-10
 **Maintained By**: Infrastructure Team
