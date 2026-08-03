@@ -1,6 +1,12 @@
 # OKE Observability Hub
 
-Central observability hub for storage, analysis, and visualization of multi-cluster telemetry.
+> **Historical after 2026-08-03.** The live OKE hub is decommissioned and its
+> weekly automation is paused. Start with
+> [OKE-DECOMMISSION-RUNBOOK.md](OKE-DECOMMISSION-RUNBOOK.md); the architecture
+> below describes the former deployment.
+
+Historical central observability hub for storage, analysis, and visualization
+of multi-cluster telemetry.
 
 ## Role
 
@@ -42,6 +48,7 @@ The stack uses the App-of-Apps pattern. The bootstrap manifest (`argocd/bootstra
 
 ## Related Documentation
 
+- [OKE-DECOMMISSION-RUNBOOK.md](OKE-DECOMMISSION-RUNBOOK.md) - Current state, retained recovery points, teardown lessons, and rebuild gate
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and storage architecture
 - [CLUSTER-INFO.md](CLUSTER-INFO.md) - OKE cluster details and access commands
 - [OPERATIONS-HUB.md](OPERATIONS-HUB.md) - Retention policies and maintenance

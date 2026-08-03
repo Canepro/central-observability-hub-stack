@@ -25,6 +25,10 @@ terraform {
     skip_requesting_account_id  = true
     use_path_style              = true
     skip_s3_checksum            = true # OCI doesn't support AWS chunked encoding
+    # Terraform 1.14.9 still attempted chunked checksum uploads during a state
+    # write. Set AWS_REQUEST_CHECKSUM_CALCULATION=when_required and
+    # AWS_RESPONSE_CHECKSUM_VALIDATION=when_required for state-changing
+    # commands. See hub-docs/OKE-DECOMMISSION-RUNBOOK.md before state recovery.
     # Credentials via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars
     # or via backend.hcl: access_key = "..." and secret_key = "..."
   }

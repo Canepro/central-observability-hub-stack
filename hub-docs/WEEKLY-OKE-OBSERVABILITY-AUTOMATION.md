@@ -3,6 +3,13 @@
 This runbook defines the weekly Codex automation for the OKE observability hub in
 `/Users/canepro/src/GrafanaLocal`.
 
+> **Retired 2026-08-03.** The OKE hub was decommissioned and the owning Codex
+> automation is `PAUSED`. Do not run the collector, Grafana checks, Argo CD
+> reconciliation, or Jenkins checks against `oke-cluster`; absence is now the
+> intended state. This document below is retained as historical procedure. Use
+> [OKE-DECOMMISSION-RUNBOOK.md](OKE-DECOMMISSION-RUNBOOK.md) for current state,
+> recovery points, and the rebuild gate.
+
 ## Purpose
 
 Once a week, check whether the OKE hub still works, identify updates or queued
