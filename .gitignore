@@ -45,3 +45,10 @@ terraform/*_override.tf.json
 # Terraform plans
 *.tfplan
 *.tfplan.*
+
+# Raw cluster exports must stay outside this public checkout.
+argocd-backup*.yaml
+argocd-backup*.yml
+my_full_backup*.yaml
+my_full_backup*.yml
+/backups/raw/
