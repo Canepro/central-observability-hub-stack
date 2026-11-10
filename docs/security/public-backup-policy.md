@@ -9,12 +9,16 @@ in Infisical. If no approved encrypted route exists, stop the export.
 
 Ignore rules cover the known Argo backup, full backup and all-manifests export
 names in YAML and JSON, plus nested `backups/raw/` directories. Forced adds
-can bypass ignores. Legitimate dashboard backup JSON remains tracked.
+can bypass ignores. Existing dashboard files remain tracked.
 
 `Gitleaks new changes` checks the incoming PR or push range independently of
-old findings. If a push base is missing, or this is a new branch/manual run,
+old findings. If a push base is missing or not an ancestor, or this is a new branch/manual run,
 it scans all history reachable from the tip and may report historical
-findings. `Gitleaks full history` separately audits fetched branches, tags
+findings. Non-default branch/tag pushes use `Gitleaks ref changes`, and
+manual runs use `Gitleaks manual audit`, so their historical fallback status
+cannot collide with the required PR/default-branch check on the same commit.
+Every event has a unique concurrency group: an earlier push scan is never
+cancelled or displaced by a later push. `Gitleaks full history` separately audits fetched branches, tags
 and public pull-request head/merge refs. Both include first-parent merge diffs
 and fail on findings, errors, deadlines or missing completion proof. Neither
 honors repository ignore lists or inline allow comments.
