@@ -2,29 +2,36 @@
 
 Raw Argo CD and Kubernetes exports can contain private keys, passwords,
 service-account credentials and encoded Secret values. Encoding is not
-encryption. Do not write these exports anywhere inside this public checkout,
-including untracked files, pull requests, workflow artifacts or logs.
+encryption. Write exports only through the existing approved backup owner to
+an encrypted destination outside this checkout. Never put them in public Git,
+pull requests, workflow artifacts or logs. Replacement runtime values belong
+in Infisical. If no approved encrypted route exists, stop the export.
 
-Use the existing approved backup owner and an encrypted destination outside the
-checkout. Runtime credentials and new replacement values belong in Infisical;
-backup access must use the established consumer. Do not create a new backup
-consumer, encryption key or storage destination as part of an ad hoc export.
-If no approved encrypted route exists, stop the export until one is configured.
+Ignore rules cover the known Argo backup, full backup and all-manifests export
+names in YAML and JSON, plus nested `backups/raw/` directories. Forced adds
+can bypass ignores. Legitimate dashboard backup JSON remains tracked.
 
-The ignore rules cover known raw backup names and the `backups/raw/` directory.
-They protect against accidental adds; `git add --force` can bypass them. The
-Secrets scan workflow scans branch and tag history, including merge changes,
-with pinned Gitleaks default rules. It does not honor repository ignore lists
-or inline allow comments. Findings, scan errors and incomplete coverage fail
-the check. Make `Gitleaks full history` a required branch check where the
-repository's owner policy permits it. CI catches a committed leak; it cannot
-undo an exposure that has already happened.
+`Gitleaks new changes` checks the incoming PR or push range independently of
+old findings. If a push base is missing, or this is a new branch/manual run,
+it scans all history reachable from the tip and may report historical
+findings. `Gitleaks full history` separately audits fetched branches, tags
+and public pull-request head/merge refs. Both include first-parent merge diffs
+and fail on findings, errors, deadlines or missing completion proof. Neither
+honors repository ignore lists or inline allow comments.
 
-Before adding a backup or export feature, keep its output private or encrypted
-outside the checkout and confirm that it cannot enter Git or CI artifacts.
-Legitimate dashboards with backup in their names remain tracked normally.
+Make `Gitleaks new changes` required under the repository owner's branch
+policy. Workflow/configuration changes also need owner review; a required
+status alone does not prevent someone with workflow-write authority from
+changing the check. These controls catch accidental commits, but cannot undo
+an exposure or protect against an owner bypass. The full audit stays red until
+historical findings have been resolved; do not suppress unresolved credentials.
 
-For a leaked credential, rotate or revoke it at its authority first, then purge
-history under the repository owner's approval. Preserve the approved private
-pre-rewrite backup and validate the rewritten history and deployed consumers.
-Never include credential values in reports or remediation records.
+Rotate or revoke exposed credentials first. Before an approved history rewrite,
+keep the required private mode-600 pre-rewrite backup. Rewrite and push the
+mutable branches/tags, then re-scan all advertised refs. GitHub pull refs are
+read-only to Git pushes and may retain old commits; cached views and fork
+copies can also remain. Resolve those through their owners/GitHub Support
+where needed, with separate authorization before any message under Vincent's
+name. Never report a branch/tag rewrite as complete erasure or a clean all-ref
+scan while old refs still expose the material. Verify deployed consumers and
+Argo CD sync after rotations. No credential values belong in reports.
