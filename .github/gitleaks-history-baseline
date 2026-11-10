@@ -4,6 +4,10 @@
 # No secret values. Only the full-history scan reads this file, and only from the
 # default branch; the new-changes scan ignores it. It is not named .gitleaksignore
 # because Gitleaks loads that file from the scanned tree on its own.
+# Fingerprints depend on the full-history scan's git log options; changing them
+# can reopen these findings.
+# Add an entry only after a private review records it as a false positive or a
+# credential whose service is retired or whose credential is revoked or expired.
 00a45f72f0d1d14336dfbc4114401688be9a97c3:docs/CONFIGURATION.md:curl-auth-user:198
 00a45f72f0d1d14336dfbc4114401688be9a97c3:docs/TROUBLESHOOTING.md:curl-auth-user:83
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:generic-api-key:6402
@@ -13,7 +17,6 @@
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6401
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6432
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6479
-1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6496
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6513
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6530
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6546
@@ -22,7 +25,6 @@
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6597
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:private-key:6458
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:private-key:6480
-1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:private-key:6497
 1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:private-key:6514
 16ab06bbfaedbcc2d9ea4a9d02e2bcff80145ee2:docs/external-config/ROCKETCHAT-SETUP.md:generic-api-key:38
 16ab06bbfaedbcc2d9ea4a9d02e2bcff80145ee2:docs/external-config/ROCKETCHAT-SETUP.md:generic-api-key:64
