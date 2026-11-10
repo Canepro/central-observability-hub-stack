@@ -49,13 +49,11 @@ terraform/*_override.tf.json
 # Raw cluster exports must stay outside this public checkout.
 argocd-backup*.yaml
 argocd-backup*.yml
+argocd-backup*.json
 my_full_backup*.yaml
 my_full_backup*.yml
-**/backups/raw/
-
-# Raw cluster exports, including the previously leaked manifest dump.
-argocd-backup*.json
 my_full_backup*.json
 all-manifests*.yaml
 all-manifests*.yml
 all-manifests*.json
+**/backups/raw/
