@@ -21,14 +21,24 @@ Every event has a unique concurrency group: an earlier push scan is never
 cancelled or displaced by a later push. `Gitleaks full history` separately audits fetched branches, tags
 and public pull-request head/merge refs. Both include first-parent merge diffs
 and fail on findings, errors, deadlines or missing completion proof. Neither
-honors repository ignore lists or inline allow comments.
+honors inline allow comments, and both delete any `.gitleaksignore` from the
+runner checkout first, because Gitleaks would otherwise load it from the scanned
+tree. Every scan forces text diffs, so `.gitattributes` or a NUL byte cannot
+hide a patch. Only `Gitleaks full history` honors an ignore list:
+`.github/gitleaks-history-baseline`, read from the default branch and never from
+a pull request, holding `commit:path:rule:line` fingerprints only. Gitleaks'
+built-in allowlist still skips some paths, such as `node_modules/`, lockfiles
+and binary document types.
 
 Make `Gitleaks new changes` required under the repository owner's branch
 policy. Workflow/configuration changes also need owner review; a required
 status alone does not prevent someone with workflow-write authority from
 changing the check. These controls catch accidental commits, but cannot undo
 an exposure or protect against an owner bypass. The full audit stays red until
-historical findings have been resolved; do not suppress unresolved credentials.
+historical findings have been resolved. A finding enters the baseline only after
+a private review records it as a false positive, or as a credential whose service
+is retired or which is revoked or expired; do not baseline unresolved
+credentials. Keep that review private and out of reports.
 
 Rotate or revoke exposed credentials first. Before an approved history rewrite,
 keep the required private mode-600 pre-rewrite backup. Rewrite and push the
