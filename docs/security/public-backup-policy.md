@@ -23,8 +23,8 @@ and public pull-request head/merge refs. Both include first-parent merge diffs
 and fail on findings, errors, deadlines or missing completion proof. Neither
 honors inline allow comments, and both delete any `.gitleaksignore` from the
 runner checkout first, because Gitleaks would otherwise load it from the scanned
-tree. Incoming-change scans also force text diffs, so `.gitattributes` or a NUL
-byte cannot hide a patch. Only `Gitleaks full history` honors an ignore list:
+tree. Every scan forces text diffs, so `.gitattributes` or a NUL byte cannot
+hide a patch. Only `Gitleaks full history` honors an ignore list:
 `.github/gitleaks-history-baseline`, read from the default branch and never from
 a pull request, holding `commit:path:rule:line` fingerprints only. Gitleaks'
 built-in allowlist still skips some paths, such as `node_modules/`, lockfiles
