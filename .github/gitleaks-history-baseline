@@ -110,3 +110,8 @@ daf5febc930fb8d9a4f69acd968d5d97d50c9d32:helm/jenkins-values.yaml:generic-api-ke
 daf5febc930fb8d9a4f69acd968d5d97d50c9d32:helm/jenkins-values.yaml:generic-api-key:129
 daf5febc930fb8d9a4f69acd968d5d97d50c9d32:helm/jenkins-values.yaml:generic-api-key:132
 daf5febc930fb8d9a4f69acd968d5d97d50c9d32:helm/jenkins-values.yaml:generic-api-key:97
+# Retired kind-cluster-world-tree admin client cert and key in an Argo CD cluster
+# Secret, reviewed privately 2026-11-13. Vincent confirmed the cluster destroyed and
+# its client keys never reused on 2026-11-12; its API host no longer resolves.
+1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:kubernetes-secret-yaml:6496
+1290ecd7feb56d60e1cfc88b423578e1108ab992:argocd-backup-20260119.yaml:private-key:6497
